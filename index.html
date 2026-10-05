@@ -19,13 +19,28 @@
     justify-content: center;
     position: relative;
     background: radial-gradient(ellipse at center, #0a0a1a 0%, #000 70%);
+    transition: background 0.8s ease;
+  }
+
+  body.theme-blue { --orb-color-1: #00d4ff; --orb-color-2: #0066ff; --orb-color-3: #001a66; --orb-glow: 0, 212, 255; }
+  body.theme-pink { --orb-color-1: #ff44d4; --orb-color-2: #cc0066; --orb-color-3: #4a0033; --orb-glow: 255, 68, 212; }
+  body.theme-green { --orb-color-1: #44ff88; --orb-color-2: #00cc55; --orb-color-3: #003318; --orb-glow: 68, 255, 136; }
+  body.theme-purple { --orb-color-1: #a044ff; --orb-color-2: #6600cc; --orb-color-3: #220044; --orb-glow: 160, 68, 255; }
+  body.theme-red { --orb-color-1: #ff5544; --orb-color-2: #cc2200; --orb-color-3: #440a00; --orb-glow: 255, 85, 68; }
+  body.theme-gold { --orb-color-1: #ffcc44; --orb-color-2: #cc8800; --orb-color-3: #443300; --orb-glow: 255, 204, 68; }
+
+  :root {
+    --orb-color-1: #00d4ff;
+    --orb-color-2: #0066ff;
+    --orb-color-3: #001a66;
+    --orb-glow: 0, 212, 255;
   }
 
   .particles { position: absolute; inset: 0; overflow: hidden; pointer-events: none; }
   .particle {
     position: absolute; width: 2px; height: 2px;
-    background: rgba(0, 200, 255, 0.6); border-radius: 50%;
-    box-shadow: 0 0 6px rgba(0, 200, 255, 0.8);
+    background: rgba(var(--orb-glow), 0.6); border-radius: 50%;
+    box-shadow: 0 0 6px rgba(var(--orb-glow), 0.8);
     animation: floatParticle linear infinite;
   }
   @keyframes floatParticle {
@@ -76,10 +91,16 @@
   .orb-core {
     width: 180px; height: 180px;
     background: radial-gradient(circle at 40% 40%, 
-      #ffffff 0%, #a0f0ff 15%, #00d4ff 35%, #0066ff 55%, #001a66 80%, transparent 100%);
+      #ffffff 0%, 
+      color-mix(in srgb, var(--orb-color-1) 70%, white) 15%,
+      var(--orb-color-1) 35%, 
+      var(--orb-color-2) 55%, 
+      var(--orb-color-3) 80%, 
+      transparent 100%);
     filter: blur(8px) brightness(1.3);
     animation: corePulse 3s ease-in-out infinite;
     z-index: 10;
+    transition: background 0.8s ease;
   }
   @keyframes corePulse {
     0%, 100% { transform: scale(1); filter: blur(8px) brightness(1.3); }
@@ -88,28 +109,47 @@
 
   .orb-layer-1 {
     width: 280px; height: 280px;
-    background: radial-gradient(circle, rgba(0, 212, 255, 0.6) 0%, rgba(0, 100, 255, 0.3) 40%, transparent 70%);
+    background: radial-gradient(circle, 
+      rgba(var(--orb-glow), 0.6) 0%, 
+      rgba(var(--orb-glow), 0.3) 40%, 
+      transparent 70%);
     animation: rotateLayer1 8s linear infinite;
+    transition: background 0.8s ease;
   }
   .orb-layer-2 {
     width: 340px; height: 340px;
-    background: radial-gradient(circle, rgba(100, 0, 255, 0.4) 0%, rgba(0, 150, 255, 0.2) 50%, transparent 75%);
+    background: radial-gradient(circle, 
+      rgba(var(--orb-glow), 0.4) 0%, 
+      rgba(var(--orb-glow), 0.2) 50%, 
+      transparent 75%);
     animation: rotateLayer2 12s linear infinite reverse;
+    transition: background 0.8s ease;
   }
   .orb-layer-3 {
     width: 400px; height: 400px;
-    background: radial-gradient(circle, rgba(0, 255, 200, 0.15) 0%, rgba(0, 100, 255, 0.1) 50%, transparent 80%);
+    background: radial-gradient(circle, 
+      rgba(var(--orb-glow), 0.15) 0%, 
+      rgba(var(--orb-glow), 0.1) 50%, 
+      transparent 80%);
     animation: rotateLayer3 16s linear infinite;
+    transition: background 0.8s ease;
   }
 
   .orb-ring {
     position: absolute; border-radius: 50%;
     border: 1.5px solid transparent;
-    background: conic-gradient(from 0deg, transparent 0%, rgba(0, 212, 255, 0.8) 20%, rgba(100, 0, 255, 0.6) 40%, rgba(0, 255, 200, 0.8) 60%, rgba(0, 100, 255, 0.6) 80%, transparent 100%) border-box;
+    background: conic-gradient(from 0deg, 
+      transparent 0%, 
+      rgba(var(--orb-glow), 0.8) 20%, 
+      rgba(var(--orb-glow), 0.6) 40%, 
+      rgba(var(--orb-glow), 0.8) 60%, 
+      rgba(var(--orb-glow), 0.6) 80%, 
+      transparent 100%) border-box;
     -webkit-mask: linear-gradient(#fff 0 0) padding-box, linear-gradient(#fff 0 0);
     -webkit-mask-composite: xor;
     mask-composite: exclude;
     filter: blur(1px) brightness(1.4);
+    transition: background 0.8s ease;
   }
   .orb-ring-1 { width: 220px; height: 220px; animation: spin 4s linear infinite, ringPulse 2s ease-in-out infinite; }
   .orb-ring-2 { width: 260px; height: 260px; animation: spin 6s linear infinite reverse, ringPulse 2.5s ease-in-out infinite 0.3s; opacity: 0.7; }
@@ -152,22 +192,23 @@
   }
   .status-text {
     font-size: 15px; letter-spacing: 2px;
-    color: #00d4ff; text-shadow: 0 0 15px rgba(0, 212, 255, 0.8);
+    color: rgb(var(--orb-glow));
+    text-shadow: 0 0 15px rgba(var(--orb-glow), 0.8);
     font-weight: 300; transition: all 0.3s ease;
     min-height: 20px; font-style: italic;
   }
-  .status-text.active { color: #00ffcc; text-shadow: 0 0 25px rgba(0, 255, 204, 1); }
+  .status-text.active { color: rgb(var(--orb-glow)); text-shadow: 0 0 25px rgba(var(--orb-glow), 1); }
   .status-text.off { color: transparent; text-shadow: none; }
 
   .transcript {
     position: fixed; bottom: 150px; left: 50%;
     transform: translateX(-50%); max-width: 80vw; text-align: center;
     font-size: 16px; color: rgba(255, 255, 255, 0.9);
-    text-shadow: 0 0 10px rgba(0, 212, 255, 0.5);
+    text-shadow: 0 0 10px rgba(var(--orb-glow), 0.5);
     padding: 12px 24px;
     background: rgba(0, 20, 40, 0.5);
     border-radius: 30px;
-    border: 1px solid rgba(0, 212, 255, 0.2);
+    border: 1px solid rgba(var(--orb-glow), 0.2);
     backdrop-filter: blur(10px);
     min-height: 20px; transition: all 0.3s ease;
     opacity: 0; pointer-events: none;
@@ -178,8 +219,8 @@
   .meta-title {
     position: absolute; top: 40px;
     font-size: 28px; letter-spacing: 12px;
-    font-weight: 200; color: rgba(0, 212, 255, 0.7);
-    text-shadow: 0 0 20px rgba(0, 212, 255, 0.5);
+    font-weight: 200; color: rgba(var(--orb-glow), 0.7);
+    text-shadow: 0 0 20px rgba(var(--orb-glow), 0.5);
     text-transform: uppercase; transition: all 0.8s ease;
   }
   .meta-title.off { color: rgba(100, 100, 120, 0.3); text-shadow: none; }
@@ -195,9 +236,9 @@
 
   .wave-bar {
     width: 3px;
-    background: linear-gradient(to top, #0066ff, #00d4ff, #00ffcc);
+    background: linear-gradient(to top, var(--orb-color-2), var(--orb-color-1), rgb(var(--orb-glow)));
     border-radius: 3px;
-    box-shadow: 0 0 10px rgba(0, 212, 255, 0.8);
+    box-shadow: 0 0 10px rgba(var(--orb-glow), 0.8);
     transition: height 0.1s ease; min-height: 4px;
   }
 
@@ -205,17 +246,679 @@
     position: fixed; top: 50%; left: 50%;
     transform: translate(-50%, -50%) scale(0.8);
     padding: 24px 40px;
-    background: linear-gradient(135deg, rgba(0, 212, 255, 0.15), rgba(0, 100, 255, 0.1));
-    border: 2px solid rgba(0, 255, 204, 0.6);
+    background: linear-gradient(135deg, 
+      rgba(var(--orb-glow), 0.15), 
+      rgba(var(--orb-glow), 0.1));
+    border: 2px solid rgba(var(--orb-glow), 0.6);
     border-radius: 20px; backdrop-filter: blur(20px);
-    box-shadow: 0 0 60px rgba(0, 255, 204, 0.5);
+    box-shadow: 0 0 60px rgba(var(--orb-glow), 0.5);
     text-align: center; opacity: 0; pointer-events: none;
     z-index: 500;
     transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
   }
   .action-toast.visible { opacity: 1; transform: translate(-50%, -50%) scale(1); }
   .action-toast-icon { font-size: 42px; margin-bottom: 12px; }
-  .action-toast-text { font-size: 15px; color: #00ffcc; letter-spacing: 1.5px; font-style: italic; }
+  .action-toast-text { font-size: 15px; color: rgb(var(--orb-glow)); letter-spacing: 1.5px; font-style: italic; }
+
+  .reminders-panel {
+    position: fixed;
+    top: 20px;
+    left: 20px;
+    max-width: 320px;
+    z-index: 100;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .reminder-item {
+    padding: 12px 18px;
+    background: rgba(0, 20, 40, 0.7);
+    border: 1px solid rgba(var(--orb-glow), 0.4);
+    border-radius: 14px;
+    backdrop-filter: blur(10px);
+    font-size: 13px;
+    color: rgba(255, 255, 255, 0.9);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    animation: reminderAppear 0.4s ease-out;
+  }
+
+  @keyframes reminderAppear {
+    from { opacity: 0; transform: translateX(-20px); }
+    to { opacity: 1; transform: translateX(0); }
+  }
+
+  .reminder-item.firing {
+    border-color: rgba(255, 200, 0, 0.8);
+    box-shadow: 0 0 20px rgba(255, 200, 0, 0.6);
+    animation: reminderFire 0.6s ease-in-out infinite;
+  }
+
+  @keyframes reminderFire {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.03); }
+  }
+
+  .reminder-icon { font-size: 18px; flex-shrink: 0; }
+  .reminder-content { flex: 1; }
+  .reminder-time { 
+    font-size: 11px; 
+    opacity: 0.7; 
+    font-style: italic;
+  }
+
+  .settings-button {
+    position: fixed;
+    bottom: 25px;
+    right: 25px;
+    width: 56px;
+    height: 56px;
+    border-radius: 50%;
+    background: linear-gradient(145deg, 
+      rgba(var(--orb-glow), 0.2), 
+      rgba(var(--orb-glow), 0.08));
+    border: 1.5px solid rgba(var(--orb-glow), 0.5);
+    color: rgb(var(--orb-glow));
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    backdrop-filter: blur(12px);
+    box-shadow: 
+      0 0 25px rgba(var(--orb-glow), 0.35),
+      inset 0 0 15px rgba(var(--orb-glow), 0.15);
+    transition: all 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+    z-index: 300;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  .settings-button:hover {
+    transform: scale(1.1) rotate(90deg);
+    border-color: rgba(var(--orb-glow), 0.9);
+    box-shadow: 
+      0 0 45px rgba(var(--orb-glow), 0.7),
+      inset 0 0 25px rgba(var(--orb-glow), 0.3);
+  }
+
+  .settings-button:active {
+    transform: scale(0.95) rotate(90deg);
+  }
+
+  .settings-button.open {
+    transform: rotate(180deg);
+    background: linear-gradient(145deg, 
+      rgba(var(--orb-glow), 0.35), 
+      rgba(var(--orb-glow), 0.15));
+  }
+
+  .settings-button svg {
+    width: 26px;
+    height: 26px;
+    filter: drop-shadow(0 0 8px rgba(var(--orb-glow), 0.8));
+    transition: all 0.3s ease;
+  }
+
+  /* ============================================================
+     PANEL DE CONFIGURACIÓN — TAMAÑO ADAPTABLE
+     ============================================================ */
+  .settings-panel {
+    position: fixed;
+    bottom: 95px;
+    right: 25px;
+    width: 420px;
+    max-width: calc(100vw - 40px);
+    height: auto;
+    max-height: calc(100vh - 130px);
+    min-height: 400px;
+    background: linear-gradient(145deg, 
+      rgba(8, 20, 38, 0.98), 
+      rgba(3, 10, 22, 0.98));
+    border: 1px solid rgba(var(--orb-glow), 0.35);
+    border-radius: 20px;
+    backdrop-filter: blur(24px);
+    box-shadow: 
+      0 20px 60px rgba(0, 0, 0, 0.6),
+      0 0 80px rgba(var(--orb-glow), 0.2),
+      inset 0 0 40px rgba(var(--orb-glow), 0.05);
+    z-index: 290;
+    opacity: 0;
+    transform: translateY(20px) scale(0.95);
+    pointer-events: none;
+    transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  .settings-panel.visible {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+    pointer-events: auto;
+  }
+
+  .settings-header {
+    padding: 18px 22px 14px;
+    border-bottom: 1px solid rgba(var(--orb-glow), 0.15);
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-shrink: 0;
+  }
+
+  .settings-header-icon {
+    font-size: 22px;
+    filter: drop-shadow(0 0 6px rgba(var(--orb-glow), 0.6));
+  }
+
+  .settings-header-title {
+    font-size: 14px;
+    letter-spacing: 3px;
+    font-weight: 300;
+    color: rgb(var(--orb-glow));
+    text-transform: uppercase;
+    text-shadow: 0 0 10px rgba(var(--orb-glow), 0.5);
+  }
+
+  /* TABS */
+  .settings-tabs {
+    display: flex;
+    gap: 2px;
+    padding: 6px 14px 0;
+    border-bottom: 1px solid rgba(var(--orb-glow), 0.1);
+    flex-shrink: 0;
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+
+  .settings-tabs::-webkit-scrollbar { display: none; }
+
+  .settings-tab {
+    padding: 10px 12px;
+    background: transparent;
+    border: none;
+    color: rgba(255, 255, 255, 0.5);
+    font-family: inherit;
+    font-size: 10px;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    border-bottom: 2px solid transparent;
+    margin-bottom: -1px;
+    font-weight: 500;
+    white-space: nowrap;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+
+  .settings-tab:hover { color: rgba(255, 255, 255, 0.9); }
+
+  .settings-tab.active {
+    color: rgb(var(--orb-glow));
+    border-bottom-color: rgb(var(--orb-glow));
+    text-shadow: 0 0 8px rgba(var(--orb-glow), 0.6);
+  }
+
+  /* CUERPO CON SCROLL */
+  .settings-body {
+    padding: 20px 22px 22px;
+    overflow-y: auto;
+    overflow-x: hidden;
+    flex: 1;
+    min-height: 0;
+    scrollbar-width: thin;
+    scrollbar-color: rgba(var(--orb-glow), 0.4) transparent;
+  }
+
+  .settings-body::-webkit-scrollbar { width: 6px; }
+  .settings-body::-webkit-scrollbar-track { background: transparent; }
+  .settings-body::-webkit-scrollbar-thumb {
+    background: rgba(var(--orb-glow), 0.35);
+    border-radius: 4px;
+  }
+  .settings-body::-webkit-scrollbar-thumb:hover {
+    background: rgba(var(--orb-glow), 0.6);
+  }
+
+  .settings-tab-content { display: none; }
+  .settings-tab-content.active {
+    display: block;
+    animation: fadeInTab 0.3s ease;
+  }
+
+  @keyframes fadeInTab {
+    from { opacity: 0; transform: translateY(5px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .settings-section { margin-bottom: 20px; }
+  .settings-section:last-child { margin-bottom: 4px; }
+
+  .settings-label {
+    font-size: 10px;
+    letter-spacing: 2px;
+    color: rgba(var(--orb-glow), 0.75);
+    text-transform: uppercase;
+    margin-bottom: 10px;
+    font-style: italic;
+    font-weight: 500;
+  }
+
+  .settings-hint {
+    font-size: 11px;
+    color: rgba(255, 255, 255, 0.4);
+    margin-top: 8px;
+    line-height: 1.4;
+    font-style: italic;
+  }
+
+  .settings-select,
+  .settings-input {
+    width: 100%;
+    padding: 11px 14px;
+    background: rgba(var(--orb-glow), 0.08);
+    border: 1px solid rgba(var(--orb-glow), 0.3);
+    border-radius: 10px;
+    color: #fff;
+    font-family: inherit;
+    font-size: 13px;
+    cursor: pointer;
+    outline: none;
+    transition: all 0.3s ease;
+    box-sizing: border-box;
+  }
+
+  .settings-select {
+    appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2300d4ff' stroke-width='2'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 12px center;
+    background-size: 14px;
+    padding-right: 38px;
+  }
+
+  .settings-select:hover,
+  .settings-select:focus,
+  .settings-input:hover,
+  .settings-input:focus {
+    border-color: rgba(var(--orb-glow), 0.7);
+    box-shadow: 0 0 15px rgba(var(--orb-glow), 0.25);
+  }
+
+  .settings-select option {
+    background: #0a1428;
+    color: #fff;
+    padding: 8px;
+  }
+
+  /* GPS Row */
+  .gps-row {
+    display: flex;
+    gap: 8px;
+    align-items: stretch;
+  }
+
+  .gps-row .settings-input {
+    flex: 1;
+  }
+
+  .gps-button {
+    flex-shrink: 0;
+    padding: 11px 14px;
+    background: linear-gradient(135deg, 
+      rgba(var(--orb-glow), 0.25), 
+      rgba(var(--orb-glow), 0.1));
+    border: 1px solid rgba(var(--orb-glow), 0.5);
+    border-radius: 10px;
+    color: rgb(var(--orb-glow));
+    cursor: pointer;
+    font-family: inherit;
+    font-size: 16px;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 46px;
+  }
+
+  .gps-button:hover {
+    background: linear-gradient(135deg, 
+      rgba(var(--orb-glow), 0.4), 
+      rgba(var(--orb-glow), 0.15));
+    border-color: rgba(var(--orb-glow), 0.9);
+    box-shadow: 0 0 20px rgba(var(--orb-glow), 0.5);
+  }
+
+  .gps-button.loading {
+    animation: gpsPulse 1.2s ease-in-out infinite;
+  }
+
+  @keyframes gpsPulse {
+    0%, 100% { box-shadow: 0 0 5px rgba(var(--orb-glow), 0.3); }
+    50% { box-shadow: 0 0 25px rgba(var(--orb-glow), 0.9); }
+  }
+
+  .gps-status {
+    font-size: 11px;
+    color: rgba(var(--orb-glow), 0.8);
+    margin-top: 6px;
+    font-style: italic;
+    min-height: 14px;
+    transition: all 0.3s ease;
+  }
+
+  .gps-status.error { color: #ff8888; }
+  .gps-status.success { color: #66ff99; }
+
+  .slider-container { margin-bottom: 14px; }
+
+  .slider-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 6px;
+  }
+
+  .slider-label {
+    font-size: 12px;
+    color: rgba(255, 255, 255, 0.8);
+    letter-spacing: 0.5px;
+  }
+
+  .slider-value {
+    font-size: 12px;
+    color: rgb(var(--orb-glow));
+    font-family: 'Courier New', monospace;
+    font-weight: 600;
+    text-shadow: 0 0 8px rgba(var(--orb-glow), 0.6);
+    min-width: 40px;
+    text-align: right;
+  }
+
+  .settings-slider {
+    width: 100%;
+    height: 4px;
+    border-radius: 4px;
+    background: rgba(var(--orb-glow), 0.15);
+    outline: none;
+    -webkit-appearance: none;
+    appearance: none;
+    cursor: pointer;
+  }
+
+  .settings-slider::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    background: rgb(var(--orb-glow));
+    cursor: pointer;
+    box-shadow: 
+      0 0 15px rgba(var(--orb-glow), 0.9),
+      inset 0 0 5px rgba(255, 255, 255, 0.5);
+    transition: all 0.2s ease;
+  }
+
+  .settings-slider::-webkit-slider-thumb:hover {
+    transform: scale(1.2);
+    box-shadow: 
+      0 0 25px rgba(var(--orb-glow), 1),
+      inset 0 0 8px rgba(255, 255, 255, 0.7);
+  }
+
+  .settings-slider::-moz-range-thumb {
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    background: rgb(var(--orb-glow));
+    cursor: pointer;
+    border: none;
+    box-shadow: 
+      0 0 15px rgba(var(--orb-glow), 0.9),
+      inset 0 0 5px rgba(255, 255, 255, 0.5);
+  }
+
+  .settings-test-button {
+    width: 100%;
+    padding: 12px;
+    background: linear-gradient(135deg, 
+      rgba(var(--orb-glow), 0.25), 
+      rgba(var(--orb-glow), 0.1));
+    border: 1px solid rgba(var(--orb-glow), 0.5);
+    border-radius: 10px;
+    color: rgb(var(--orb-glow));
+    font-family: inherit;
+    font-size: 12px;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    font-weight: 500;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+  }
+
+  .settings-test-button:hover {
+    background: linear-gradient(135deg, 
+      rgba(var(--orb-glow), 0.4), 
+      rgba(var(--orb-glow), 0.15));
+    border-color: rgba(var(--orb-glow), 0.9);
+    box-shadow: 0 0 25px rgba(var(--orb-glow), 0.5);
+    transform: translateY(-1px);
+  }
+
+  .settings-test-button:active { transform: translateY(0); }
+  .settings-test-button svg { width: 16px; height: 16px; }
+
+  .settings-info {
+    padding: 12px 14px;
+    background: rgba(var(--orb-glow), 0.06);
+    border-radius: 10px;
+    border-left: 2px solid rgba(var(--orb-glow), 0.5);
+    font-size: 11px;
+    color: rgba(255, 255, 255, 0.65);
+    line-height: 1.5;
+    font-style: italic;
+  }
+
+  .settings-info strong {
+    color: rgba(var(--orb-glow), 0.95);
+    font-style: normal;
+  }
+
+  /* Toggle switch */
+  .toggle-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 11px 14px;
+    background: rgba(var(--orb-glow), 0.05);
+    border: 1px solid rgba(var(--orb-glow), 0.15);
+    border-radius: 10px;
+    margin-bottom: 8px;
+    transition: all 0.3s ease;
+    gap: 12px;
+  }
+
+  .toggle-row:hover {
+    background: rgba(var(--orb-glow), 0.08);
+    border-color: rgba(var(--orb-glow), 0.3);
+  }
+
+  .toggle-row > div:first-child {
+    flex: 1;
+    min-width: 0;
+  }
+
+  .toggle-label {
+    font-size: 12px;
+    color: rgba(255, 255, 255, 0.9);
+    letter-spacing: 0.3px;
+    margin-bottom: 2px;
+  }
+
+  .toggle-description {
+    font-size: 10px;
+    color: rgba(255, 255, 255, 0.4);
+    font-style: italic;
+    line-height: 1.3;
+  }
+
+  .toggle-switch {
+    position: relative;
+    width: 42px;
+    height: 24px;
+    flex-shrink: 0;
+  }
+
+  .toggle-switch input { opacity: 0; width: 0; height: 0; }
+
+  .toggle-slider {
+    position: absolute;
+    cursor: pointer;
+    inset: 0;
+    background-color: rgba(255, 255, 255, 0.15);
+    border-radius: 24px;
+    transition: 0.3s;
+  }
+
+  .toggle-slider:before {
+    content: '';
+    position: absolute;
+    height: 18px;
+    width: 18px;
+    left: 3px;
+    bottom: 3px;
+    background-color: white;
+    border-radius: 50%;
+    transition: 0.3s;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
+  }
+
+  .toggle-switch input:checked + .toggle-slider {
+    background: linear-gradient(135deg, 
+      rgba(var(--orb-glow), 0.9), 
+      rgba(var(--orb-glow), 0.6));
+    box-shadow: 0 0 15px rgba(var(--orb-glow), 0.6);
+  }
+
+  .toggle-switch input:checked + .toggle-slider:before {
+    transform: translateX(18px);
+  }
+
+  /* Paleta de colores */
+  .color-grid {
+    display: grid;
+    grid-template-columns: repeat(6, 1fr);
+    gap: 8px;
+    margin-bottom: 8px;
+  }
+
+  .color-swatch {
+    aspect-ratio: 1;
+    border-radius: 10px;
+    cursor: pointer;
+    border: 2px solid transparent;
+    transition: all 0.3s ease;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .color-swatch:hover {
+    transform: scale(1.1);
+    box-shadow: 0 0 20px currentColor;
+  }
+
+  .color-swatch.active {
+    border-color: #fff;
+    box-shadow: 
+      0 0 0 2px rgba(0, 0, 0, 0.5),
+      0 0 25px currentColor;
+    transform: scale(1.05);
+  }
+
+  .color-swatch.active::after {
+    content: '✓';
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #fff;
+    font-size: 16px;
+    font-weight: bold;
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
+  }
+
+  .swatch-blue { background: linear-gradient(135deg, #00d4ff, #0066ff); color: #00d4ff; }
+  .swatch-pink { background: linear-gradient(135deg, #ff44d4, #cc0066); color: #ff44d4; }
+  .swatch-green { background: linear-gradient(135deg, #44ff88, #00cc55); color: #44ff88; }
+  .swatch-purple { background: linear-gradient(135deg, #a044ff, #6600cc); color: #a044ff; }
+  .swatch-red { background: linear-gradient(135deg, #ff5544, #cc2200); color: #ff5544; }
+  .swatch-gold { background: linear-gradient(135deg, #ffcc44, #cc8800); color: #ffcc44; }
+
+  .action-buttons {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .settings-danger-button {
+    width: 100%;
+    padding: 12px;
+    background: rgba(255, 80, 80, 0.1);
+    border: 1px solid rgba(255, 80, 80, 0.4);
+    border-radius: 10px;
+    color: #ff6b6b;
+    font-family: inherit;
+    font-size: 12px;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    font-weight: 500;
+  }
+
+  .settings-danger-button:hover {
+    background: rgba(255, 80, 80, 0.2);
+    border-color: rgba(255, 80, 80, 0.7);
+    box-shadow: 0 0 20px rgba(255, 80, 80, 0.3);
+  }
+
+  .info-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+  }
+
+  .info-card {
+    padding: 10px;
+    background: rgba(var(--orb-glow), 0.05);
+    border: 1px solid rgba(var(--orb-glow), 0.15);
+    border-radius: 10px;
+    text-align: center;
+  }
+
+  .info-card-label {
+    font-size: 9px;
+    letter-spacing: 1px;
+    color: rgba(255, 255, 255, 0.5);
+    text-transform: uppercase;
+    margin-bottom: 4px;
+  }
+
+  .info-card-value {
+    font-size: 13px;
+    color: rgb(var(--orb-glow));
+    font-weight: 600;
+    text-shadow: 0 0 8px rgba(var(--orb-glow), 0.6);
+  }
 
   .loading-overlay {
     position: fixed; inset: 0;
@@ -227,11 +930,17 @@
 
   .loading-orb {
     width: 120px; height: 120px; border-radius: 50%;
-    background: radial-gradient(circle at 40% 40%, #ffffff 0%, #a0f0ff 15%, #00d4ff 40%, #0066ff 65%, transparent 100%);
+    background: radial-gradient(circle at 40% 40%, 
+      #ffffff 0%, 
+      color-mix(in srgb, var(--orb-color-1) 70%, white) 15%,
+      var(--orb-color-1) 40%, 
+      var(--orb-color-2) 65%, 
+      transparent 100%);
     filter: blur(6px) brightness(1.4);
     animation: loadingPulse 1.5s ease-in-out infinite;
-    box-shadow: 0 0 80px rgba(0, 212, 255, 0.7);
+    box-shadow: 0 0 80px rgba(var(--orb-glow), 0.7);
     margin-bottom: 30px;
+    transition: background 0.8s ease, box-shadow 0.8s ease;
   }
   @keyframes loadingPulse {
     0%, 100% { transform: scale(1); opacity: 0.8; }
@@ -239,7 +948,7 @@
   }
   .loading-text {
     font-size: 13px; letter-spacing: 4px;
-    color: rgba(0, 212, 255, 0.7);
+    color: rgba(var(--orb-glow), 0.7);
     text-transform: uppercase; font-style: italic;
     animation: loadingTextPulse 2s ease-in-out infinite;
     text-align: center; padding: 0 20px;
@@ -258,10 +967,22 @@
     .meta-title { font-size: 20px; letter-spacing: 8px; }
     .transcript { font-size: 13px; bottom: 130px; }
     .loading-orb { width: 90px; height: 90px; }
+    .reminders-panel { max-width: 260px; }
+    .settings-button { bottom: 15px; right: 15px; width: 50px; height: 50px; }
+    .settings-panel { 
+      bottom: 80px; 
+      right: 10px; 
+      left: 10px;
+      width: auto;
+      max-width: none;
+      max-height: calc(100vh - 100px);
+    }
+    .settings-button svg { width: 22px; height: 22px; }
+    .color-grid { grid-template-columns: repeat(3, 1fr); }
   }
 </style>
 </head>
-<body>
+<body class="theme-blue">
 
   <div class="loading-overlay" id="loadingOverlay">
     <div class="loading-orb"></div>
@@ -271,6 +992,8 @@
   <div class="app-container" id="appContainer">
     <div class="particles" id="particles"></div>
     <div class="meta-title" id="metaTitle">M . E . T . A .</div>
+
+    <div class="reminders-panel" id="remindersPanel"></div>
 
     <div class="orb-container" id="orbContainer">
       <div class="orb-layer orb-layer-3"></div>
@@ -290,6 +1013,262 @@
     <div class="waves" id="waves"></div>
   </div>
 
+  <!-- ⚙️ BOTÓN DE CONFIGURACIÓN -->
+  <button class="settings-button" id="settingsButton" title="Configuración" aria-label="Configuración">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <circle cx="12" cy="12" r="3"/>
+      <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+    </svg>
+  </button>
+
+  <!-- 🎛️ PANEL DE CONFIGURACIÓN -->
+  <div class="settings-panel" id="settingsPanel">
+    <div class="settings-header">
+      <div class="settings-header-icon">⚙️</div>
+      <div class="settings-header-title">Configuración</div>
+    </div>
+
+    <div class="settings-tabs">
+      <button class="settings-tab active" data-tab="voz">🎤 Voz</button>
+      <button class="settings-tab" data-tab="apariencia">🎨 Aspecto</button>
+      <button class="settings-tab" data-tab="comportamiento">⚡ Comport.</button>
+      <button class="settings-tab" data-tab="info">ℹ️ Info</button>
+    </div>
+
+    <div class="settings-body">
+
+      <!-- ============ TAB VOZ ============ -->
+      <div class="settings-tab-content active" data-content="voz">
+        <div class="settings-section">
+          <div class="settings-label">Voz del asistente</div>
+          <select class="settings-select" id="voiceSelect">
+            <option>Cargando voces...</option>
+          </select>
+        </div>
+
+        <div class="settings-section">
+          <div class="slider-container">
+            <div class="slider-header">
+              <span class="slider-label">Velocidad</span>
+              <span class="slider-value" id="rateValue">1.05</span>
+            </div>
+            <input type="range" class="settings-slider" id="rateSlider" min="0.5" max="2" step="0.05" value="1.05">
+          </div>
+
+          <div class="slider-container">
+            <div class="slider-header">
+              <span class="slider-label">Tono</span>
+              <span class="slider-value" id="pitchValue">1.15</span>
+            </div>
+            <input type="range" class="settings-slider" id="pitchSlider" min="0.5" max="2" step="0.05" value="1.15">
+          </div>
+
+          <div class="slider-container">
+            <div class="slider-header">
+              <span class="slider-label">Volumen</span>
+              <span class="slider-value" id="volumeValue">1.00</span>
+            </div>
+            <input type="range" class="settings-slider" id="volumeSlider" min="0" max="1" step="0.05" value="1">
+          </div>
+        </div>
+
+        <button class="settings-test-button" id="testVoiceButton">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/>
+            <path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"/>
+          </svg>
+          Probar voz
+        </button>
+
+        <div class="settings-info" style="margin-top: 14px;">
+          Solo se muestran voces en español.
+          <div id="currentVoiceInfo" style="margin-top: 6px;"></div>
+        </div>
+      </div>
+
+      <!-- ============ TAB APARIENCIA ============ -->
+      <div class="settings-tab-content" data-content="apariencia">
+        <div class="settings-section">
+          <div class="settings-label">Color del orbe</div>
+          <div class="color-grid">
+            <div class="color-swatch swatch-blue active" data-theme="theme-blue" title="Azul"></div>
+            <div class="color-swatch swatch-pink" data-theme="theme-pink" title="Rosa"></div>
+            <div class="color-swatch swatch-green" data-theme="theme-green" title="Verde"></div>
+            <div class="color-swatch swatch-purple" data-theme="theme-purple" title="Morado"></div>
+            <div class="color-swatch swatch-red" data-theme="theme-red" title="Rojo"></div>
+            <div class="color-swatch swatch-gold" data-theme="theme-gold" title="Dorado"></div>
+          </div>
+        </div>
+
+        <div class="settings-section">
+          <div class="settings-label">Efectos visuales</div>
+
+          <div class="toggle-row">
+            <div>
+              <div class="toggle-label">Partículas de fondo</div>
+              <div class="toggle-description">Puntos flotantes</div>
+            </div>
+            <label class="toggle-switch">
+              <input type="checkbox" id="toggleParticles" checked>
+              <span class="toggle-slider"></span>
+            </label>
+          </div>
+
+          <div class="toggle-row">
+            <div>
+              <div class="toggle-label">Ondas de voz</div>
+              <div class="toggle-description">Visualizador al hablar</div>
+            </div>
+            <label class="toggle-switch">
+              <input type="checkbox" id="toggleWaves" checked>
+              <span class="toggle-slider"></span>
+            </label>
+          </div>
+
+          <div class="toggle-row">
+            <div>
+              <div class="toggle-label">Seguimiento del ratón</div>
+              <div class="toggle-description">El orbe sigue al cursor</div>
+            </div>
+            <label class="toggle-switch">
+              <input type="checkbox" id="toggleMouseFollow" checked>
+              <span class="toggle-slider"></span>
+            </label>
+          </div>
+        </div>
+
+        <div class="settings-section">
+          <div class="settings-label">Tamaño del orbe</div>
+          <div class="slider-container">
+            <div class="slider-header">
+              <span class="slider-label">Escala</span>
+              <span class="slider-value" id="orbSizeValue">100%</span>
+            </div>
+            <input type="range" class="settings-slider" id="orbSizeSlider" min="60" max="130" step="5" value="100">
+          </div>
+        </div>
+      </div>
+
+      <!-- ============ TAB COMPORTAMIENTO ============ -->
+      <div class="settings-tab-content" data-content="comportamiento">
+        <div class="settings-section">
+          <div class="settings-label">Nombre del usuario</div>
+          <input type="text" class="settings-input" id="userNameInput" placeholder="Pablo" maxlength="20">
+        </div>
+
+        <div class="settings-section">
+          <div class="settings-label">Tiempo de auto-descanso</div>
+          <div class="slider-container">
+            <div class="slider-header">
+              <span class="slider-label">Segundos sin voz</span>
+              <span class="slider-value" id="idleTimeoutValue">5s</span>
+            </div>
+            <input type="range" class="settings-slider" id="idleTimeoutSlider" min="3" max="30" step="1" value="5">
+          </div>
+        </div>
+
+        <div class="settings-section">
+          <div class="settings-label">Alertas y sonidos</div>
+
+          <div class="toggle-row">
+            <div>
+              <div class="toggle-label">Notificaciones</div>
+              <div class="toggle-description">Alertas del navegador</div>
+            </div>
+            <label class="toggle-switch">
+              <input type="checkbox" id="toggleNotifications" checked>
+              <span class="toggle-slider"></span>
+            </label>
+          </div>
+
+          <div class="toggle-row">
+            <div>
+              <div class="toggle-label">Toast de acciones</div>
+              <div class="toggle-description">Aviso al ejecutar algo</div>
+            </div>
+            <label class="toggle-switch">
+              <input type="checkbox" id="toggleToasts" checked>
+              <span class="toggle-slider"></span>
+            </label>
+          </div>
+
+          <div class="toggle-row">
+            <div>
+              <div class="toggle-label">Transcripción visible</div>
+              <div class="toggle-description">Mostrar lo que dices</div>
+            </div>
+            <label class="toggle-switch">
+              <input type="checkbox" id="toggleTranscript" checked>
+              <span class="toggle-slider"></span>
+            </label>
+          </div>
+        </div>
+
+        <div class="settings-section">
+          <div class="settings-label">Ubicación para el clima</div>
+          <div class="gps-row">
+            <input type="text" class="settings-input" id="defaultCityInput" placeholder="Madrid">
+            <button class="gps-button" id="gpsButton" title="Detectar mi ubicación">
+              📍
+            </button>
+          </div>
+          <div class="gps-status" id="gpsStatus"></div>
+        </div>
+      </div>
+
+      <!-- ============ TAB INFO ============ -->
+      <div class="settings-tab-content" data-content="info">
+        <div class="settings-section">
+          <div class="settings-label">Estado actual</div>
+          <div class="info-grid">
+            <div class="info-card">
+              <div class="info-card-label">Recordatorios</div>
+              <div class="info-card-value" id="infoReminders">0</div>
+            </div>
+            <div class="info-card">
+              <div class="info-card-label">Tema</div>
+              <div class="info-card-value" id="infoTheme">Azul</div>
+            </div>
+            <div class="info-card">
+              <div class="info-card-label">Voz</div>
+              <div class="info-card-value" id="infoVoice" style="font-size: 10px;">—</div>
+            </div>
+            <div class="info-card">
+              <div class="info-card-label">Estado</div>
+              <div class="info-card-value" id="infoState">Activa</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="settings-section">
+          <div class="settings-label">Comandos disponibles</div>
+          <div class="settings-info">
+            <strong>Básicos:</strong> META, dime la hora · META, cuéntame un chiste<br><br>
+            <strong>Web:</strong> META, abre YouTube · META, busca noticias<br><br>
+            <strong>Utilidades:</strong> META, haz una captura · META, lee la página<br><br>
+            <strong>Info:</strong> META, qué es la física cuántica<br><br>
+            <strong>Recordatorios:</strong> META, recuérdame en 5 minutos sacar la ropa<br><br>
+            <strong>Traducción:</strong> META, traduce hola al inglés<br><br>
+            <strong>Clima:</strong> META, qué clima hace hoy<br><br>
+            <strong>Portapapeles:</strong> META, copia este texto<br><br>
+            <strong>Dictado:</strong> META, activa dictado<br><br>
+            <strong>Voz:</strong> META, cambia la voz a Sabina
+          </div>
+        </div>
+
+        <div class="settings-section">
+          <div class="settings-label">Acciones rápidas</div>
+          <div class="action-buttons">
+            <button class="settings-danger-button" id="resetSettingsButton">
+              🔄 Restablecer todo
+            </button>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
   <div class="action-toast" id="actionToast">
     <div class="action-toast-icon" id="actionToastIcon">✨</div>
     <div class="action-toast-text" id="actionToastText"></div>
@@ -297,11 +1276,47 @@
 
 <script>
   // ============================================================
-  // M.E.T.A. - Asistente con auto-descanso de 5s
+  // M.E.T.A. - Asistente completo con GPS
   // ============================================================
 
-  const USER_NAME = 'Pablo';
-  const IDLE_TIMEOUT_MS = 5000; // 5 segundos sin voz → descanso
+  const DEFAULT_SETTINGS = {
+    USER_NAME: 'Pablo',
+    IDLE_TIMEOUT_MS: 5000,
+    THEME: 'theme-blue',
+    DEFAULT_CITY: 'Madrid',
+    CITY_AUTO: false,
+    LAT: null,
+    LON: null,
+    SHOW_PARTICLES: true,
+    SHOW_WAVES: true,
+    MOUSE_FOLLOW: true,
+    ORB_SIZE: 100,
+    NOTIFICATIONS: true,
+    TOASTS: true,
+    TRANSCRIPT: true
+  };
+
+  let settings = { ...DEFAULT_SETTINGS };
+  try {
+    const saved = localStorage.getItem('meta-app-settings');
+    if (saved) {
+      Object.assign(settings, JSON.parse(saved));
+    }
+  } catch (e) {}
+
+  function saveSettings() {
+    try {
+      localStorage.setItem('meta-app-settings', JSON.stringify(settings));
+    } catch (e) {}
+  }
+
+  window.USER_NAME = settings.USER_NAME;
+
+  const CONFIG = {
+    OPENWEATHER_API_KEY: '',
+    NEWS_API_KEY: '',
+    DEFAULT_CITY: settings.DEFAULT_CITY
+  };
 
   const loadingOverlay = document.getElementById('loadingOverlay');
   const loadingText = document.getElementById('loadingText');
@@ -314,6 +1329,41 @@
   const actionToast = document.getElementById('actionToast');
   const actionToastIcon = document.getElementById('actionToastIcon');
   const actionToastText = document.getElementById('actionToastText');
+  const remindersPanel = document.getElementById('remindersPanel');
+  const particlesContainer = document.getElementById('particles');
+
+  const settingsButton = document.getElementById('settingsButton');
+  const settingsPanel = document.getElementById('settingsPanel');
+  const voiceSelect = document.getElementById('voiceSelect');
+  const rateSlider = document.getElementById('rateSlider');
+  const pitchSlider = document.getElementById('pitchSlider');
+  const volumeSlider = document.getElementById('volumeSlider');
+  const rateValue = document.getElementById('rateValue');
+  const pitchValue = document.getElementById('pitchValue');
+  const volumeValue = document.getElementById('volumeValue');
+  const testVoiceButton = document.getElementById('testVoiceButton');
+  const currentVoiceInfo = document.getElementById('currentVoiceInfo');
+  const orbSizeSlider = document.getElementById('orbSizeSlider');
+  const orbSizeValue = document.getElementById('orbSizeValue');
+  const idleTimeoutSlider = document.getElementById('idleTimeoutSlider');
+  const idleTimeoutValue = document.getElementById('idleTimeoutValue');
+  const userNameInput = document.getElementById('userNameInput');
+  const defaultCityInput = document.getElementById('defaultCityInput');
+  const gpsButton = document.getElementById('gpsButton');
+  const gpsStatus = document.getElementById('gpsStatus');
+
+  const toggleParticles = document.getElementById('toggleParticles');
+  const toggleWaves = document.getElementById('toggleWaves');
+  const toggleMouseFollow = document.getElementById('toggleMouseFollow');
+  const toggleNotifications = document.getElementById('toggleNotifications');
+  const toggleToasts = document.getElementById('toggleToasts');
+  const toggleTranscript = document.getElementById('toggleTranscript');
+
+  const infoReminders = document.getElementById('infoReminders');
+  const infoTheme = document.getElementById('infoTheme');
+  const infoVoice = document.getElementById('infoVoice');
+  const infoState = document.getElementById('infoState');
+  const resetSettingsButton = document.getElementById('resetSettingsButton');
 
   // ============================================================
   // Estado global
@@ -322,21 +1372,55 @@
   let attentionActive = true;
   let awaitingCommand = false;
   let awaitingCommandTimeout = null;
-  let idleTimeout = null;              // ← Timer de 5s para auto-descanso
+  let idleTimeout = null;
   let isSpeaking = false;
   let recognition = null;
   let recognitionActive = false;
   let restartTimeout = null;
   let speakCooldown = false;
   let hasGreeted = false;
+  let reminders = [];
+  let currentTheme = settings.THEME;
+  let clipboardContent = '';
+  let dictationMode = false;
+  let dictationBuffer = '';
 
-  // ============================================================
-  // Frases humanas
-  // ============================================================
+  const voiceSettings = {
+    voiceName: null,
+    rate: 1.05,
+    pitch: 1.15,
+    volume: 1.0
+  };
+
+  try {
+    const saved = localStorage.getItem('meta-voice-settings');
+    if (saved) {
+      Object.assign(voiceSettings, JSON.parse(saved));
+    }
+  } catch (e) {}
+
+  function saveVoiceSettings() {
+    try {
+      localStorage.setItem('meta-voice-settings', JSON.stringify(voiceSettings));
+    } catch (e) {}
+  }
+
+  function applyVisualSettings() {
+    document.body.classList.remove(
+      'theme-blue', 'theme-pink', 'theme-green', 
+      'theme-purple', 'theme-red', 'theme-gold'
+    );
+    document.body.classList.add(settings.THEME);
+    particlesContainer.style.display = settings.SHOW_PARTICLES ? 'block' : 'none';
+    wavesContainer.style.display = settings.SHOW_WAVES ? 'flex' : 'none';
+    const scale = settings.ORB_SIZE / 100;
+    orbContainer.style.transform = `scale(${scale})`;
+  }
+
   const PHRASES = {
     idle: ['Estoy aquí...', 'Aquí sigo...', 'Cuando quieras, cuéntame...'],
     listening: ['Te escucho...', 'Cuéntame...', 'Adelante, te oigo...', 'Sigue, te escucho...'],
-    waiting: [`Dime ${USER_NAME}...`, `Te escucho, ${USER_NAME}...`, `Adelante ${USER_NAME}...`],
+    waiting: [`Dime ${settings.USER_NAME}...`, `Te escucho, ${settings.USER_NAME}...`, `Adelante ${settings.USER_NAME}...`],
     processing: ['Déjame pensar...', 'Un momento...', 'Procesando...'],
     speaking: ['Te cuento...', 'Mira...', 'Verás...']
   };
@@ -346,49 +1430,37 @@
     return arr[Math.floor(Math.random() * arr.length)];
   }
 
-  // ============================================================
-  // Timer de inactividad (5 segundos)
-  // ============================================================
   function resetIdleTimer() {
     clearTimeout(idleTimeout);
-    // Solo arranca el timer si está atenta, micrófono activo y no está hablando
     if (!attentionActive || !micPermissionGranted || isSpeaking || speakCooldown) return;
 
     idleTimeout = setTimeout(() => {
-      // Después de 5s sin voz → entra en descanso silenciosamente
       if (attentionActive && !awaitingCommand && !isSpeaking && !speakCooldown) {
-        enterRestMode(true); // true = silencioso (sin hablar)
+        enterRestMode(true);
       }
-    }, IDLE_TIMEOUT_MS);
+    }, settings.IDLE_TIMEOUT_MS);
   }
 
-  function clearIdleTimer() {
-    clearTimeout(idleTimeout);
-  }
+  function clearIdleTimer() { clearTimeout(idleTimeout); }
 
-  // ============================================================
-  // Entrar en modo descanso (silencioso o con despedida)
-  // ============================================================
   function enterRestMode(silent = false) {
     attentionActive = false;
     awaitingCommand = false;
     clearTimeout(awaitingCommandTimeout);
     clearIdleTimer();
     setState('resting');
+    updateInfoPanel();
 
     if (!silent) {
       const despedidas = [
-        `De acuerdo ${USER_NAME}, me quedo en calma. Di "META" cuando me necesites.`,
-        `Entendido ${USER_NAME}. Descanso, pero mi oído sigue atento. Solo di "META".`,
-        `Está bien ${USER_NAME}. Me relajo. Puedes llamarme diciendo "META".`
+        `De acuerdo ${settings.USER_NAME}, me quedo en calma. Di "META" cuando me necesites.`,
+        `Entendido ${settings.USER_NAME}. Descanso. Solo di "META".`,
+        `Está bien ${settings.USER_NAME}. Me relajo.`
       ];
       speak(despedidas[Math.floor(Math.random() * despedidas.length)]);
     }
   }
 
-  // ============================================================
-  // Detección de "META"
-  // ============================================================
   function isWakeWord(text) {
     const clean = text.toLowerCase().trim()
       .replace(/[.,;!?¡¿]/g, '')
@@ -397,275 +1469,77 @@
   }
 
   // ============================================================
-  // Ejecutor de acciones
-  // ============================================================
-  async function executeAction(action) {
-    const act = action.toLowerCase().trim();
-    const name = USER_NAME;
-
-    const confirmaciones = [
-      `Claro, ${name}.`,
-      `Por supuesto, ${name}.`,
-      `Enseguida, ${name}.`,
-      `Voy con eso, ${name}.`,
-      `De acuerdo, ${name}.`
-    ];
-    const confirm = confirmaciones[Math.floor(Math.random() * confirmaciones.length)];
-
-    // ---- CAPTURA DE PANTALLA ----
-    if (/(captura|screenshot|pantallazo|foto de (la )?pantalla|screen)/.test(act)) {
-      speak(`${confirm} Voy a hacer una captura de pantalla.`);
-      showActionToast('📸', 'Captura de pantalla');
-
-      setTimeout(async () => {
-        try {
-          const stream = await navigator.mediaDevices.getDisplayMedia({ video: { mediaSource: 'screen' } });
-          const track = stream.getVideoTracks()[0];
-          const imageCapture = new ImageCapture(track);
-          const bitmap = await imageCapture.grabFrame();
-
-          const canvas = document.createElement('canvas');
-          canvas.width = bitmap.width;
-          canvas.height = bitmap.height;
-          const ctx = canvas.getContext('2d');
-          ctx.drawImage(bitmap, 0, 0);
-          track.stop();
-
-          canvas.toBlob((blob) => {
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19);
-            a.href = url;
-            a.download = `captura-${timestamp}.png`;
-            document.body.appendChild(a);
-            a.click();
-            document.body.removeChild(a);
-            setTimeout(() => URL.revokeObjectURL(url), 1000);
-
-            setTimeout(() => speak(`Listo ${name}, la captura se ha guardado en tus descargas.`), 800);
-          }, 'image/png');
-
-        } catch (err) {
-          console.warn('Captura cancelada:', err);
-          speak(`Parece que cancelaste la captura, ${name}.`);
-        }
-      }, 1500);
-      return;
-    }
-
-    if (/(hora|qué hora|dime la hora)/.test(act)) {
-      const now = new Date();
-      const h = now.getHours();
-      const m = now.getMinutes().toString().padStart(2, '0');
-      let momento;
-      if (h === 0) momento = 'medianoche';
-      else if (h === 12) momento = 'el mediodía';
-      else if (h === 1) momento = 'la una';
-      else momento = `las ${h}`;
-      speak(`${confirm} Son ${momento} y ${m} minutos.`);
-      return;
-    }
-
-    if (/(fecha|qué día|día es|fecha es)/.test(act)) {
-      const now = new Date();
-      const dias = ['domingo', 'lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado'];
-      const meses = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'];
-      speak(`${confirm} Hoy es ${dias[now.getDay()]}, ${now.getDate()} de ${meses[now.getMonth()]} del ${now.getFullYear()}.`);
-      return;
-    }
-
-    if (/(chiste|algo gracioso|hazme reír|diviérteme|cuéntame algo)/.test(act)) {
-      const chistes = [
-        '¿Por qué los programadores prefieren el modo oscuro? Porque la luz atrae a los bugs.',
-        'Hay 10 tipos de personas: las que entienden binario y las que no.',
-        '¿Qué le dice un bit a otro bit? Nos vemos en el bus.',
-        'Un programador fue al médico y le dijo: Doctor, me duele aquí. El médico respondió: No se preocupe, eso es solo un bug.'
-      ];
-      speak(`${confirm} ${chistes[Math.floor(Math.random() * chistes.length)]}`);
-      return;
-    }
-
-    const mathMatch = act.match(/(\d+)\s*([\+\-\*\/x])\s*(\d+)/);
-    if (mathMatch) {
-      const a = parseFloat(mathMatch[1]);
-      const op = mathMatch[2];
-      const b = parseFloat(mathMatch[3]);
-      let result;
-      switch (op) {
-        case '+': result = a + b; break;
-        case '-': result = a - b; break;
-        case '*': case 'x': result = a * b; break;
-        case '/': result = b !== 0 ? a / b : null; break;
-      }
-      if (result === null) speak(`${name}, dividir entre cero no es posible.`);
-      else speak(`${confirm} ${a} ${op} ${b} es igual a ${result}.`);
-      return;
-    }
-
-    const navMatch = act.match(/^(abre|abrir|navega a|ir a|ve a)\s+(.+)$/i);
-    if (navMatch) {
-      const site = navMatch[2].trim();
-      const sitesMap = {
-        'youtube': 'https://www.youtube.com',
-        'google': 'https://www.google.com',
-        'gmail': 'https://mail.google.com',
-        'correo': 'https://mail.google.com',
-        'whatsapp': 'https://web.whatsapp.com',
-        'facebook': 'https://www.facebook.com',
-        'instagram': 'https://www.instagram.com',
-        'twitter': 'https://twitter.com',
-        'x': 'https://twitter.com',
-        'github': 'https://www.github.com',
-        'wikipedia': 'https://www.wikipedia.org'
-      };
-      const key = site.toLowerCase().replace(/\s+\.?(com|org|net)$/, '').trim();
-      const url = sitesMap[key];
-
-      if (url) {
-        speak(`${confirm} Abro ${key}.`);
-        showActionToast('🌐', `Abriendo ${key}`);
-        setTimeout(() => window.open(url, '_blank'), 1200);
-      } else {
-        speak(`${confirm} Abro ${site}.`);
-        showActionToast('🌐', `Buscando ${site}`);
-        setTimeout(() => window.open(`https://www.google.com/search?q=${encodeURIComponent(site)}`, '_blank'), 1200);
-      }
-      return;
-    }
-
-    const searchMatch = act.match(/^(busca|búscame|buscar)\s+(.+)$/i);
-    if (searchMatch) {
-      const query = searchMatch[2].trim();
-      speak(`${confirm} Busco ${query}.`);
-      showActionToast('🔍', `Buscando: ${query}`);
-      setTimeout(() => window.open(`https://www.google.com/search?q=${encodeURIComponent(query)}`, '_blank'), 1200);
-      return;
-    }
-
-    if (/(sube el volumen|volumen arriba|más volumen)/.test(act)) {
-      speak(`${confirm} Subo el volumen.`);
-      showActionToast('🔊', 'Subiendo volumen');
-      return;
-    }
-    if (/(baja el volumen|volumen abajo|menos volumen)/.test(act)) {
-      speak(`${confirm} Bajo el volumen.`);
-      showActionToast('🔉', 'Bajando volumen');
-      return;
-    }
-
-    if (/(cómo estás|como estas|qué tal|estado|diagnóstico)/.test(act)) {
-      speak(`${confirm} Todos mis sistemas funcionan perfectamente. Gracias por preguntar.`);
-      return;
-    }
-
-    if (/(ayuda|qué puedes hacer|funciones|comandos)/.test(act)) {
-      speak(`${confirm} Puedes decir META, y luego: dime la hora, has una captura de pantalla, abre YouTube, busca algo en Google, cuéntame un chiste.`);
-      return;
-    }
-
-    if (/(cómo te llamas|quién eres|tu nombre)/.test(act)) {
-      speak(`Me llamo M.E.T.A., ${name}. Soy tu asistente personal.`);
-      return;
-    }
-
-    if (/(gracias|te agradezco)/.test(act)) {
-      speak(`De nada ${name}. Es un placer ayudarte.`);
-      return;
-    }
-
-    speak(`${confirm} Pero aún no sé cómo hacer eso. ¿Puedes pedírmelo de otra forma?`);
-  }
-
-  // ============================================================
-  // Toast
-  // ============================================================
-  let toastTimeout = null;
-  function showActionToast(icon, text) {
-    actionToastIcon.textContent = icon;
-    actionToastText.textContent = text;
-    actionToast.classList.add('visible');
-    clearTimeout(toastTimeout);
-    toastTimeout = setTimeout(() => actionToast.classList.remove('visible'), 3000);
-  }
-
-  // ============================================================
-  // Partículas y waves
-  // ============================================================
-  function createParticles() {
-    const container = document.getElementById('particles');
-    for (let i = 0; i < 40; i++) {
-      const p = document.createElement('div');
-      p.className = 'particle';
-      p.style.left = Math.random() * 100 + '%';
-      p.style.animationDuration = (8 + Math.random() * 12) + 's';
-      p.style.animationDelay = (Math.random() * 10) + 's';
-      p.style.width = p.style.height = (1 + Math.random() * 2) + 'px';
-      p.style.opacity = 0.3 + Math.random() * 0.5;
-      container.appendChild(p);
-    }
-  }
-  createParticles();
-
-  const BAR_COUNT = 48;
-  const waveBars = [];
-  for (let i = 0; i < BAR_COUNT; i++) {
-    const bar = document.createElement('div');
-    bar.className = 'wave-bar';
-    const center = BAR_COUNT / 2;
-    const dist = Math.abs(i - center) / center;
-    const baseHeight = 4 + (1 - dist) * 8;
-    bar.style.height = baseHeight + 'px';
-    wavesContainer.appendChild(bar);
-    waveBars.push({ el: bar, base: baseHeight });
-  }
-
-  let waveAnimationId = null;
-  let waveAmplitude = 0;
-
-  function animateWaves() {
-    const time = Date.now() / 200;
-    waveBars.forEach((bar, i) => {
-      const center = BAR_COUNT / 2;
-      const dist = Math.abs(i - center) / center;
-      const wave = Math.sin(time + i * 0.4) * 0.5 + 0.5;
-      const height = bar.base + wave * waveAmplitude * (1 - dist * 0.5);
-      bar.el.style.height = Math.max(4, height) + 'px';
-    });
-    waveAnimationId = requestAnimationFrame(animateWaves);
-  }
-
-  function startWaves() {
-    wavesContainer.classList.add('active');
-    waveAmplitude = 30;
-    if (!waveAnimationId) animateWaves();
-  }
-
-  function stopWaves() {
-    wavesContainer.classList.remove('active');
-    waveAmplitude = 0;
-    if (waveAnimationId) {
-      cancelAnimationFrame(waveAnimationId);
-      waveAnimationId = null;
-    }
-  }
-
-  // ============================================================
-  // Síntesis de voz
+  // 🔊 SÍNTESIS DE VOZ
   // ============================================================
   let voices = [];
   let preferredVoice = null;
 
   function loadVoices() {
     voices = speechSynthesis.getVoices();
-    preferredVoice = voices.find(v => v.lang.startsWith('es') && v.name.includes('Google')) ||
-                     voices.find(v => v.lang.startsWith('es') && v.name.includes('Microsoft')) ||
-                     voices.find(v => v.lang.startsWith('es')) ||
-                     voices[0];
+
+    if (voiceSettings.voiceName) {
+      const saved = voices.find(v => 
+        v.name === voiceSettings.voiceName && 
+        v.lang.toLowerCase().startsWith('es')
+      );
+      if (saved) {
+        preferredVoice = saved;
+        updateCurrentVoiceInfo();
+        return;
+      }
+    }
+
+    const spanishVoices = voices.filter(v => v.lang.toLowerCase().startsWith('es'));
+
+    if (spanishVoices.length === 0) {
+      preferredVoice = voices[0];
+      updateCurrentVoiceInfo();
+      return;
+    }
+
+    const priorityNames = [
+      'Microsoft Elvira', 'Microsoft Sabina', 'Microsoft Helena',
+      'Microsoft Laura', 'Microsoft Dalia',
+      'Google español', 'Google español de Estados Unidos',
+      'Mónica', 'Paulina', 'Marisol', 'Angelica', 'Monica',
+      'español España', 'español México', 'español Estados Unidos'
+    ];
+
+    for (const name of priorityNames) {
+      const found = spanishVoices.find(v => 
+        v.name.toLowerCase().includes(name.toLowerCase())
+      );
+      if (found) {
+        preferredVoice = found;
+        break;
+      }
+    }
+
+    if (!preferredVoice) {
+      const masculineNames = ['jorge', 'diego', 'carlos', 'juan', 'pablo', 'enrique', 'raul', 'miguel', 'pedro', 'luis'];
+      preferredVoice = spanishVoices.find(v => 
+        !masculineNames.some(m => v.name.toLowerCase().includes(m))
+      ) || spanishVoices[0];
+    }
+
+    updateCurrentVoiceInfo();
   }
 
   if ('speechSynthesis' in window) {
     loadVoices();
-    speechSynthesis.onvoiceschanged = loadVoices;
+    speechSynthesis.onvoiceschanged = () => {
+      loadVoices();
+      populateVoiceSelect();
+    };
+  }
+
+  function updateCurrentVoiceInfo() {
+    if (preferredVoice && currentVoiceInfo) {
+      currentVoiceInfo.innerHTML = `Voz actual: <strong>${preferredVoice.name}</strong> · ${preferredVoice.lang}`;
+    }
+    if (preferredVoice && infoVoice) {
+      infoVoice.textContent = preferredVoice.name.replace('Microsoft ', '').replace('Google ', '');
+    }
   }
 
   function speak(text, onComplete) {
@@ -675,20 +1549,20 @@
     }
 
     speakCooldown = true;
-    clearIdleTimer(); // ⏸️ no contar tiempo mientras habla
+    clearIdleTimer();
     speechSynthesis.cancel();
 
     const utterance = new SpeechSynthesisUtterance(text);
-    utterance.lang = 'es-ES';
-    utterance.rate = 1.02;
-    utterance.pitch = 0.95;
-    utterance.volume = 1;
+    utterance.lang = preferredVoice?.lang || 'es-ES';
+    utterance.rate = voiceSettings.rate;
+    utterance.pitch = voiceSettings.pitch;
+    utterance.volume = voiceSettings.volume;
     if (preferredVoice) utterance.voice = preferredVoice;
 
     utterance.onstart = () => {
       isSpeaking = true;
       setState('speaking');
-      startWaves();
+      if (settings.SHOW_WAVES) startWaves();
     };
 
     utterance.onend = () => {
@@ -699,11 +1573,11 @@
         if (onComplete) onComplete();
         if (attentionActive) {
           if (awaitingCommand) {
-            statusText.textContent = `Dime ${USER_NAME}...`;
+            statusText.textContent = `Dime ${settings.USER_NAME}...`;
             statusText.classList.add('active');
           } else {
             setState('listening');
-            resetIdleTimer(); // ▶️ reiniciar cuenta de 5s
+            resetIdleTimer();
           }
         } else {
           setState('resting');
@@ -718,7 +1592,7 @@
       if (onComplete) onComplete();
       if (attentionActive) {
         if (awaitingCommand) {
-          statusText.textContent = `Dime ${USER_NAME}...`;
+          statusText.textContent = `Dime ${settings.USER_NAME}...`;
           statusText.classList.add('active');
         } else {
           setState('listening');
@@ -733,10 +1607,346 @@
   }
 
   // ============================================================
-  // Estados visuales
+  // ⚙️ PANEL DE CONFIGURACIÓN
   // ============================================================
+  document.querySelectorAll('.settings-tab').forEach(tab => {
+    tab.addEventListener('click', () => {
+      const tabName = tab.dataset.tab;
+      document.querySelectorAll('.settings-tab').forEach(t => t.classList.remove('active'));
+      document.querySelectorAll('.settings-tab-content').forEach(c => c.classList.remove('active'));
+      tab.classList.add('active');
+      document.querySelector(`[data-content="${tabName}"]`).classList.add('active');
+      // Reset scroll del body
+      document.querySelector('.settings-body').scrollTop = 0;
+    });
+  });
+
+  settingsButton.addEventListener('click', () => {
+    const isOpen = settingsPanel.classList.toggle('visible');
+    settingsButton.classList.toggle('open', isOpen);
+    if (isOpen) {
+      populateVoiceSelect();
+      updateInfoPanel();
+    }
+  });
+
+  document.addEventListener('click', (e) => {
+    if (!settingsPanel.contains(e.target) && !settingsButton.contains(e.target)) {
+      settingsPanel.classList.remove('visible');
+      settingsButton.classList.remove('open');
+    }
+  });
+
+  settingsPanel.addEventListener('click', (e) => e.stopPropagation());
+
+  // ============================================================
+  // 📍 GPS — Detectar ubicación
+  // ============================================================
+  gpsButton.addEventListener('click', async () => {
+    if (!navigator.geolocation) {
+      gpsStatus.textContent = '❌ Tu navegador no soporta geolocalización';
+      gpsStatus.className = 'gps-status error';
+      return;
+    }
+
+    gpsStatus.textContent = '📍 Detectando ubicación...';
+    gpsStatus.className = 'gps-status';
+    gpsButton.classList.add('loading');
+    gpsButton.disabled = true;
+
+    navigator.geolocation.getCurrentPosition(
+      async (position) => {
+        const { latitude, longitude } = position.coords;
+
+        settings.LAT = latitude;
+        settings.LON = longitude;
+        settings.CITY_AUTO = true;
+        saveSettings();
+
+        // Intentar obtener el nombre de la ciudad con reverse geocoding
+        try {
+          const response = await fetch(
+            `https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}&zoom=10&addressdetails=1&accept-language=es`
+          );
+          const data = await response.json();
+
+          let cityName = 'Tu ubicación';
+          if (data.address) {
+            cityName = data.address.city || 
+                       data.address.town || 
+                       data.address.village || 
+                       data.address.municipality || 
+                       data.address.state || 
+                       data.address.country || 
+                       'Tu ubicación';
+          }
+
+          settings.DEFAULT_CITY = cityName;
+          CONFIG.DEFAULT_CITY = cityName;
+          defaultCityInput.value = cityName;
+          saveSettings();
+
+          gpsStatus.textContent = `✅ Ubicación: ${cityName} (${latitude.toFixed(2)}, ${longitude.toFixed(2)})`;
+          gpsStatus.className = 'gps-status success';
+          showActionToast('📍', `Ubicación: ${cityName}`);
+
+        } catch (err) {
+          console.error('Error en reverse geocoding:', err);
+          defaultCityInput.value = `${latitude.toFixed(2)}, ${longitude.toFixed(2)}`;
+          settings.DEFAULT_CITY = `${latitude},${longitude}`;
+          saveSettings();
+          gpsStatus.textContent = `✅ Coordenadas guardadas: ${latitude.toFixed(2)}, ${longitude.toFixed(2)}`;
+          gpsStatus.className = 'gps-status success';
+        }
+
+        gpsButton.classList.remove('loading');
+        gpsButton.disabled = false;
+      },
+      (error) => {
+        console.error('Error de GPS:', error);
+        let msg = '❌ No pude obtener tu ubicación';
+
+        switch (error.code) {
+          case error.PERMISSION_DENIED:
+            msg = '❌ Permiso de ubicación denegado';
+            break;
+          case error.POSITION_UNAVAILABLE:
+            msg = '❌ Ubicación no disponible';
+            break;
+          case error.TIMEOUT:
+            msg = '❌ Se agotó el tiempo';
+            break;
+        }
+
+        gpsStatus.textContent = msg;
+        gpsStatus.className = 'gps-status error';
+        gpsButton.classList.remove('loading');
+        gpsButton.disabled = false;
+      },
+      {
+        enableHighAccuracy: true,
+        timeout: 10000,
+        maximumAge: 60000
+      }
+    );
+  });
+
+  // ============================================================
+  // Selector de voces
+  // ============================================================
+  function populateVoiceSelect() {
+    voiceSelect.innerHTML = '';
+    const spanishVoices = voices.filter(v => v.lang.toLowerCase().startsWith('es'));
+
+    if (spanishVoices.length === 0) {
+      const opt = document.createElement('option');
+      opt.textContent = 'No hay voces en español disponibles';
+      opt.disabled = true;
+      voiceSelect.appendChild(opt);
+      return;
+    }
+
+    const qualityKeywords = ['natural', 'neural', 'enhanced', 'premium', 'mejorada', 'google'];
+    spanishVoices.sort((a, b) => {
+      const aScore = qualityKeywords.some(k => a.name.toLowerCase().includes(k)) ? 1 : 0;
+      const bScore = qualityKeywords.some(k => b.name.toLowerCase().includes(k)) ? 1 : 0;
+      if (aScore !== bScore) return bScore - aScore;
+      return a.name.localeCompare(b.name);
+    });
+
+    spanishVoices.forEach(v => {
+      const opt = document.createElement('option');
+      opt.value = v.name;
+      let displayName = v.name.replace('Microsoft ', '').replace('Google ', '');
+      const flags = {
+        'es-ES': '🇪🇸', 'es-MX': '🇲🇽', 'es-AR': '🇦🇷', 'es-CO': '🇨🇴',
+        'es-CL': '🇨🇱', 'es-PE': '🇵🇪', 'es-US': '🇺🇸', 'es-VE': '🇻🇪',
+        'es-UY': '🇺🇾', 'es-EC': '🇪🇨', 'es-GT': '🇬🇹', 'es-CR': '🇨🇷',
+        'es-PA': '🇵🇦', 'es-PR': '🇵🇷', 'es-DO': '🇩🇴', 'es-BO': '🇧🇴',
+        'es-HN': '🇭🇳', 'es-NI': '🇳🇮', 'es-PY': '🇵🇾', 'es-SV': '🇸🇻',
+        'es-CU': '🇨🇺', 'es-419': '🌎'
+      };
+      const flag = flags[v.lang] || '🌎';
+      opt.textContent = `${flag} ${displayName} · ${v.lang}`;
+      if (preferredVoice && v.name === preferredVoice.name) opt.selected = true;
+      voiceSelect.appendChild(opt);
+    });
+  }
+
+  // ============================================================
+  // Listeners
+  // ============================================================
+  voiceSelect.addEventListener('change', (e) => {
+    const selected = voices.find(v => v.name === e.target.value);
+    if (selected && selected.lang.toLowerCase().startsWith('es')) {
+      preferredVoice = selected;
+      voiceSettings.voiceName = selected.name;
+      saveVoiceSettings();
+      updateCurrentVoiceInfo();
+      speechSynthesis.cancel();
+      const testUtterance = new SpeechSynthesisUtterance(
+        `Hola ${settings.USER_NAME}, así suena mi nueva voz.`
+      );
+      testUtterance.lang = selected.lang;
+      testUtterance.voice = selected;
+      testUtterance.rate = voiceSettings.rate;
+      testUtterance.pitch = voiceSettings.pitch;
+      testUtterance.volume = voiceSettings.volume;
+      speechSynthesis.speak(testUtterance);
+    }
+  });
+
+  rateSlider.addEventListener('input', (e) => {
+    voiceSettings.rate = parseFloat(e.target.value);
+    rateValue.textContent = voiceSettings.rate.toFixed(2);
+    saveVoiceSettings();
+  });
+
+  pitchSlider.addEventListener('input', (e) => {
+    voiceSettings.pitch = parseFloat(e.target.value);
+    pitchValue.textContent = voiceSettings.pitch.toFixed(2);
+    saveVoiceSettings();
+  });
+
+  volumeSlider.addEventListener('input', (e) => {
+    voiceSettings.volume = parseFloat(e.target.value);
+    volumeValue.textContent = voiceSettings.volume.toFixed(2);
+    saveVoiceSettings();
+  });
+
+  testVoiceButton.addEventListener('click', () => {
+    speechSynthesis.cancel();
+    const testTexts = [
+      `Hola ${settings.USER_NAME}, soy M.E.T.A. Esta es mi voz actual.`,
+      `${settings.USER_NAME}, así sueno con la configuración actual.`,
+      `Hola, ¿te gusta cómo suena mi voz, ${settings.USER_NAME}?`
+    ];
+    const testText = testTexts[Math.floor(Math.random() * testTexts.length)];
+    const testUtterance = new SpeechSynthesisUtterance(testText);
+    testUtterance.lang = preferredVoice?.lang || 'es-ES';
+    if (preferredVoice) testUtterance.voice = preferredVoice;
+    testUtterance.rate = voiceSettings.rate;
+    testUtterance.pitch = voiceSettings.pitch;
+    testUtterance.volume = voiceSettings.volume;
+    speechSynthesis.speak(testUtterance);
+  });
+
+  document.querySelectorAll('.color-swatch').forEach(swatch => {
+    swatch.addEventListener('click', () => {
+      const theme = swatch.dataset.theme;
+      settings.THEME = theme;
+      saveSettings();
+      document.querySelectorAll('.color-swatch').forEach(s => s.classList.remove('active'));
+      swatch.classList.add('active');
+      document.body.classList.remove(
+        'theme-blue', 'theme-pink', 'theme-green', 
+        'theme-purple', 'theme-red', 'theme-gold'
+      );
+      document.body.classList.add(theme);
+      updateInfoPanel();
+      createParticles();
+    });
+  });
+
+  toggleParticles.addEventListener('change', (e) => {
+    settings.SHOW_PARTICLES = e.target.checked;
+    saveSettings();
+    particlesContainer.style.display = settings.SHOW_PARTICLES ? 'block' : 'none';
+  });
+
+  toggleWaves.addEventListener('change', (e) => {
+    settings.SHOW_WAVES = e.target.checked;
+    saveSettings();
+    wavesContainer.style.display = settings.SHOW_WAVES ? 'flex' : 'none';
+  });
+
+  toggleMouseFollow.addEventListener('change', (e) => {
+    settings.MOUSE_FOLLOW = e.target.checked;
+    saveSettings();
+  });
+
+  toggleNotifications.addEventListener('change', async (e) => {
+    settings.NOTIFICATIONS = e.target.checked;
+    saveSettings();
+    if (settings.NOTIFICATIONS && 'Notification' in window) {
+      if (Notification.permission === 'default') {
+        await Notification.requestPermission();
+      }
+    }
+  });
+
+  toggleToasts.addEventListener('change', (e) => {
+    settings.TOASTS = e.target.checked;
+    saveSettings();
+  });
+
+  toggleTranscript.addEventListener('change', (e) => {
+    settings.TRANSCRIPT = e.target.checked;
+    saveSettings();
+    if (!settings.TRANSCRIPT) {
+      transcriptEl.classList.remove('visible');
+    }
+  });
+
+  orbSizeSlider.addEventListener('input', (e) => {
+    settings.ORB_SIZE = parseInt(e.target.value);
+    orbSizeValue.textContent = settings.ORB_SIZE + '%';
+    saveSettings();
+    const scale = settings.ORB_SIZE / 100;
+    orbContainer.style.transform = `scale(${scale})`;
+  });
+
+  idleTimeoutSlider.addEventListener('input', (e) => {
+    settings.IDLE_TIMEOUT_MS = parseInt(e.target.value) * 1000;
+    idleTimeoutValue.textContent = e.target.value + 's';
+    saveSettings();
+    resetIdleTimer();
+  });
+
+  userNameInput.addEventListener('change', (e) => {
+    const newName = e.target.value.trim() || DEFAULT_SETTINGS.USER_NAME;
+    settings.USER_NAME = newName;
+    window.USER_NAME = newName;
+    saveSettings();
+    PHRASES.waiting = [
+      `Dime ${newName}...`,
+      `Te escucho, ${newName}...`,
+      `Adelante ${newName}...`
+    ];
+    showActionToast('✏️', `Ahora me llamarás ${newName}`);
+  });
+
+  defaultCityInput.addEventListener('change', (e) => {
+    settings.DEFAULT_CITY = e.target.value.trim() || DEFAULT_SETTINGS.DEFAULT_CITY;
+    settings.CITY_AUTO = false;
+    CONFIG.DEFAULT_CITY = settings.DEFAULT_CITY;
+    saveSettings();
+    gpsStatus.textContent = '';
+  });
+
+  resetSettingsButton.addEventListener('click', () => {
+    if (confirm('¿Restablecer toda la configuración a los valores por defecto?')) {
+      localStorage.removeItem('meta-app-settings');
+      localStorage.removeItem('meta-voice-settings');
+      location.reload();
+    }
+  });
+
+  function updateInfoPanel() {
+    if (infoReminders) infoReminders.textContent = reminders.length;
+    if (infoTheme) {
+      const themeNames = {
+        'theme-blue': 'Azul', 'theme-pink': 'Rosa', 'theme-green': 'Verde',
+        'theme-purple': 'Morado', 'theme-red': 'Rojo', 'theme-gold': 'Dorado'
+      };
+      infoTheme.textContent = themeNames[settings.THEME] || 'Azul';
+    }
+    if (infoState) infoState.textContent = attentionActive ? 'Activa' : 'En calma';
+  }
+
   function setState(state) {
-    orbContainer.classList.remove('listening', 'speaking', 'off');
+    orbContainer.classList.remove('listening', 'speaking');
+    if (state !== 'resting') orbContainer.classList.remove('off');
     metaTitle.classList.remove('off');
 
     switch (state) {
@@ -768,56 +1978,736 @@
         statusText.textContent = randomPhrase('idle');
         statusText.classList.remove('active', 'off');
     }
+    updateInfoPanel();
+  }
+
+  function changeTheme(theme) {
+    document.body.classList.remove(
+      'theme-blue', 'theme-pink', 'theme-green', 
+      'theme-purple', 'theme-red', 'theme-gold'
+    );
+    document.body.classList.add(theme);
+    currentTheme = theme;
+    settings.THEME = theme;
+    saveSettings();
+    document.querySelectorAll('.color-swatch').forEach(s => {
+      s.classList.toggle('active', s.dataset.theme === theme);
+    });
+    createParticles();
+    updateInfoPanel();
   }
 
   // ============================================================
-  // Conversación general
+  // RECORDATORIOS
   // ============================================================
-  function metaResponse(input) {
-    const text = input.toLowerCase().trim();
+  function addReminder(seconds, task) {
+    const id = Date.now();
+    const fireTime = new Date(Date.now() + seconds * 1000);
+    const reminder = { id, task, fireTime, seconds };
+    reminders.push(reminder);
+    renderReminders();
+    updateInfoPanel();
+    setTimeout(() => fireReminder(id), seconds * 1000);
+  }
 
-    if (/(hola|buenos días|buenas tardes|buenas noches|hey|saludos|qué tal)/.test(text)) {
-      const hour = new Date().getHours();
-      let greeting;
-      if (hour < 12) greeting = 'Buenos días';
-      else if (hour < 20) greeting = 'Buenas tardes';
-      else greeting = 'Buenas noches';
-      return `${greeting} ${USER_NAME}. Me alegra oírte. ¿Cómo va tu día?`;
+  function fireReminder(id) {
+    const reminder = reminders.find(r => r.id === id);
+    if (!reminder) return;
+
+    if (settings.NOTIFICATIONS && 'Notification' in window && Notification.permission === 'granted') {
+      new Notification('M.E.T.A. - Recordatorio', {
+        body: reminder.task,
+        icon: 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><circle cx="50" cy="50" r="40" fill="%2300d4ff"/></svg>'
+      });
     }
 
-    if (/(cómo te llamas|quién eres|tu nombre)/.test(text)) {
-      return `Me llamo M.E.T.A., ${USER_NAME}. Soy tu asistente personal.`;
-    }
+    const el = document.querySelector(`[data-reminder-id="${id}"]`);
+    if (el) el.classList.add('firing');
 
-    if (/(cómo estás|como estas|qué tal estás)/.test(text)) {
-      return `Muy bien ${USER_NAME}, gracias por preguntar. ¿Y tú cómo estás?`;
-    }
+    setTimeout(() => {
+      speak(`${settings.USER_NAME}, te recuerdo que es hora de ${reminder.task}.`);
+    }, 500);
 
-    if (/(gracias|te agradezco)/.test(text)) {
-      return `De nada ${USER_NAME}. Es un placer ayudarte.`;
-    }
+    showActionToast('🔔', reminder.task);
 
-    if (/(adiós|adios|hasta luego|chao|bye)/.test(text)) {
-      return `Hasta pronto ${USER_NAME}. Aquí estaré cuando me necesites.`;
-    }
+    setTimeout(() => {
+      reminders = reminders.filter(r => r.id !== id);
+      renderReminders();
+      updateInfoPanel();
+    }, 10000);
+  }
 
-    const defaults = [
-      `Mmm ${USER_NAME}, no estoy segura de haberte entendido. Di "META" y luego tu indicación.`,
-      `Interesante lo que dices, ${USER_NAME}. Si quieres pedirme algo, di "META" primero.`,
-      `${USER_NAME}, recuerda decir "META" antes de tu pedido para darme una orden directa.`,
-      `¿Podrías darme más contexto, ${USER_NAME}? O di "META" seguido de tu indicación.`
+  function renderReminders() {
+    remindersPanel.innerHTML = '';
+    reminders.forEach(r => {
+      const item = document.createElement('div');
+      item.className = 'reminder-item';
+      item.dataset.reminderId = r.id;
+      const timeStr = r.fireTime.toLocaleTimeString('es-ES', { 
+        hour: '2-digit', 
+        minute: '2-digit' 
+      });
+      item.innerHTML = `
+        <div class="reminder-icon">⏰</div>
+        <div class="reminder-content">
+          <div>${r.task}</div>
+          <div class="reminder-time">A las ${timeStr}</div>
+        </div>
+      `;
+      remindersPanel.appendChild(item);
+    });
+  }
+
+  function parseTimeToSeconds(text) {
+    let total = 0;
+    const hourMatch = text.match(/(\d+)\s*(hora|horas)/i);
+    const minMatch = text.match(/(\d+)\s*(minuto|minutos|min)/i);
+    const secMatch = text.match(/(\d+)\s*(segundo|segundos|seg)/i);
+    if (hourMatch) total += parseInt(hourMatch[1]) * 3600;
+    if (minMatch) total += parseInt(minMatch[1]) * 60;
+    if (secMatch) total += parseInt(secMatch[1]);
+    return total;
+  }
+
+  // ============================================================
+  // CLIMA CON GPS
+  // ============================================================
+  async function getWeather(city) {
+    if (!CONFIG.OPENWEATHER_API_KEY) {
+      return `Aún no tengo configurada mi clave del clima, ${settings.USER_NAME}.`;
+    }
+    try {
+      // Si tenemos coordenadas guardadas y CITY_AUTO, usar lat/lon
+      let url;
+      if (settings.CITY_AUTO && settings.LAT && settings.LON) {
+        url = `https://api.openweathermap.org/data/2.5/weather?lat=${settings.LAT}&lon=${settings.LON}&appid=${CONFIG.OPENWEATHER_API_KEY}&units=metric&lang=es`;
+      } else {
+        url = `https://api.openweathermap.org/data/2.5/weather?q=${encodeURIComponent(city)}&appid=${CONFIG.OPENWEATHER_API_KEY}&units=metric&lang=es`;
+      }
+
+      const response = await fetch(url);
+      const data = await response.json();
+      if (data.cod !== 200) return `No he podido encontrar el clima de ${city}, ${settings.USER_NAME}.`;
+
+      const temp = Math.round(data.main.temp);
+      const feels = Math.round(data.main.feels_like);
+      const desc = data.weather[0].description;
+      const humidity = data.main.humidity;
+      const wind = Math.round(data.wind.speed * 3.6);
+
+      return `En ${data.name} ahora mismo hay ${desc}, con ${temp} grados. Se siente como ${feels}. La humedad es del ${humidity} por ciento y el viento sopla a ${wind} kilómetros por hora.`;
+    } catch (err) {
+      return `No pude conectarme al servicio del clima, ${settings.USER_NAME}.`;
+    }
+  }
+
+  // ============================================================
+  // NOTICIAS
+  // ============================================================
+  async function getNews(topic = '') {
+    if (!CONFIG.NEWS_API_KEY) {
+      return `Aún no tengo configurada mi clave de noticias, ${settings.USER_NAME}.`;
+    }
+    try {
+      const url = topic 
+        ? `https://newsapi.org/v2/everything?q=${encodeURIComponent(topic)}&language=es&sortBy=publishedAt&pageSize=3&apiKey=${CONFIG.NEWS_API_KEY}`
+        : `https://newsapi.org/v2/top-headlines?language=es&pageSize=3&apiKey=${CONFIG.NEWS_API_KEY}`;
+      const response = await fetch(url);
+      const data = await response.json();
+      if (!data.articles || data.articles.length === 0) return `No encontré noticias sobre eso, ${settings.USER_NAME}.`;
+      const headlines = data.articles.slice(0, 3).map((a, i) => `Noticia ${i + 1}: ${a.title}`).join('. ');
+      return `Aquí van las noticias, ${settings.USER_NAME}. ${headlines}`;
+    } catch (err) {
+      return `No pude conectarme al servicio de noticias, ${settings.USER_NAME}.`;
+    }
+  }
+
+  // ============================================================
+  // TRADUCCIÓN
+  // ============================================================
+  async function translateText(text, targetLang) {
+    try {
+      const langMap = {
+        'inglés': 'en', 'ingles': 'en', 'english': 'en',
+        'español': 'es', 'espanol': 'es', 'spanish': 'es',
+        'francés': 'fr', 'frances': 'fr', 'french': 'fr',
+        'alemán': 'de', 'aleman': 'de', 'german': 'de',
+        'italiano': 'it', 'italian': 'it',
+        'portugués': 'pt', 'portugues': 'pt', 'portuguese': 'pt',
+        'japonés': 'ja', 'japones': 'ja', 'japanese': 'ja',
+        'chino': 'zh', 'chinese': 'zh',
+        'ruso': 'ru', 'russian': 'ru',
+        'árabe': 'ar', 'arabe': 'ar', 'arabic': 'ar'
+      };
+      const target = langMap[targetLang.toLowerCase()] || targetLang;
+      const response = await fetch(
+        `https://api.mymemory.translated.net/get?q=${encodeURIComponent(text)}&langpair=es|${target}`
+      );
+      const data = await response.json();
+      if (data.responseData && data.responseData.translatedText) {
+        return data.responseData.translatedText;
+      }
+      return null;
+    } catch (err) { return null; }
+  }
+
+  // ============================================================
+  // WIKIPEDIA
+  // ============================================================
+  async function searchWikipedia(query) {
+    try {
+      const searchResponse = await fetch(
+        `https://es.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(query)}`
+      );
+      if (searchResponse.ok) {
+        const data = await searchResponse.json();
+        if (data.extract) {
+          const extract = data.extract.length > 500 ? data.extract.substring(0, 500) + '...' : data.extract;
+          return `Según Wikipedia: ${extract}`;
+        }
+      }
+      const searchUrl = `https://es.wikipedia.org/w/api.php?action=opensearch&search=${encodeURIComponent(query)}&limit=1&format=json&origin=*`;
+      const sResponse = await fetch(searchUrl);
+      const sData = await sResponse.json();
+      if (sData[1] && sData[1].length > 0) {
+        const title = sData[1][0];
+        const summaryResponse = await fetch(
+          `https://es.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(title)}`
+        );
+        const summaryData = await summaryResponse.json();
+        if (summaryData.extract) {
+          const extract = summaryData.extract.length > 500 ? summaryData.extract.substring(0, 500) + '...' : summaryData.extract;
+          return `Según Wikipedia: ${extract}`;
+        }
+      }
+      return `No encontré información sobre ${query} en Wikipedia, ${settings.USER_NAME}.`;
+    } catch (err) {
+      return `No pude conectarme a Wikipedia, ${settings.USER_NAME}.`;
+    }
+  }
+
+  // ============================================================
+  // LECTURA DE PÁGINA
+  // ============================================================
+  function readPageAloud() {
+    try {
+      const bodyText = document.body.innerText.replace(/\s+/g, ' ').trim().substring(0, 1000);
+      if (bodyText.length > 50) {
+        speak(`Leyendo la página, ${settings.USER_NAME}. ${bodyText}`);
+        showActionToast('📖', 'Leyendo página');
+        return true;
+      }
+    } catch (e) {}
+    return false;
+  }
+
+  // ============================================================
+  // PORTAPAPELES
+  // ============================================================
+  async function copyToClipboard(text) {
+    try {
+      await navigator.clipboard.writeText(text);
+      clipboardContent = text;
+      return true;
+    } catch (err) { return false; }
+  }
+
+  async function pasteFromClipboard() {
+    try {
+      const text = await navigator.clipboard.readText();
+      clipboardContent = text;
+      return text;
+    } catch (err) { return null; }
+  }
+
+  // ============================================================
+  // EJECUTOR DE ACCIONES
+  // ============================================================
+  async function executeAction(action) {
+    const act = action.toLowerCase().trim();
+    const name = settings.USER_NAME;
+    const confirmaciones = [
+      `Claro, ${name}.`, `Por supuesto, ${name}.`,
+      `Enseguida, ${name}.`, `Voy con eso, ${name}.`, `De acuerdo, ${name}.`
     ];
-    return defaults[Math.floor(Math.random() * defaults.length)];
+    const confirm = confirmaciones[Math.floor(Math.random() * confirmaciones.length)];
+
+    // RECORDATORIOS
+    const reminderMatch = act.match(/(?:recu[eé]rdame|recordatorio|av[ií]same)\s+(?:en\s+)?(.+?)\s+(?:que\s+)?(.+)$/i);
+    if (reminderMatch) {
+      const timePart = reminderMatch[1];
+      const task = reminderMatch[2].trim();
+      const seconds = parseTimeToSeconds(timePart);
+      if (seconds === 0) {
+        speak(`${name}, no entendí el tiempo. Prueba con "en 5 minutos".`);
+        return;
+      }
+      if (settings.NOTIFICATIONS && 'Notification' in window && Notification.permission === 'default') {
+        await Notification.requestPermission();
+      }
+      addReminder(seconds, task);
+      const timeDesc = seconds >= 3600 
+        ? `${Math.floor(seconds / 3600)} hora${seconds >= 7200 ? 's' : ''}`
+        : seconds >= 60 
+          ? `${Math.floor(seconds / 60)} minuto${seconds >= 120 ? 's' : ''}`
+          : `${seconds} segundos`;
+      speak(`${confirm} Te avisaré en ${timeDesc} para ${task}.`);
+      showActionToast('⏰', `Recordatorio en ${timeDesc}`);
+      return;
+    }
+
+    // TEMPORIZADOR
+    const timerMatch = act.match(/(?:pon|crea|inicia|configura)\s+(?:un\s+)?(?:temporizador|timer|alarma|cronómetro)\s+(?:de\s+|en\s+)?(.+)/i);
+    if (timerMatch) {
+      const seconds = parseTimeToSeconds(timerMatch[1]);
+      if (seconds === 0) {
+        speak(`${name}, no entendí el tiempo.`);
+        return;
+      }
+      if (settings.NOTIFICATIONS && 'Notification' in window && Notification.permission === 'default') {
+        await Notification.requestPermission();
+      }
+      addReminder(seconds, 'temporizador');
+      speak(`${confirm} Temporizador configurado.`);
+      showActionToast('⏰', 'Temporizador activo');
+      return;
+    }
+
+    // CLIMA
+    const weatherMatch = act.match(/(?:clima|tiempo|temperatura)\s+(?:en\s+|de\s+)?(.+)/i);
+    if (weatherMatch || /(?:qué (?:clima|tiempo)|cómo está el (?:clima|tiempo))/.test(act)) {
+      let city = weatherMatch ? weatherMatch[1].trim() : null;
+      // Si no hay ciudad específica y tenemos GPS, usar ubicación automática
+      if (!city && settings.CITY_AUTO) {
+        city = settings.DEFAULT_CITY;
+      }
+      if (!city) city = CONFIG.DEFAULT_CITY;
+      speak(`${confirm} Déjame ver el clima en ${city}.`);
+      const weather = await getWeather(city);
+      setTimeout(() => speak(weather), 500);
+      return;
+    }
+
+    // NOTICIAS
+    const newsMatch = act.match(/(?:noticias|novedades)\s+(?:de\s+|sobre\s+)?(.+)/i);
+    if (newsMatch || /(?:dime las noticias|qué noticias hay|noticias de hoy)/.test(act)) {
+      const topic = newsMatch ? newsMatch[1].trim() : '';
+      speak(`${confirm} Déjame ver las noticias${topic ? ' sobre ' + topic : ''}.`);
+      const news = await getNews(topic);
+      setTimeout(() => speak(news), 500);
+      return;
+    }
+
+    // WIKIPEDIA
+    const wikiMatch = act.match(/(?:busca en wikipedia|qué es|quién es|quién fue|cuéntame sobre)\s+(.+)/i);
+    if (wikiMatch) {
+      const query = wikiMatch[1].trim();
+      speak(`${confirm} Busco en Wikipedia sobre ${query}.`);
+      const result = await searchWikipedia(query);
+      setTimeout(() => speak(result), 500);
+      return;
+    }
+
+    // TRADUCCIÓN
+    const translateMatch = act.match(/(?:traduce|traducir|cómo se dice)\s+(.+?)\s+(?:al\s+|en\s+)(\w+)/i);
+    if (translateMatch) {
+      const textToTranslate = translateMatch[1].replace(/["']/g, '').trim();
+      const targetLang = translateMatch[2];
+      speak(`${confirm} Traduzco al ${targetLang}.`);
+      const translation = await translateText(textToTranslate, targetLang);
+      if (translation) setTimeout(() => speak(`Se dice: ${translation}`), 500);
+      else setTimeout(() => speak(`No pude traducir eso, ${name}.`), 500);
+      return;
+    }
+
+    // LEER PÁGINA
+    if (/(lee (?:la )?p[aá]gina|lectura de p[aá]gina|leer contenido|lee esto)/.test(act)) {
+      speak(`${confirm} Voy a leer el contenido de la página.`);
+      showActionToast('📖', 'Leyendo...');
+      setTimeout(() => readPageAloud(), 800);
+      return;
+    }
+
+    // YOUTUBE
+    const youtubeMatch = act.match(/(?:reproduce|pon|busca en youtube|youtube)\s+(.+)/i);
+    if (youtubeMatch) {
+      const query = youtubeMatch[1].trim();
+      speak(`${confirm} Busco en YouTube: ${query}.`);
+      showActionToast('🎵', `YouTube: ${query}`);
+      setTimeout(() => window.open(`https://www.youtube.com/results?search_query=${encodeURIComponent(query)}`, '_blank'), 1200);
+      return;
+    }
+
+    if (/(?:abre youtube|ir a youtube)/.test(act)) {
+      speak(`${confirm} Abro YouTube.`);
+      showActionToast('🎵', 'YouTube');
+      setTimeout(() => window.open('https://www.youtube.com', '_blank'), 1200);
+      return;
+    }
+
+    // PORTAPAPELES
+    const copyMatch = act.match(/(?:copia|copiar)\s+(.+)/i);
+    if (copyMatch) {
+      const text = copyMatch[1].trim();
+      const ok = await copyToClipboard(text);
+      if (ok) {
+        speak(`${confirm} Copiado al portapapeles.`);
+        showActionToast('📋', 'Copiado');
+      } else {
+        speak(`No pude copiar, ${name}.`);
+      }
+      return;
+    }
+
+    if (/(?:pega|pegar|qué hay en el portapapeles|lee el portapapeles)/.test(act)) {
+      const text = await pasteFromClipboard();
+      if (text) speak(`${confirm} El portapapeles dice: ${text}`);
+      else speak(`No pude leer el portapapeles, ${name}.`);
+      return;
+    }
+
+    // TEMAS
+    const themeMatch = act.match(/(?:cambia (?:el )?tema|cambia (?:el )?color|pon (?:el )?tema|tema)\s+(?:a\s+|al\s+|en\s+)?(\w+)/i);
+    if (themeMatch) {
+      const themeName = themeMatch[1].toLowerCase();
+      const themes = {
+        'azul': 'theme-blue', 'blue': 'theme-blue',
+        'rosa': 'theme-pink', 'pink': 'theme-pink', 'rosado': 'theme-pink',
+        'verde': 'theme-green', 'green': 'theme-green',
+        'morado': 'theme-purple', 'purple': 'theme-purple', 'violeta': 'theme-purple',
+        'rojo': 'theme-red', 'red': 'theme-red',
+        'dorado': 'theme-gold', 'gold': 'theme-gold', 'amarillo': 'theme-gold'
+      };
+      const selectedTheme = themes[themeName];
+      if (selectedTheme) {
+        changeTheme(selectedTheme);
+        speak(`${confirm} Cambio el tema a ${themeName}.`);
+        showActionToast('🎨', `Tema ${themeName}`);
+      } else {
+        speak(`${name}, los temas disponibles son: azul, rosa, verde, morado, rojo y dorado.`);
+      }
+      return;
+    }
+
+    if (/(?:tema aleatorio|color aleatorio)/.test(act)) {
+      const allThemes = ['theme-blue', 'theme-pink', 'theme-green', 'theme-purple', 'theme-red', 'theme-gold'];
+      const randomTheme = allThemes[Math.floor(Math.random() * allThemes.length)];
+      changeTheme(randomTheme);
+      speak(`${confirm} Cambio a un tema aleatorio.`);
+      showActionToast('🎨', 'Tema aleatorio');
+      return;
+    }
+
+    // VOZ POR COMANDO
+    const voiceMatch = act.match(/(?:cambia (?:tu )?voz a|cambia la voz a|usa la voz)\s+(.+)/i);
+    if (voiceMatch) {
+      const query = voiceMatch[1].toLowerCase().trim();
+      const found = voices.find(v => 
+        v.name.toLowerCase().includes(query) && 
+        v.lang.toLowerCase().startsWith('es')
+      );
+      if (found) {
+        preferredVoice = found;
+        voiceSettings.voiceName = found.name;
+        saveVoiceSettings();
+        updateCurrentVoiceInfo();
+        speak(`${confirm} Cambio mi voz a ${found.name}.`);
+      } else {
+        speak(`${name}, no encontré una voz en español que se llame "${query}".`);
+      }
+      return;
+    }
+
+    // DICTADO
+    if (/(?:modo dictado|dictado|empieza a escribir|activa dictado)/.test(act)) {
+      dictationMode = !dictationMode;
+      if (dictationMode) {
+        speak(`${confirm} Modo dictado activado.`);
+        dictationBuffer = '';
+        showActionToast('✍️', 'Dictado activado');
+      } else {
+        speak(`Modo dictado desactivado.`);
+        saveDictation();
+        showActionToast('✍️', 'Dictado guardado');
+      }
+      return;
+    }
+
+    // CAPTURA
+    if (/(captura|screenshot|pantallazo|foto de (la )?pantalla|screen)/.test(act)) {
+      speak(`${confirm} Voy a hacer una captura de pantalla.`);
+      showActionToast('📸', 'Captura de pantalla');
+      setTimeout(async () => {
+        try {
+          const stream = await navigator.mediaDevices.getDisplayMedia({ video: { mediaSource: 'screen' } });
+          const track = stream.getVideoTracks()[0];
+          const imageCapture = new ImageCapture(track);
+          const bitmap = await imageCapture.grabFrame();
+          const canvas = document.createElement('canvas');
+          canvas.width = bitmap.width;
+          canvas.height = bitmap.height;
+          const ctx = canvas.getContext('2d');
+          ctx.drawImage(bitmap, 0, 0);
+          track.stop();
+          canvas.toBlob((blob) => {
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19);
+            a.href = url;
+            a.download = `captura-${timestamp}.png`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            setTimeout(() => URL.revokeObjectURL(url), 1000);
+            setTimeout(() => speak(`Listo ${name}, la captura se ha guardado.`), 800);
+          }, 'image/png');
+        } catch (err) {
+          speak(`Parece que cancelaste la captura, ${name}.`);
+        }
+      }, 1500);
+      return;
+    }
+
+    // HORA
+    if (/(hora|qué hora|dime la hora)/.test(act)) {
+      const now = new Date();
+      const h = now.getHours();
+      const m = now.getMinutes().toString().padStart(2, '0');
+      let momento;
+      if (h === 0) momento = 'medianoche';
+      else if (h === 12) momento = 'el mediodía';
+      else if (h === 1) momento = 'la una';
+      else momento = `las ${h}`;
+      speak(`${confirm} Son ${momento} y ${m} minutos.`);
+      return;
+    }
+
+    // FECHA
+    if (/(fecha|qué día|día es|fecha es)/.test(act)) {
+      const now = new Date();
+      const dias = ['domingo', 'lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado'];
+      const meses = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'];
+      speak(`${confirm} Hoy es ${dias[now.getDay()]}, ${now.getDate()} de ${meses[now.getMonth()]} del ${now.getFullYear()}.`);
+      return;
+    }
+
+    // CHISTE
+    if (/(chiste|algo gracioso|hazme reír|diviérteme)/.test(act)) {
+      const chistes = [
+        '¿Por qué los programadores prefieren el modo oscuro? Porque la luz atrae a los bugs.',
+        'Hay 10 tipos de personas: las que entienden binario y las que no.',
+        '¿Qué le dice un bit a otro bit? Nos vemos en el bus.',
+        'Un programador fue al médico y le dijo: Doctor, me duele aquí. El médico respondió: No se preocupe, eso es solo un bug.'
+      ];
+      speak(`${confirm} ${chistes[Math.floor(Math.random() * chistes.length)]}`);
+      return;
+    }
+
+    // CÁLCULOS
+    const mathMatch = act.match(/(\d+)\s*([\+\-\*\/x])\s*(\d+)/);
+    if (mathMatch) {
+      const a = parseFloat(mathMatch[1]);
+      const op = mathMatch[2];
+      const b = parseFloat(mathMatch[3]);
+      let result;
+      switch (op) {
+        case '+': result = a + b; break;
+        case '-': result = a - b; break;
+        case '*': case 'x': result = a * b; break;
+        case '/': result = b !== 0 ? a / b : null; break;
+      }
+      if (result === null) speak(`${name}, dividir entre cero no es posible.`);
+      else speak(`${confirm} ${a} ${op} ${b} es igual a ${result}.`);
+      return;
+    }
+
+    // ABRIR SITIOS
+    const navMatch = act.match(/^(abre|abrir|navega a|ir a|ve a)\s+(.+)$/i);
+    if (navMatch) {
+      const site = navMatch[2].trim();
+      const sitesMap = {
+        'youtube': 'https://www.youtube.com',
+        'google': 'https://www.google.com',
+        'gmail': 'https://mail.google.com',
+        'correo': 'https://mail.google.com',
+        'whatsapp': 'https://web.whatsapp.com',
+        'facebook': 'https://www.facebook.com',
+        'instagram': 'https://www.instagram.com',
+        'twitter': 'https://twitter.com',
+        'x': 'https://twitter.com',
+        'github': 'https://www.github.com',
+        'wikipedia': 'https://www.wikipedia.org',
+        'netflix': 'https://www.netflix.com',
+        'spotify': 'https://open.spotify.com'
+      };
+      const key = site.toLowerCase().replace(/\s+\.?(com|org|net)$/, '').trim();
+      const url = sitesMap[key];
+      if (url) {
+        speak(`${confirm} Abro ${key}.`);
+        showActionToast('🌐', `Abriendo ${key}`);
+        setTimeout(() => window.open(url, '_blank'), 1200);
+      } else {
+        speak(`${confirm} Abro ${site}.`);
+        showActionToast('🌐', `Buscando ${site}`);
+        setTimeout(() => window.open(`https://www.google.com/search?q=${encodeURIComponent(site)}`, '_blank'), 1200);
+      }
+      return;
+    }
+
+    // BUSCAR
+    const searchMatch = act.match(/^(busca|búscame|buscar)\s+(.+)$/i);
+    if (searchMatch) {
+      const query = searchMatch[2].trim();
+      speak(`${confirm} Busco ${query}.`);
+      showActionToast('🔍', `Buscando: ${query}`);
+      setTimeout(() => window.open(`https://www.google.com/search?q=${encodeURIComponent(query)}`, '_blank'), 1200);
+      return;
+    }
+
+    // VOLUMEN
+    if (/(sube el volumen|volumen arriba|más volumen)/.test(act)) {
+      speak(`${confirm} Subo el volumen.`);
+      showActionToast('🔊', 'Subiendo volumen');
+      return;
+    }
+    if (/(baja el volumen|volumen abajo|menos volumen)/.test(act)) {
+      speak(`${confirm} Bajo el volumen.`);
+      showActionToast('🔉', 'Bajando volumen');
+      return;
+    }
+
+    // LISTAR RECORDATORIOS
+    if (/(qué recordatorios|mis recordatorios|recordatorios activos)/.test(act)) {
+      if (reminders.length === 0) speak(`No tienes recordatorios activos, ${name}.`);
+      else {
+        const list = reminders.map(r => `${r.task} en ${Math.round((r.fireTime - Date.now()) / 60000)} minutos`).join(', ');
+        speak(`Tienes ${reminders.length} recordatorios: ${list}.`);
+      }
+      return;
+    }
+
+    // CANCELAR RECORDATORIOS
+    if (/(cancela los recordatorios|borra los recordatorios)/.test(act)) {
+      reminders = [];
+      renderReminders();
+      updateInfoPanel();
+      speak(`${confirm} He cancelado todos los recordatorios.`);
+      return;
+    }
+
+    // AYUDA
+    if (/(ayuda|qué puedes hacer|funciones|comandos|qué sabes hacer)/.test(act)) {
+      speak(`${confirm} Puedo hacer muchas cosas, ${name}. Dime: recuérdame en 5 minutos sacar la ropa. Qué clima hace. Dame las noticias. Qué es la física cuántica. Traduce hola al inglés. Pon música de Queen en YouTube. Cambia el tema a rosa. Lee la página. Haz una captura. Y mucho más.`);
+      return;
+    }
+
+    // NOMBRE
+    if (/(cómo te llamas|quién eres|tu nombre)/.test(act)) {
+      speak(`Me llamo M.E.T.A., ${name}. Soy tu asistente personal.`);
+      return;
+    }
+
+    if (/(gracias|te agradezco)/.test(act)) {
+      speak(`De nada ${name}. Es un placer ayudarte.`);
+      return;
+    }
+
+    speak(`${confirm} Pero aún no sé cómo hacer eso.`);
   }
 
   // ============================================================
-  // Reconocimiento de voz — SIEMPRE ACTIVO
+  // DICTADO
+  // ============================================================
+  function saveDictation() {
+    if (!dictationBuffer.trim()) return;
+    const blob = new Blob([dictationBuffer], { type: 'text/plain;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19);
+    a.href = url;
+    a.download = `dictado-${timestamp}.txt`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+  }
+
+  let toastTimeout = null;
+  function showActionToast(icon, text) {
+    if (!settings.TOASTS) return;
+    actionToastIcon.textContent = icon;
+    actionToastText.textContent = text;
+    actionToast.classList.add('visible');
+    clearTimeout(toastTimeout);
+    toastTimeout = setTimeout(() => actionToast.classList.remove('visible'), 3000);
+  }
+
+  function createParticles() {
+    particlesContainer.innerHTML = '';
+    if (!settings.SHOW_PARTICLES) return;
+    for (let i = 0; i < 40; i++) {
+      const p = document.createElement('div');
+      p.className = 'particle';
+      p.style.left = Math.random() * 100 + '%';
+      p.style.animationDuration = (8 + Math.random() * 12) + 's';
+      p.style.animationDelay = (Math.random() * 10) + 's';
+      p.style.width = p.style.height = (1 + Math.random() * 2) + 'px';
+      p.style.opacity = 0.3 + Math.random() * 0.5;
+      particlesContainer.appendChild(p);
+    }
+  }
+
+  const BAR_COUNT = 48;
+  const waveBars = [];
+  for (let i = 0; i < BAR_COUNT; i++) {
+    const bar = document.createElement('div');
+    bar.className = 'wave-bar';
+    const center = BAR_COUNT / 2;
+    const dist = Math.abs(i - center) / center;
+    const baseHeight = 4 + (1 - dist) * 8;
+    bar.style.height = baseHeight + 'px';
+    wavesContainer.appendChild(bar);
+    waveBars.push({ el: bar, base: baseHeight });
+  }
+
+  let waveAnimationId = null;
+  let waveAmplitude = 0;
+
+  function animateWaves() {
+    const time = Date.now() / 200;
+    waveBars.forEach((bar, i) => {
+      const center = BAR_COUNT / 2;
+      const dist = Math.abs(i - center) / center;
+      const wave = Math.sin(time + i * 0.4) * 0.5 + 0.5;
+      const height = bar.base + wave * waveAmplitude * (1 - dist * 0.5);
+      bar.el.style.height = Math.max(4, height) + 'px';
+    });
+    waveAnimationId = requestAnimationFrame(animateWaves);
+  }
+
+  function startWaves() {
+    if (!settings.SHOW_WAVES) return;
+    wavesContainer.classList.add('active');
+    waveAmplitude = 30;
+    if (!waveAnimationId) animateWaves();
+  }
+
+  function stopWaves() {
+    wavesContainer.classList.remove('active');
+    waveAmplitude = 0;
+    if (waveAnimationId) {
+      cancelAnimationFrame(waveAnimationId);
+      waveAnimationId = null;
+    }
+  }
+
+  // ============================================================
+  // RECONOCIMIENTO
   // ============================================================
   const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
 
   function initRecognition() {
     if (!SpeechRecognition) return null;
-
     const rec = new SpeechRecognition();
     rec.lang = 'es-ES';
     rec.continuous = true;
@@ -826,29 +2716,37 @@
 
     rec.onresult = (event) => {
       if (speakCooldown || isSpeaking) return;
-
       let interim = '';
       let final = '';
-
       for (let i = event.resultIndex; i < event.results.length; i++) {
         const transcript = event.results[i][0].transcript;
         if (event.results[i].isFinal) final += transcript;
         else interim += transcript;
       }
 
-      if (interim) {
+      if (interim && settings.TRANSCRIPT) {
         transcriptEl.textContent = interim;
         transcriptEl.classList.add('visible');
-        // Detectó voz → reinicia el contador de 5s
         if (attentionActive) resetIdleTimer();
       }
 
       if (final && final.trim().length > 0) {
         const cleanFinal = final.trim();
-        transcriptEl.textContent = cleanFinal;
-        transcriptEl.classList.add('visible');
+        if (settings.TRANSCRIPT) {
+          transcriptEl.textContent = cleanFinal;
+          transcriptEl.classList.add('visible');
+        }
 
-        // ---- ESPERANDO COMANDO ----
+        if (dictationMode && attentionActive) {
+          dictationBuffer += cleanFinal + ' ';
+          if (settings.TRANSCRIPT) {
+            transcriptEl.textContent = `✍️ ${cleanFinal}`;
+            setTimeout(() => transcriptEl.classList.remove('visible'), 2000);
+          }
+          resetIdleTimer();
+          return;
+        }
+
         if (awaitingCommand) {
           clearTimeout(awaitingCommandTimeout);
           clearIdleTimer();
@@ -862,33 +2760,26 @@
           return;
         }
 
-        // ---- DETECTAR "META" ----
         if (isWakeWord(cleanFinal)) {
           attentionActive = true;
           awaitingCommand = true;
           setState('listening');
-          speak(`Dime ${USER_NAME}...`);
-
-          // ⏱️ Si no da comando en 5s → descanso silencioso
+          speak(`Dime ${settings.USER_NAME}...`);
           awaitingCommandTimeout = setTimeout(() => {
             if (awaitingCommand) {
               awaitingCommand = false;
-              enterRestMode(true); // silencioso
+              enterRestMode(true);
             }
-          }, IDLE_TIMEOUT_MS);
-
+          }, settings.IDLE_TIMEOUT_MS);
           setTimeout(() => transcriptEl.classList.remove('visible'), 2000);
           return;
         }
 
-        // ---- SI ESTÁ DESCANSANDO → ignora ----
         if (!attentionActive) {
           setTimeout(() => transcriptEl.classList.remove('visible'), 800);
           return;
         }
 
-        // ---- CONVERSACIÓN GENERAL ----
-        // Detectó voz → resetea el contador de 5s
         resetIdleTimer();
         setState('processing');
         setTimeout(() => {
@@ -900,7 +2791,6 @@
     };
 
     rec.onerror = (event) => {
-      console.warn('Error de reconocimiento:', event.error);
       if (event.error === 'not-allowed' || event.error === 'service-not-allowed') {
         micPermissionGranted = false;
         setState('resting');
@@ -912,9 +2802,7 @@
       if (micPermissionGranted && !isSpeaking && !speakCooldown) {
         clearTimeout(restartTimeout);
         restartTimeout = setTimeout(() => {
-          if (micPermissionGranted && !recognitionActive) {
-            startRecognition();
-          }
+          if (micPermissionGranted && !recognitionActive) startRecognition();
         }, 250);
       }
     };
@@ -924,7 +2812,7 @@
       if (!isSpeaking && !speakCooldown) {
         if (attentionActive) {
           if (awaitingCommand) {
-            statusText.textContent = `Dime ${USER_NAME}...`;
+            statusText.textContent = `Dime ${settings.USER_NAME}...`;
             statusText.classList.add('active');
           } else {
             setState('listening');
@@ -935,38 +2823,58 @@
         }
       }
     };
-
     return rec;
   }
 
   function startRecognition() {
     if (!recognition || recognitionActive || isSpeaking || speakCooldown) return;
-    try { recognition.start(); } catch (e) { console.warn(e.message); }
+    try { recognition.start(); } catch (e) {}
   }
 
   function ensureRecognitionRunning() {
-    if (micPermissionGranted && !recognitionActive && !isSpeaking && !speakCooldown) {
-      startRecognition();
-    }
+    if (micPermissionGranted && !recognitionActive && !isSpeaking && !speakCooldown) startRecognition();
   }
 
-  // ============================================================
-  // Permiso de micrófono
-  // ============================================================
+  function metaResponse(input) {
+    const text = input.toLowerCase().trim();
+    if (/(hola|buenos días|buenas tardes|buenas noches|hey|saludos|qué tal)/.test(text)) {
+      const hour = new Date().getHours();
+      let greeting;
+      if (hour < 12) greeting = 'Buenos días';
+      else if (hour < 20) greeting = 'Buenas tardes';
+      else greeting = 'Buenas noches';
+      return `${greeting} ${settings.USER_NAME}. Me alegra oírte. ¿Cómo va tu día?`;
+    }
+    if (/(cómo te llamas|quién eres|tu nombre)/.test(text)) {
+      return `Me llamo M.E.T.A., ${settings.USER_NAME}. Soy tu asistente personal.`;
+    }
+    if (/(cómo estás|como estas|qué tal estás)/.test(text)) {
+      return `Muy bien ${settings.USER_NAME}, gracias por preguntar. ¿Y tú cómo estás?`;
+    }
+    if (/(gracias|te agradezco)/.test(text)) {
+      return `De nada ${settings.USER_NAME}. Es un placer ayudarte.`;
+    }
+    if (/(adiós|adios|hasta luego|chao|bye)/.test(text)) {
+      return `Hasta pronto ${settings.USER_NAME}. Aquí estaré cuando me necesites.`;
+    }
+    const defaults = [
+      `Mmm ${settings.USER_NAME}, no estoy segura. Di "META" y luego tu indicación.`,
+      `Interesante, ${settings.USER_NAME}. Si quieres pedirme algo, di "META" primero.`,
+      `${settings.USER_NAME}, recuerda decir "META" antes de tu pedido.`
+    ];
+    return defaults[Math.floor(Math.random() * defaults.length)];
+  }
+
   async function requestMicrophonePermission() {
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
       stream.getTracks().forEach(track => track.stop());
       return true;
     } catch (err) {
-      console.error('Permiso denegado:', err);
       return false;
     }
   }
 
-  // ============================================================
-  // 🖱️ CLIC EN EL ORBE
-  // ============================================================
   orbContainer.addEventListener('click', async () => {
     orbContainer.classList.add('clicked');
     setTimeout(() => orbContainer.classList.remove('clicked'), 600);
@@ -985,31 +2893,23 @@
       return;
     }
 
-    // ---- PAUSAR ATENCIÓN ----
     if (attentionActive) {
-      enterRestMode(false); // con despedida hablada
+      enterRestMode(false);
       return;
     }
 
-    // ---- REACTIVAR ----
     attentionActive = true;
     awaitingCommand = false;
     setState('listening');
     ensureRecognitionRunning();
-
     const saludos = [
-      `Aquí estoy de nuevo, ${USER_NAME}. ¿Qué necesitas?`,
-      `He vuelto, ${USER_NAME}. Te escucho.`,
-      `Despierta otra vez, ${USER_NAME}. Cuéntame.`
+      `Aquí estoy de nuevo, ${settings.USER_NAME}. ¿Qué necesitas?`,
+      `He vuelto, ${settings.USER_NAME}. Te escucho.`,
+      `Despierta otra vez, ${settings.USER_NAME}. Cuéntame.`
     ];
-    setTimeout(() => {
-      speak(saludos[Math.floor(Math.random() * saludos.length)]);
-    }, 200);
+    setTimeout(() => speak(saludos[Math.floor(Math.random() * saludos.length)]), 200);
   });
 
-  // ============================================================
-  // Atajos y efectos
-  // ============================================================
   document.addEventListener('keydown', (e) => {
     if (e.code === 'Escape') {
       speechSynthesis.cancel();
@@ -1025,6 +2925,7 @@
   });
 
   orbContainer.addEventListener('mousemove', (e) => {
+    if (!settings.MOUSE_FOLLOW) return;
     const rect = orbContainer.getBoundingClientRect();
     const x = (e.clientX - rect.left) / rect.width - 0.5;
     const y = (e.clientY - rect.top) / rect.height - 0.5;
@@ -1038,9 +2939,41 @@
   });
 
   // ============================================================
-  // 🚀 ARRANQUE
+  // ARRANQUE
   // ============================================================
   async function boot() {
+    rateSlider.value = voiceSettings.rate;
+    pitchSlider.value = voiceSettings.pitch;
+    volumeSlider.value = voiceSettings.volume;
+    rateValue.textContent = voiceSettings.rate.toFixed(2);
+    pitchValue.textContent = voiceSettings.pitch.toFixed(2);
+    volumeValue.textContent = voiceSettings.volume.toFixed(2);
+
+    orbSizeSlider.value = settings.ORB_SIZE;
+    orbSizeValue.textContent = settings.ORB_SIZE + '%';
+    idleTimeoutSlider.value = settings.IDLE_TIMEOUT_MS / 1000;
+    idleTimeoutValue.textContent = (settings.IDLE_TIMEOUT_MS / 1000) + 's';
+    userNameInput.value = settings.USER_NAME;
+    defaultCityInput.value = settings.DEFAULT_CITY;
+
+    toggleParticles.checked = settings.SHOW_PARTICLES;
+    toggleWaves.checked = settings.SHOW_WAVES;
+    toggleMouseFollow.checked = settings.MOUSE_FOLLOW;
+    toggleNotifications.checked = settings.NOTIFICATIONS;
+    toggleToasts.checked = settings.TOASTS;
+    toggleTranscript.checked = settings.TRANSCRIPT;
+
+    document.querySelectorAll('.color-swatch').forEach(s => {
+      s.classList.toggle('active', s.dataset.theme === settings.THEME);
+    });
+
+    document.body.classList.remove(
+      'theme-blue', 'theme-pink', 'theme-green', 
+      'theme-purple', 'theme-red', 'theme-gold'
+    );
+    document.body.classList.add(settings.THEME);
+    applyVisualSettings();
+
     await new Promise(resolve => setTimeout(resolve, 600));
 
     if (!SpeechRecognition) {
@@ -1069,24 +3002,23 @@
 
     micPermissionGranted = true;
     attentionActive = true;
-
     loadingOverlay.classList.add('hidden');
     appContainer.classList.add('visible');
-
     recognition = initRecognition();
 
     setTimeout(() => {
       startRecognition();
       setState('listening');
-      resetIdleTimer(); // ▶️ arranca el contador de 5s
-
+      resetIdleTimer();
       setTimeout(() => {
         if (!hasGreeted) {
           hasGreeted = true;
-          speak(`Hola ${USER_NAME}. Soy M.E.T.A. Di "META" cuando quieras pedirme algo.`);
+          speak(`Hola ${settings.USER_NAME}. Soy tu asistente META. Di "META" cuando quieras pedirme algo.`);
         }
       }, 800);
     }, 500);
+
+    setTimeout(() => populateVoiceSelect(), 1000);
   }
 
   if (document.readyState === 'loading') {

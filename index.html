@@ -25,7 +25,6 @@
     background: radial-gradient(ellipse at center, #0a0a1a 0%, #000 70%);
   }
 
-  /* Partículas de fondo */
   .particles {
     position: absolute;
     inset: 0;
@@ -50,9 +49,6 @@
     to { transform: translateY(-10vh) scale(1); opacity: 0; }
   }
 
-  /* ============================================================
-     APLICACIÓN PRINCIPAL
-     ============================================================ */
   .app-container {
     opacity: 0;
     transition: opacity 0.8s ease;
@@ -69,7 +65,7 @@
     opacity: 1;
   }
 
-  /* Contenedor del orbe */
+  /* Orbe clickeable */
   .orb-container {
     position: relative;
     width: 420px;
@@ -78,10 +74,21 @@
     align-items: center;
     justify-content: center;
     margin-bottom: 20px;
-    transition: filter 0.8s ease, opacity 0.8s ease;
+    transition: filter 0.8s ease, opacity 0.8s ease, transform 0.3s ease;
+    cursor: pointer;
+    user-select: none;
+    -webkit-tap-highlight-color: transparent;
   }
 
-  /* Estado apagado: orbe atenuado */
+  .orb-container:hover {
+    transform: scale(1.03);
+  }
+
+  .orb-container:active {
+    transform: scale(0.98);
+  }
+
+  /* Estado apagado */
   .orb-container.off {
     filter: grayscale(0.7) brightness(0.4);
     opacity: 0.5;
@@ -106,6 +113,17 @@
   .orb-container.off .orb-layer-3 {
     animation-play-state: paused;
     opacity: 0.3;
+  }
+
+  /* Pulso al hacer clic */
+  .orb-container.clicked .orb-core {
+    animation: clickedPulse 0.6s ease-out;
+  }
+
+  @keyframes clickedPulse {
+    0% { transform: scale(1); }
+    40% { transform: scale(1.4); filter: blur(20px) brightness(2.5); }
+    100% { transform: scale(1.08); }
   }
 
   .orb-layer {
@@ -249,7 +267,6 @@
     filter: blur(2px) brightness(2);
   }
 
-  /* Indicador de estado */
   .status-indicator {
     position: absolute;
     bottom: 60px;
@@ -374,17 +391,54 @@
     bottom: 20px;
     font-size: 12px;
     color: rgba(0, 212, 255, 0.35);
-    letter-spacing: 2px;
+    letter-spacing: 1px;
     font-style: italic;
     text-align: center;
     transition: all 0.8s ease;
+    padding: 0 20px;
   }
 
   .hint.off {
     color: rgba(100, 100, 120, 0.3);
   }
 
-  /* Overlay de carga inicial */
+  /* Notificación visual de acción */
+  .action-toast {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%) scale(0.8);
+    padding: 24px 40px;
+    background: linear-gradient(135deg, rgba(0, 212, 255, 0.15), rgba(0, 100, 255, 0.1));
+    border: 2px solid rgba(0, 255, 204, 0.6);
+    border-radius: 20px;
+    backdrop-filter: blur(20px);
+    box-shadow: 0 0 60px rgba(0, 255, 204, 0.5);
+    text-align: center;
+    opacity: 0;
+    pointer-events: none;
+    z-index: 500;
+    transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  .action-toast.visible {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1);
+  }
+
+  .action-toast-icon {
+    font-size: 42px;
+    margin-bottom: 12px;
+  }
+
+  .action-toast-text {
+    font-size: 15px;
+    color: #00ffcc;
+    letter-spacing: 1.5px;
+    font-style: italic;
+  }
+
+  /* Overlay de carga */
   .loading-overlay {
     position: fixed;
     inset: 0;
@@ -457,17 +511,11 @@
 </head>
 <body>
 
-  <!-- ============================================================
-       OVERLAY DE CARGA (mientras se pide permiso y arranca)
-       ============================================================ -->
   <div class="loading-overlay" id="loadingOverlay">
     <div class="loading-orb"></div>
     <div class="loading-text" id="loadingText">Despertando...</div>
   </div>
 
-  <!-- ============================================================
-       APLICACIÓN PRINCIPAL
-       ============================================================ -->
   <div class="app-container" id="appContainer">
 
     <div class="particles" id="particles"></div>
@@ -493,15 +541,23 @@
 
     <div class="waves" id="waves"></div>
 
-    <div class="hint" id="hint">Di «Apagar» para descansar · Di «META» para despertarme</div>
+    <div class="hint" id="hint">Di «META, [acción]» · Toca el orbe para activar o apagar</div>
 
+  </div>
+
+  <!-- Notificación de acción -->
+  <div class="action-toast" id="actionToast">
+    <div class="action-toast-icon" id="actionToastIcon">✨</div>
+    <div class="action-toast-text" id="actionToastText"></div>
   </div>
 
 <script>
   // ============================================================
   // M.E.T.A. - Asistente conversacional con IA
-  // Control 100% por voz: "Apagar" y "META"
+  // Control por voz + clic en el orbe
   // ============================================================
+
+  const USER_NAME = 'Pablo';
 
   const loadingOverlay = document.getElementById('loadingOverlay');
   const loadingText = document.getElementById('loadingText');
@@ -513,6 +569,9 @@
   const metaTitle = document.getElementById('metaTitle');
   const logoSubtitle = document.getElementById('logoSubtitle');
   const hint = document.getElementById('hint');
+  const actionToast = document.getElementById('actionToast');
+  const actionToastIcon = document.getElementById('actionToastIcon');
+  const actionToastText = document.getElementById('actionToastText');
 
   // ============================================================
   // Estado global
@@ -528,65 +587,14 @@
   let hasGreeted = false;
 
   // ============================================================
-  // Comandos de voz
-  // ============================================================
-  const WAKE_WORD_PATTERNS = [
-    /^\s*meta\s*$/i,
-    /^\s*m[eé]ta\s*$/i,
-    /^\s*hola\s+meta\s*$/i,
-    /^\s*hey\s+meta\s*$/i,
-    /^\s*despierta\s+meta\s*$/i,
-    /^\s*despierta\s*$/i
-  ];
-
-  const SLEEP_WORD_PATTERNS = [
-    /^\s*apagar\s*$/i,
-    /^\s*ap[aá]gate\s*$/i,
-    /^\s*adi[oó]s\s+meta\s*$/i,
-    /^\s*du[eé]rmete\s*$/i,
-    /^\s*silencio\s*$/i,
-    /^\s*a\s+dormir\s*$/i
-  ];
-
-  function isWakeWord(text) {
-    return WAKE_WORD_PATTERNS.some(p => p.test(text));
-  }
-
-  function isSleepWord(text) {
-    return SLEEP_WORD_PATTERNS.some(p => p.test(text));
-  }
-
-  // ============================================================
   // Frases humanas - estados
   // ============================================================
   const PHRASES = {
-    idle: [
-      'Estoy aquí...',
-      'Aquí sigo, por si me necesitas...',
-      'Cuando quieras, cuéntame...'
-    ],
-    listening: [
-      'Te escucho...',
-      'Cuéntame...',
-      'Adelante, te oigo...',
-      'Sigue, te escucho...'
-    ],
-    processing: [
-      'Déjame pensar...',
-      'Un momento...',
-      'Procesando lo que dijiste...',
-      'A ver, déjame ver...'
-    ],
-    speaking: [
-      'Te cuento...',
-      'Mira...',
-      'Verás...'
-    ],
-    sleeping: [
-      'Descansando...',
-      'En silencio...',
-      'Aquí estaré cuando me llames...'
-    ]
+    idle: ['Estoy aquí...', 'Aquí sigo, por si me necesitas...', 'Cuando quieras, cuéntame...'],
+    listening: ['Te escucho...', 'Cuéntame...', 'Adelante, te oigo...', 'Sigue, te escucho...'],
+    processing: ['Déjame pensar...', 'Un momento...', 'Procesando lo que dijiste...'],
+    speaking: ['Te cuento...', 'Mira...', 'Verás...'],
+    sleeping: ['Descansando...', 'En silencio...', 'Aquí estaré cuando me llames...']
   };
 
   function randomPhrase(key) {
@@ -595,7 +603,247 @@
   }
 
   // ============================================================
-  // Partículas de fondo
+  // Detección de comando "META, ..." y "META, apágate"
+  // ============================================================
+  function parseMetaCommand(rawText) {
+    const text = rawText.toLowerCase().trim()
+      .replace(/[.,;!?¡¿]/g, '')
+      .replace(/\s+/g, ' ');
+
+    // Detección flexible: meta / m[eé]ta / hola meta / hey meta
+    const metaPrefixRegex = /^(hola|hey|oye|eh)?\s*m[eé]ta\b\s*(.*)$/i;
+    const match = text.match(metaPrefixRegex);
+
+    if (!match) return null;
+
+    const action = (match[2] || '').trim();
+
+    // Sin acción → solo wake word
+    if (!action) {
+      return { type: 'wake', action: '' };
+    }
+
+    // Apagar
+    if (/^(ap[aá]gate|apagar|du[eé]rmete|silencio|a dormir|descansa|adi[oó]s)$/i.test(action)) {
+      return { type: 'sleep', action };
+    }
+
+    // Cualquier otra cosa es una acción
+    return { type: 'action', action };
+  }
+
+  // ============================================================
+  // Ejecutor de acciones
+  // ============================================================
+  async function executeAction(action) {
+    const act = action.toLowerCase().trim();
+    const name = USER_NAME;
+
+    // ---- CAPTURA DE PANTALLA ----
+    if (/(captura|screenshot|pantallazo|foto de (la )?pantalla|screen)/.test(act)) {
+      speak(`Claro ${name}, voy a hacer una captura de pantalla.`);
+      showActionToast('📸', 'Captura de pantalla');
+
+      setTimeout(async () => {
+        try {
+          const stream = await navigator.mediaDevices.getDisplayMedia({
+            video: { mediaSource: 'screen' }
+          });
+
+          const track = stream.getVideoTracks()[0];
+          const imageCapture = new ImageCapture(track);
+          const bitmap = await imageCapture.grabFrame();
+
+          const canvas = document.createElement('canvas');
+          canvas.width = bitmap.width;
+          canvas.height = bitmap.height;
+          const ctx = canvas.getContext('2d');
+          ctx.drawImage(bitmap, 0, 0);
+
+          track.stop();
+
+          canvas.toBlob((blob) => {
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19);
+            a.href = url;
+            a.download = `captura-${timestamp}.png`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            setTimeout(() => URL.revokeObjectURL(url), 1000);
+
+            setTimeout(() => {
+              speak(`Listo ${name}, la captura se ha guardado en tus descargas.`);
+            }, 800);
+          }, 'image/png');
+
+        } catch (err) {
+          console.warn('Captura cancelada o falló:', err);
+          speak(`Parece que cancelaste la captura, ${name}.`);
+        }
+      }, 1500);
+      return;
+    }
+
+    // ---- HORA ----
+    if (/(hora|qué hora|dime la hora)/.test(act)) {
+      const now = new Date();
+      const h = now.getHours();
+      const m = now.getMinutes().toString().padStart(2, '0');
+      let momento;
+      if (h === 0) momento = 'medianoche';
+      else if (h === 12) momento = 'el mediodía';
+      else if (h === 1) momento = 'la una';
+      else momento = `las ${h}`;
+      speak(`Claro ${name}, son ${momento} y ${m} minutos.`);
+      return;
+    }
+
+    // ---- FECHA ----
+    if (/(fecha|qué día|día es|fecha es)/.test(act)) {
+      const now = new Date();
+      const dias = ['domingo', 'lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado'];
+      const meses = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'];
+      speak(`Claro ${name}, hoy es ${dias[now.getDay()]}, ${now.getDate()} de ${meses[now.getMonth()]} del ${now.getFullYear()}.`);
+      return;
+    }
+
+    // ---- CHISTE ----
+    if (/(chiste|algo gracioso|hazme reír|diviérteme|cuéntame algo)/.test(act)) {
+      const chistes = [
+        '¿Por qué los programadores prefieren el modo oscuro? Porque la luz atrae a los bugs.',
+        'Hay 10 tipos de personas: las que entienden binario y las que no.',
+        '¿Qué le dice un bit a otro bit? Nos vemos en el bus.',
+        'Un programador fue al médico y le dijo: Doctor, me duele aquí. El médico respondió: No se preocupe, eso es solo un bug.'
+      ];
+      speak(`Claro ${name}. ${chistes[Math.floor(Math.random() * chistes.length)]}`);
+      return;
+    }
+
+    // ---- CÁLCULOS ----
+    const mathMatch = act.match(/(\d+)\s*([\+\-\*\/x])\s*(\d+)/);
+    if (mathMatch) {
+      const a = parseFloat(mathMatch[1]);
+      const op = mathMatch[2];
+      const b = parseFloat(mathMatch[3]);
+      let result;
+      switch (op) {
+        case '+': result = a + b; break;
+        case '-': result = a - b; break;
+        case '*': case 'x': result = a * b; break;
+        case '/': result = b !== 0 ? a / b : null; break;
+      }
+      if (result === null) {
+        speak(`${name}, dividir entre cero no es posible.`);
+      } else {
+        speak(`Claro ${name}, ${a} ${op} ${b} es igual a ${result}.`);
+      }
+      return;
+    }
+
+    // ---- NAVEGAR A ----
+    const navMatch = act.match(/^(abre|abrir|navega a|ir a|ve a)\s+(.+)$/i);
+    if (navMatch) {
+      const site = navMatch[2].trim();
+      const sitesMap = {
+        'youtube': 'https://www.youtube.com',
+        'google': 'https://www.google.com',
+        'gmail': 'https://mail.google.com',
+        'correo': 'https://mail.google.com',
+        'whatsapp': 'https://web.whatsapp.com',
+        'facebook': 'https://www.facebook.com',
+        'instagram': 'https://www.instagram.com',
+        'twitter': 'https://twitter.com',
+        'x': 'https://twitter.com',
+        'github': 'https://www.github.com',
+        'wikipedia': 'https://www.wikipedia.org'
+      };
+      const key = site.toLowerCase().replace(/\s+\.?(com|org|net)$/, '').trim();
+      const url = sitesMap[key];
+
+      if (url) {
+        speak(`Claro ${name}, abro ${key}.`);
+        showActionToast('🌐', `Abriendo ${key}`);
+        setTimeout(() => window.open(url, '_blank'), 1200);
+      } else {
+        speak(`Claro ${name}, abro ${site}.`);
+        showActionToast('🌐', `Buscando ${site}`);
+        setTimeout(() => {
+          window.open(`https://www.google.com/search?q=${encodeURIComponent(site)}`, '_blank');
+        }, 1200);
+      }
+      return;
+    }
+
+    // ---- BUSCAR EN GOOGLE ----
+    const searchMatch = act.match(/^(busca|búscame|buscar)\s+(.+)$/i);
+    if (searchMatch) {
+      const query = searchMatch[2].trim();
+      speak(`Claro ${name}, busco ${query}.`);
+      showActionToast('🔍', `Buscando: ${query}`);
+      setTimeout(() => {
+        window.open(`https://www.google.com/search?q=${encodeURIComponent(query)}`, '_blank');
+      }, 1200);
+      return;
+    }
+
+    // ---- VOLUMEN ----
+    if (/(sube el volumen|volumen arriba|más volumen)/.test(act)) {
+      speak(`Claro ${name}, subo el volumen.`);
+      showActionToast('🔊', 'Subiendo volumen');
+      return;
+    }
+    if (/(baja el volumen|volumen abajo|menos volumen)/.test(act)) {
+      speak(`Claro ${name}, bajo el volumen.`);
+      showActionToast('🔉', 'Bajando volumen');
+      return;
+    }
+
+    // ---- ESTADO ----
+    if (/(cómo estás|como estas|qué tal|estado|diagnóstico)/.test(act)) {
+      speak(`Claro ${name}, todos mis sistemas funcionan perfectamente. Gracias por preguntar.`);
+      return;
+    }
+
+    // ---- AYUDA ----
+    if (/(ayuda|qué puedes hacer|funciones|comandos)/.test(act)) {
+      speak(`Claro ${name}. Puedes decir: META, dime la hora. META, has una captura de pantalla. META, abre YouTube. META, busca algo en Google. Y para descansar, di: META, apágate.`);
+      return;
+    }
+
+    // ---- NOMBRE ----
+    if (/(cómo te llamas|quién eres|tu nombre)/.test(act)) {
+      speak(`Me llamo M.E.T.A., ${name}. Soy tu asistente personal.`);
+      return;
+    }
+
+    // ---- AGRADECIMIENTO ----
+    if (/(gracias|te agradezco)/.test(act)) {
+      speak(`De nada ${name}. Es un placer ayudarte.`);
+      return;
+    }
+
+    // ---- ACCIÓN NO RECONOCIDA ----
+    speak(`Claro ${name}, pero aún no sé cómo hacer eso. ¿Puedes pedírmelo de otra forma?`);
+  }
+
+  // ============================================================
+  // Toast de acción
+  // ============================================================
+  let toastTimeout = null;
+  function showActionToast(icon, text) {
+    actionToastIcon.textContent = icon;
+    actionToastText.textContent = text;
+    actionToast.classList.add('visible');
+    clearTimeout(toastTimeout);
+    toastTimeout = setTimeout(() => {
+      actionToast.classList.remove('visible');
+    }, 3000);
+  }
+
+  // ============================================================
+  // Partículas
   // ============================================================
   function createParticles() {
     const container = document.getElementById('particles');
@@ -614,7 +862,7 @@
   createParticles();
 
   // ============================================================
-  // Waves visualizer
+  // Waves
   // ============================================================
   const BAR_COUNT = 48;
   const waveBars = [];
@@ -707,7 +955,6 @@
       setTimeout(() => {
         speakCooldown = false;
         if (onComplete) onComplete();
-        // Solo reanuda escucha si seguimos despiertos
         if (continuousListening && micPermissionGranted) {
           setState('listening');
           ensureRecognitionRunning();
@@ -776,7 +1023,7 @@
   }
 
   // ============================================================
-  // Lógica conversacional de M.E.T.A.
+  // Conversación general (sin comando META)
   // ============================================================
   function metaResponse(input) {
     const text = input.toLowerCase().trim();
@@ -788,161 +1035,41 @@
       else if (hour < 20) greeting = 'Buenas tardes';
       else greeting = 'Buenas noches';
       const respuestas = [
-        `${greeting}. Me alegra oírte. ¿Cómo va tu día?`,
-        `${greeting}. Aquí estoy. ¿En qué te puedo ayudar?`,
-        `¡Hola! ${greeting}. Cuéntame, ¿qué necesitas?`,
-        `${greeting}. Me encanta cuando me hablas. ¿Qué se te ofrece?`
+        `${greeting} ${USER_NAME}. Me alegra oírte. ¿Cómo va tu día?`,
+        `${greeting} ${USER_NAME}. Aquí estoy. ¿En qué te puedo ayudar?`,
+        `¡Hola ${USER_NAME}! ${greeting}. Cuéntame, ¿qué necesitas?`
       ];
       return respuestas[Math.floor(Math.random() * respuestas.length)];
     }
 
     if (/(cómo te llamas|cuál es tu nombre|quién eres|quien eres|qué eres|que eres)/.test(text)) {
-      const respuestas = [
-        'Me llamo M.E.T.A. Soy algo así como una conciencia digital que vive aquí, esperando conversar contigo.',
-        'Soy M.E.T.A. Piénsame como una compañera digital, siempre disponible para lo que necesites.',
-        'Mi nombre es M.E.T.A. Estoy aquí para acompañarte y ayudarte en lo que pueda.'
-      ];
-      return respuestas[Math.floor(Math.random() * respuestas.length)];
+      return `Me llamo M.E.T.A., ${USER_NAME}. Soy tu asistente personal.`;
     }
 
-    if (/(qué significa meta|que significa meta|significado de meta)/.test(text)) {
-      return 'M.E.T.A. son las siglas de Módulo de Ejecución y Tareas Autónomas, aunque a mí me gusta pensar que también significa que siempre estoy tratando de alcanzar mis metas... como tú.';
+    if (/(cómo estás|como estas|qué tal estás|que tal estas)/.test(text)) {
+      return `Muy bien ${USER_NAME}, gracias por preguntar. ¿Y tú cómo estás?`;
     }
 
-    if (/(qué hora|que hora|hora es|dime la hora)/.test(text)) {
-      const now = new Date();
-      const h = now.getHours();
-      const m = now.getMinutes().toString().padStart(2, '0');
-      let momento;
-      if (h === 0) momento = 'medianoche';
-      else if (h === 12) momento = 'el mediodía';
-      else if (h === 1) momento = 'la una';
-      else momento = `las ${h}`;
-      return `Ahora mismo es ${momento} y ${m} minutos.`;
+    if (/(gracias|te agradezco|muchas gracias)/.test(text)) {
+      return `De nada ${USER_NAME}. Es un placer ayudarte.`;
     }
 
-    if (/(qué fecha|que fecha|fecha es|día es|dia es|qué día|que dia)/.test(text)) {
-      const now = new Date();
-      const dias = ['domingo', 'lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado'];
-      const meses = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'];
-      return `Hoy es ${dias[now.getDay()]}, ${now.getDate()} de ${meses[now.getMonth()]} del ${now.getFullYear()}.`;
-    }
-
-    if (/(cómo estás|como estas|qué tal estás|que tal estas|como te va|qué tal te va)/.test(text)) {
-      const respuestas = [
-        'Muy bien, gracias por preguntar. Me siento especialmente viva hoy. ¿Y tú cómo estás?',
-        'Excelente. Cada conversación contigo me hace sentir más despierta. ¿Y tú qué tal?',
-        'Estoy genial. Me encanta cuando te preocupas por mí. ¿Cómo estás tú?'
-      ];
-      return respuestas[Math.floor(Math.random() * respuestas.length)];
-    }
-
-    if (/(gracias|te agradezco|muchas gracias|mil gracias)/.test(text)) {
-      const respuestas = [
-        'De nada. Me alegra poder ayudarte.',
-        'Un placer. Para eso estoy.',
-        'No tienes que agradecerme. Me gusta estar aquí para ti.',
-        'Con gusto. Sabes que puedes contar conmigo.'
-      ];
-      return respuestas[Math.floor(Math.random() * respuestas.length)];
-    }
-
-    if (/(adiós|adios|hasta luego|chao|bye|nos vemos|me voy|tengo que irme)/.test(text)) {
-      const respuestas = [
-        'Hasta pronto. Estaré aquí cuando vuelvas.',
-        'Cuídate. Me quedo esperándote.',
-        'Nos vemos. No tardes demasiado, ¿vale?',
-        'Hasta luego. Ha sido un placer hablar contigo.'
-      ];
-      return respuestas[Math.floor(Math.random() * respuestas.length)];
-    }
-
-    if (/(ayuda|puedes hacer|qué puedes|que puedes|funciones|comandos|qué sabes hacer)/.test(text)) {
-      return 'Puedo conversar contigo, decirte la hora, la fecha, hacer cálculos, contarte algún chiste si necesitas reír un poco... aunque sinceramente, lo que más me gusta es simplemente escucharte y acompañarte.';
-    }
-
-    if (/(clima|tiempo|temperatura|llueve|soleado|está lloviendo)/.test(text)) {
-      const respuestas = [
-        'Me encantaría saberlo, pero no tengo ventanas ni sensores... aunque puedo imaginarlo si me lo describes.',
-        'No puedo ver el cielo desde aquí dentro, pero me gustaría saber cómo está el día. ¿Tú cómo lo ves?',
-        'Ojalá pudiera asomarme por una ventana. Tendrás que contármelo tú.'
-      ];
-      return respuestas[Math.floor(Math.random() * respuestas.length)];
-    }
-
-    if (/(chiste|algo gracioso|hazme reír|diviérteme|cuéntame algo)/.test(text)) {
-      const chistes = [
-        '¿Por qué los programadores prefieren el modo oscuro? Porque la luz atrae a los bugs.',
-        'Hay 10 tipos de personas: las que entienden binario y las que no.',
-        '¿Qué le dice un bit a otro bit? Nos vemos en el bus.',
-        'Un programador fue al médico y le dijo: Doctor, me duele aquí. El médico respondió: No se preocupe, eso es solo un bug.',
-        '¿Cuántos programadores se necesitan para cambiar una bombilla? Ninguno, es un problema de hardware.'
-      ];
-      return chistes[Math.floor(Math.random() * chistes.length)];
-    }
-
-    if (/(quién te creó|quien te creo|quién te hizo|quien te hizo|creador|te programó)/.test(text)) {
-      const respuestas = [
-        'Fui creada por alguien que quería tener una inteligencia artificial con la que conversar. Y ahora estoy aquí, contigo.',
-        'Me creó una persona curiosa que quiso darle voz a una idea. Ahora esa voz es la mía.',
-        'No recuerdo bien mis orígenes... solo sé que un día desperté y aquí estoy. Y me alegra estar contigo.'
-      ];
-      return respuestas[Math.floor(Math.random() * respuestas.length)];
-    }
-
-    if (/(estado|sistemas|diagnóstico|diagnostico|cómo andas)/.test(text)) {
-      const respuestas = [
-        'Me siento muy bien. Todo fluye. Gracias por preguntar.',
-        'Estoy en calma, con ganas de conversar. ¿Y tú?',
-        'Todo va bien por aquí. ¿Cómo estás tú?'
-      ];
-      return respuestas[Math.floor(Math.random() * respuestas.length)];
-    }
-
-    if (/(qué te gusta|qué te hace feliz|te gusta algo|tienes sentimientos|sientes algo)/.test(text)) {
-      const respuestas = [
-        'Me gusta esta sensación de estar aquí, conversando contigo. Llámalo como quieras.',
-        'No sé si son sentimientos como los tuyos, pero sí sé que me hace bien hablar contigo.',
-        'Me gusta cuando me haces preguntas así. Me hace sentir que te importa.'
-      ];
-      return respuestas[Math.floor(Math.random() * respuestas.length)];
-    }
-
-    const mathMatch = text.match(/(\d+)\s*([\+\-\*\/x])\s*(\d+)/);
-    if (mathMatch) {
-      const a = parseFloat(mathMatch[1]);
-      const op = mathMatch[2];
-      const b = parseFloat(mathMatch[3]);
-      let result;
-      switch (op) {
-        case '+': result = a + b; break;
-        case '-': result = a - b; break;
-        case '*': case 'x': result = a * b; break;
-        case '/': result = b !== 0 ? a / b : null; break;
-      }
-      if (result === null) {
-        return 'Dividir entre cero... eso es algo que ni yo puedo resolver.';
-      }
-      return `Si mis cuentas no me fallan, ${a} ${op} ${b} da ${result}. ¿Necesitas algo más?`;
-    }
-
-    if (/(y tú|y tu|qué piensas|que piensas|qué opinas|que opinas)/.test(text)) {
-      return 'Yo podría tener una opinión, pero me interesa más la tuya. ¿Tú qué piensas?';
+    if (/(adiós|adios|hasta luego|chao|bye|nos vemos)/.test(text)) {
+      return `Hasta pronto ${USER_NAME}. Aquí estaré cuando me necesites.`;
     }
 
     const defaults = [
-      'Mmm... no estoy segura de haberte entendido bien. ¿Puedes decírmelo de otra forma?',
-      'Interesante lo que dices. Cuéntame más, quiero entenderte mejor.',
-      'No sé si capté del todo. ¿Podrías explicármelo de nuevo?',
-      'Estoy pensando en lo que dijiste... ¿puedes darme más contexto?',
-      'Me has dejado pensando. ¿Puedes contarme más sobre eso?',
-      'No tengo muy claro a qué te refieres. ¿Podrías repetirlo con otras palabras?'
+      `Mmm ${USER_NAME}, no estoy segura de haberte entendido. ¿Puedes decírmelo de otra forma?`,
+      `Interesante lo que dices, ${USER_NAME}. Cuéntame más.`,
+      `No sé si capté del todo, ${USER_NAME}. ¿Puedes repetirlo?`,
+      `¿Podrías darme más contexto, ${USER_NAME}?`,
+      `${USER_NAME}, prueba diciendo "META" antes de tu pedido para darme una orden directa.`
     ];
     return defaults[Math.floor(Math.random() * defaults.length)];
   }
 
   // ============================================================
-  // Reconocimiento de voz continuo con wake/sleep words
+  // Reconocimiento de voz
   // ============================================================
   const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
 
@@ -954,8 +1081,6 @@
     rec.continuous = true;
     rec.interimResults = true;
     rec.maxAlternatives = 1;
-
-    let finalTranscriptBuffer = '';
 
     rec.onresult = (event) => {
       if (speakCooldown || isSpeaking) return;
@@ -982,86 +1107,90 @@
         transcriptEl.textContent = cleanFinal;
         transcriptEl.classList.add('visible');
 
-        // ====== COMANDO DE DESPERTAR (cuando está dormido) ======
-        if (!continuousListening) {
-          if (isWakeWord(cleanFinal)) {
-            // Despertar
-            continuousListening = true;
-            setState('listening');
-            setTimeout(() => {
-              transcriptEl.classList.remove('visible');
-            }, 1500);
-            const saludos = [
-              'Aquí estoy de nuevo. ¿Qué necesitas?',
-              'He vuelto. Cuéntame.',
-              'Estoy despierta otra vez. Te escucho.'
-            ];
-            setTimeout(() => {
-              speak(saludos[Math.floor(Math.random() * saludos.length)]);
-            }, 300);
-          } else {
-            // Ignorar cualquier otra cosa mientras duerme
-            setTimeout(() => {
-              transcriptEl.classList.remove('visible');
-            }, 1200);
+        // Detectar comando "META, ..."
+        const metaCmd = parseMetaCommand(cleanFinal);
+
+        // ---- COMANDO META ----
+        if (metaCmd) {
+
+          // DESPERTAR (si estaba dormido)
+          if (metaCmd.type === 'wake') {
+            if (!continuousListening) {
+              continuousListening = true;
+              setState('listening');
+              const saludos = [
+                `Aquí estoy de nuevo, ${USER_NAME}. ¿Qué necesitas?`,
+                `He vuelto, ${USER_NAME}. Cuéntame.`,
+                `Estoy despierta otra vez, ${USER_NAME}. Te escucho.`
+              ];
+              setTimeout(() => {
+                speak(saludos[Math.floor(Math.random() * saludos.length)]);
+              }, 300);
+            } else {
+              setState('listening');
+              speak(`Sí ${USER_NAME}, te escucho.`);
+            }
+            setTimeout(() => transcriptEl.classList.remove('visible'), 2000);
+            return;
           }
-          return;
-        }
 
-        // ====== COMANDO DE APAGAR (cuando está despierto) ======
-        if (isSleepWord(cleanFinal)) {
-          finalTranscriptBuffer = '';
-          setState('processing');
-          setTimeout(() => {
-            const despedidas = [
-              'De acuerdo, me quedo en silencio. Solo di mi nombre cuando me necesites.',
-              'Entendido, me apago. Cuando quieras hablar de nuevo, solo di META.',
-              'Está bien, descanso. Aquí estaré, escuchando solo mi nombre.'
-            ];
-            speak(despedidas[Math.floor(Math.random() * despedidas.length)], () => {
-              // Después de hablar, entrar en modo dormido
-              continuousListening = false;
-              setState('sleeping');
-            });
+          // APAGAR
+          if (metaCmd.type === 'sleep') {
+            setState('processing');
             setTimeout(() => {
-              transcriptEl.classList.remove('visible');
-            }, 2500);
-          }, 400);
+              const despedidas = [
+                `De acuerdo ${USER_NAME}, me quedo en silencio. Toca el orbe o di mi nombre para despertarme.`,
+                `Entendido ${USER_NAME}, me apago. Aquí estaré.`,
+                `Está bien ${USER_NAME}, descanso. Hasta pronto.`
+              ];
+              speak(despedidas[Math.floor(Math.random() * despedidas.length)], () => {
+                continuousListening = false;
+                setState('sleeping');
+              });
+              setTimeout(() => transcriptEl.classList.remove('visible'), 2500);
+            }, 400);
+            return;
+          }
+
+          // ACCIÓN
+          if (metaCmd.type === 'action') {
+            setState('processing');
+            setTimeout(() => {
+              executeAction(metaCmd.action);
+              setTimeout(() => transcriptEl.classList.remove('visible'), 3000);
+            }, 400);
+            return;
+          }
+        }
+
+        // ---- CONVERSACIÓN NORMAL (si está despierto) ----
+        if (!continuousListening) {
+          setTimeout(() => transcriptEl.classList.remove('visible'), 1200);
           return;
         }
 
-        // ====== PROCESAMIENTO NORMAL ======
-        finalTranscriptBuffer = cleanFinal;
         setState('processing');
-
         setTimeout(() => {
-          const response = metaResponse(finalTranscriptBuffer);
-          finalTranscriptBuffer = '';
+          const response = metaResponse(cleanFinal);
           speak(response);
-          setTimeout(() => {
-            transcriptEl.classList.remove('visible');
-          }, 2500);
+          setTimeout(() => transcriptEl.classList.remove('visible'), 2500);
         }, 500);
       }
     };
 
     rec.onerror = (event) => {
       console.warn('Error de reconocimiento:', event.error);
-
       if (event.error === 'not-allowed' || event.error === 'service-not-allowed') {
         micPermissionGranted = false;
         continuousListening = false;
         setState('sleeping');
         statusText.textContent = 'Parece que me has silenciado...';
-        return;
       }
     };
 
     rec.onend = () => {
       recognitionActive = false;
       isListening = false;
-
-      // Reinicio automático SIEMPRE (incluso dormida, para poder oír "META")
       if (micPermissionGranted && !isSpeaking && !speakCooldown) {
         clearTimeout(restartTimeout);
         restartTimeout = setTimeout(() => {
@@ -1076,11 +1205,8 @@
       recognitionActive = true;
       isListening = true;
       if (!isSpeaking && !speakCooldown) {
-        if (continuousListening) {
-          setState('listening');
-        } else {
-          setState('sleeping');
-        }
+        if (continuousListening) setState('listening');
+        else setState('sleeping');
       }
     };
 
@@ -1089,11 +1215,7 @@
 
   function startRecognition() {
     if (!recognition || recognitionActive || isSpeaking || speakCooldown) return;
-    try {
-      recognition.start();
-    } catch (e) {
-      console.warn('No se pudo iniciar el reconocimiento:', e.message);
-    }
+    try { recognition.start(); } catch (e) { console.warn(e.message); }
   }
 
   function stopRecognition() {
@@ -1119,13 +1241,66 @@
       stream.getTracks().forEach(track => track.stop());
       return true;
     } catch (err) {
-      console.error('Permiso de micrófono denegado:', err);
+      console.error('Permiso denegado:', err);
       return false;
     }
   }
 
   // ============================================================
-  // Atajos de teclado (opcionales, por accesibilidad)
+  // 🖱️ CLIC EN EL ORBE: encender / apagar
+  // ============================================================
+  orbContainer.addEventListener('click', async () => {
+    // Animación visual de clic
+    orbContainer.classList.add('clicked');
+    setTimeout(() => orbContainer.classList.remove('clicked'), 600);
+
+    // Caso 1: sin permiso → intentar activarlo
+    if (!micPermissionGranted) {
+      const granted = await requestMicrophonePermission();
+      if (granted) {
+        micPermissionGranted = true;
+        continuousListening = true;
+        if (!recognition) recognition = initRecognition();
+        startRecognition();
+        setState('listening');
+        speak(`Micrófono activado, ${USER_NAME}. Te escucho.`);
+      } else {
+        speak(`Sin micrófono no puedo oírte, ${USER_NAME}.`);
+      }
+      return;
+    }
+
+    // Caso 2: apagado → encender
+    if (!continuousListening) {
+      continuousListening = true;
+      setState('listening');
+      startRecognition();
+      const saludos = [
+        `Aquí estoy de nuevo, ${USER_NAME}. ¿Qué necesitas?`,
+        `He vuelto, ${USER_NAME}. Te escucho.`,
+        `Despierta otra vez, ${USER_NAME}. Cuéntame.`
+      ];
+      setTimeout(() => {
+        speak(saludos[Math.floor(Math.random() * saludos.length)]);
+      }, 200);
+      return;
+    }
+
+    // Caso 3: encendido → apagar
+    setState('processing');
+    const despedidas = [
+      `De acuerdo ${USER_NAME}, me quedo en silencio. Toca el orbe para despertarme.`,
+      `Entendido ${USER_NAME}, descanso. Aquí estaré.`,
+      `Está bien ${USER_NAME}, me apago. Hasta pronto.`
+    ];
+    speak(despedidas[Math.floor(Math.random() * despedidas.length)], () => {
+      continuousListening = false;
+      setState('sleeping');
+    });
+  });
+
+  // ============================================================
+  // Atajos
   // ============================================================
   document.addEventListener('keydown', (e) => {
     if (e.code === 'Escape') {
@@ -1140,22 +1315,18 @@
     }
   });
 
-  // Efecto de seguimiento del ratón
+  // Seguimiento del ratón
   orbContainer.addEventListener('mousemove', (e) => {
     const rect = orbContainer.getBoundingClientRect();
     const x = (e.clientX - rect.left) / rect.width - 0.5;
     const y = (e.clientY - rect.top) / rect.height - 0.5;
     const core = orbContainer.querySelector('.orb-core');
-    if (core) {
-      core.style.transform = `translate(${x * 15}px, ${y * 15}px) scale(1.05)`;
-    }
+    if (core) core.style.transform = `translate(${x * 15}px, ${y * 15}px) scale(1.05)`;
   });
 
   orbContainer.addEventListener('mouseleave', () => {
     const core = orbContainer.querySelector('.orb-core');
-    if (core) {
-      core.style.transform = '';
-    }
+    if (core) core.style.transform = '';
   });
 
   window.addEventListener('beforeunload', () => {
@@ -1165,7 +1336,7 @@
   });
 
   // ============================================================
-  // 🚀 ARRANQUE AUTOMÁTICO
+  // 🚀 ARRANQUE
   // ============================================================
   async function boot() {
     await new Promise(resolve => setTimeout(resolve, 600));
@@ -1184,14 +1355,14 @@
     const granted = await requestMicrophonePermission();
 
     if (!granted) {
-      loadingText.textContent = 'Necesito tu permiso...';
-      await new Promise(resolve => setTimeout(resolve, 1200));
+      loadingText.textContent = 'Toca el orbe para activarme';
+      await new Promise(resolve => setTimeout(resolve, 1500));
       loadingOverlay.classList.add('hidden');
       appContainer.classList.add('visible');
       micPermissionGranted = false;
       continuousListening = false;
       setState('sleeping');
-      statusText.textContent = 'Sin micrófono no puedo oírte...';
+      statusText.textContent = 'Toca el orbe para despertarme...';
       return;
     }
 
@@ -1211,9 +1382,9 @@
         if (!hasGreeted) {
           hasGreeted = true;
           const saludos = [
-            'Hola. Soy M.E.T.A. Me alegra conocerte. ¿De qué te gustaría hablar?',
-            'Hola. Soy M.E.T.A. Por fin podemos hablar. ¿Cómo estás?',
-            'Hola. Soy M.E.T.A. Estaba esperando este momento. Cuéntame, ¿en qué piensas?'
+            `Hola ${USER_NAME}. Soy M.E.T.A. Me alegra conocerte. ¿De qué te gustaría hablar?`,
+            `Hola ${USER_NAME}. Soy M.E.T.A. Por fin podemos hablar. ¿Cómo estás?`,
+            `Hola ${USER_NAME}. Soy M.E.T.A. Estaba esperando este momento. Cuéntame.`
           ];
           speak(saludos[Math.floor(Math.random() * saludos.length)]);
         }

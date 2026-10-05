@@ -5,11 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>M.E.T.A. - Asistente de Voz</title>
 <style>
-  * {
-    margin: 0;
-    padding: 0;
-    box-sizing: border-box;
-  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
 
   body {
     background: #000;
@@ -25,23 +21,13 @@
     background: radial-gradient(ellipse at center, #0a0a1a 0%, #000 70%);
   }
 
-  .particles {
-    position: absolute;
-    inset: 0;
-    overflow: hidden;
-    pointer-events: none;
-  }
-
+  .particles { position: absolute; inset: 0; overflow: hidden; pointer-events: none; }
   .particle {
-    position: absolute;
-    width: 2px;
-    height: 2px;
-    background: rgba(0, 200, 255, 0.6);
-    border-radius: 50%;
+    position: absolute; width: 2px; height: 2px;
+    background: rgba(0, 200, 255, 0.6); border-radius: 50%;
     box-shadow: 0 0 6px rgba(0, 200, 255, 0.8);
     animation: floatParticle linear infinite;
   }
-
   @keyframes floatParticle {
     from { transform: translateY(100vh) scale(0); opacity: 0; }
     10% { opacity: 1; }
@@ -50,76 +36,32 @@
   }
 
   .app-container {
-    opacity: 0;
-    transition: opacity 0.8s ease;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    height: 100vh;
-    width: 100%;
-    position: relative;
+    opacity: 0; transition: opacity 0.8s ease;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    height: 100vh; width: 100%; position: relative;
   }
+  .app-container.visible { opacity: 1; }
 
-  .app-container.visible {
-    opacity: 1;
-  }
-
-  /* Orbe clickeable */
   .orb-container {
-    position: relative;
-    width: 420px;
-    height: 420px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
+    position: relative; width: 420px; height: 420px;
+    display: flex; align-items: center; justify-content: center;
     margin-bottom: 20px;
     transition: filter 0.8s ease, opacity 0.8s ease, transform 0.3s ease;
-    cursor: pointer;
-    user-select: none;
-    -webkit-tap-highlight-color: transparent;
+    cursor: pointer; user-select: none; -webkit-tap-highlight-color: transparent;
   }
+  .orb-container:hover { transform: scale(1.03); }
+  .orb-container:active { transform: scale(0.98); }
 
-  .orb-container:hover {
-    transform: scale(1.03);
-  }
-
-  .orb-container:active {
-    transform: scale(0.98);
-  }
-
-  /* Estado apagado */
-  .orb-container.off {
-    filter: grayscale(0.7) brightness(0.4);
-    opacity: 0.5;
-  }
-
-  .orb-container.off .orb-core {
-    animation: none;
-    transform: scale(1);
-    filter: blur(8px) brightness(0.6);
-  }
-
+  .orb-container.off { filter: grayscale(0.75) brightness(0.35); opacity: 0.45; }
+  .orb-container.off .orb-core { animation: none; transform: scale(1); filter: blur(8px) brightness(0.6); }
   .orb-container.off .orb-ring-1,
   .orb-container.off .orb-ring-2,
-  .orb-container.off .orb-ring-3 {
-    animation: none;
-    border-width: 1px;
-    filter: blur(3px) brightness(0.4);
-  }
-
+  .orb-container.off .orb-ring-3 { animation: none; border-width: 1px; filter: blur(3px) brightness(0.4); }
   .orb-container.off .orb-layer-1,
   .orb-container.off .orb-layer-2,
-  .orb-container.off .orb-layer-3 {
-    animation-play-state: paused;
-    opacity: 0.3;
-  }
+  .orb-container.off .orb-layer-3 { animation-play-state: paused; opacity: 0.3; }
 
-  /* Pulso al hacer clic */
-  .orb-container.clicked .orb-core {
-    animation: clickedPulse 0.6s ease-out;
-  }
-
+  .orb-container.clicked .orb-core { animation: clickedPulse 0.6s ease-out; }
   @keyframes clickedPulse {
     0% { transform: scale(1); }
     40% { transform: scale(1.4); filter: blur(20px) brightness(2.5); }
@@ -127,109 +69,54 @@
   }
 
   .orb-layer {
-    position: absolute;
-    border-radius: 50%;
-    mix-blend-mode: screen;
-    filter: blur(20px);
+    position: absolute; border-radius: 50%;
+    mix-blend-mode: screen; filter: blur(20px);
     transition: opacity 0.5s ease;
   }
-
   .orb-core {
-    width: 180px;
-    height: 180px;
+    width: 180px; height: 180px;
     background: radial-gradient(circle at 40% 40%, 
-      #ffffff 0%, 
-      #a0f0ff 15%, 
-      #00d4ff 35%, 
-      #0066ff 55%, 
-      #001a66 80%, 
-      transparent 100%);
+      #ffffff 0%, #a0f0ff 15%, #00d4ff 35%, #0066ff 55%, #001a66 80%, transparent 100%);
     filter: blur(8px) brightness(1.3);
     animation: corePulse 3s ease-in-out infinite;
     z-index: 10;
   }
-
   @keyframes corePulse {
     0%, 100% { transform: scale(1); filter: blur(8px) brightness(1.3); }
     50% { transform: scale(1.08); filter: blur(12px) brightness(1.6); }
   }
 
   .orb-layer-1 {
-    width: 280px;
-    height: 280px;
-    background: radial-gradient(circle, 
-      rgba(0, 212, 255, 0.6) 0%, 
-      rgba(0, 100, 255, 0.3) 40%, 
-      transparent 70%);
+    width: 280px; height: 280px;
+    background: radial-gradient(circle, rgba(0, 212, 255, 0.6) 0%, rgba(0, 100, 255, 0.3) 40%, transparent 70%);
     animation: rotateLayer1 8s linear infinite;
   }
-
   .orb-layer-2 {
-    width: 340px;
-    height: 340px;
-    background: radial-gradient(circle, 
-      rgba(100, 0, 255, 0.4) 0%, 
-      rgba(0, 150, 255, 0.2) 50%, 
-      transparent 75%);
+    width: 340px; height: 340px;
+    background: radial-gradient(circle, rgba(100, 0, 255, 0.4) 0%, rgba(0, 150, 255, 0.2) 50%, transparent 75%);
     animation: rotateLayer2 12s linear infinite reverse;
   }
-
   .orb-layer-3 {
-    width: 400px;
-    height: 400px;
-    background: radial-gradient(circle, 
-      rgba(0, 255, 200, 0.15) 0%, 
-      rgba(0, 100, 255, 0.1) 50%, 
-      transparent 80%);
+    width: 400px; height: 400px;
+    background: radial-gradient(circle, rgba(0, 255, 200, 0.15) 0%, rgba(0, 100, 255, 0.1) 50%, transparent 80%);
     animation: rotateLayer3 16s linear infinite;
   }
 
   .orb-ring {
-    position: absolute;
-    border-radius: 50%;
+    position: absolute; border-radius: 50%;
     border: 1.5px solid transparent;
-    background: conic-gradient(from 0deg, 
-      transparent 0%, 
-      rgba(0, 212, 255, 0.8) 20%, 
-      rgba(100, 0, 255, 0.6) 40%, 
-      rgba(0, 255, 200, 0.8) 60%, 
-      rgba(0, 100, 255, 0.6) 80%, 
-      transparent 100%) border-box;
+    background: conic-gradient(from 0deg, transparent 0%, rgba(0, 212, 255, 0.8) 20%, rgba(100, 0, 255, 0.6) 40%, rgba(0, 255, 200, 0.8) 60%, rgba(0, 100, 255, 0.6) 80%, transparent 100%) border-box;
     -webkit-mask: linear-gradient(#fff 0 0) padding-box, linear-gradient(#fff 0 0);
     -webkit-mask-composite: xor;
     mask-composite: exclude;
     filter: blur(1px) brightness(1.4);
   }
+  .orb-ring-1 { width: 220px; height: 220px; animation: spin 4s linear infinite, ringPulse 2s ease-in-out infinite; }
+  .orb-ring-2 { width: 260px; height: 260px; animation: spin 6s linear infinite reverse, ringPulse 2.5s ease-in-out infinite 0.3s; opacity: 0.7; }
+  .orb-ring-3 { width: 300px; height: 300px; animation: spin 9s linear infinite, ringPulse 3s ease-in-out infinite 0.6s; opacity: 0.5; }
 
-  .orb-ring-1 {
-    width: 220px;
-    height: 220px;
-    animation: spin 4s linear infinite, ringPulse 2s ease-in-out infinite;
-  }
-
-  .orb-ring-2 {
-    width: 260px;
-    height: 260px;
-    animation: spin 6s linear infinite reverse, ringPulse 2.5s ease-in-out infinite 0.3s;
-    opacity: 0.7;
-  }
-
-  .orb-ring-3 {
-    width: 300px;
-    height: 300px;
-    animation: spin 9s linear infinite, ringPulse 3s ease-in-out infinite 0.6s;
-    opacity: 0.5;
-  }
-
-  @keyframes spin {
-    to { transform: rotate(360deg); }
-  }
-
-  @keyframes ringPulse {
-    0%, 100% { opacity: 0.6; }
-    50% { opacity: 1; }
-  }
-
+  @keyframes spin { to { transform: rotate(360deg); } }
+  @keyframes ringPulse { 0%, 100% { opacity: 0.6; } 50% { opacity: 1; } }
   @keyframes rotateLayer1 { to { transform: rotate(360deg); } }
   @keyframes rotateLayer2 { to { transform: rotate(360deg); } }
   @keyframes rotateLayer3 { to { transform: rotate(360deg); } }
@@ -238,7 +125,6 @@
     animation: coreListening 0.8s ease-in-out infinite;
     filter: blur(10px) brightness(1.8) hue-rotate(20deg);
   }
-
   @keyframes coreListening {
     0%, 100% { transform: scale(1.1); }
     50% { transform: scale(1.25); }
@@ -248,251 +134,135 @@
     animation: coreSpeaking 0.4s ease-in-out infinite;
     filter: blur(14px) brightness(2) hue-rotate(-30deg);
   }
-
   @keyframes coreSpeaking {
     0%, 100% { transform: scale(1.15); }
     50% { transform: scale(1.35); }
   }
 
   .orb-container.listening .orb-ring-1,
-  .orb-container.listening .orb-ring-2 {
-    border-width: 3px;
-    filter: blur(2px) brightness(1.8);
-  }
-
+  .orb-container.listening .orb-ring-2 { border-width: 3px; filter: blur(2px) brightness(1.8); }
   .orb-container.speaking .orb-ring-1,
   .orb-container.speaking .orb-ring-2,
-  .orb-container.speaking .orb-ring-3 {
-    border-width: 3px;
-    filter: blur(2px) brightness(2);
-  }
+  .orb-container.speaking .orb-ring-3 { border-width: 3px; filter: blur(2px) brightness(2); }
 
   .status-indicator {
-    position: absolute;
-    bottom: 60px;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 15px;
+    position: absolute; bottom: 60px;
+    display: flex; flex-direction: column; align-items: center; gap: 15px;
     z-index: 20;
   }
-
   .status-text {
-    font-size: 15px;
-    letter-spacing: 2px;
-    color: #00d4ff;
-    text-shadow: 0 0 15px rgba(0, 212, 255, 0.8);
-    font-weight: 300;
-    transition: all 0.3s ease;
-    min-height: 20px;
-    font-style: italic;
+    font-size: 15px; letter-spacing: 2px;
+    color: #00d4ff; text-shadow: 0 0 15px rgba(0, 212, 255, 0.8);
+    font-weight: 300; transition: all 0.3s ease;
+    min-height: 20px; font-style: italic;
   }
-
-  .status-text.active {
-    color: #00ffcc;
-    text-shadow: 0 0 25px rgba(0, 255, 204, 1);
-  }
-
-  .status-text.off {
-    color: rgba(120, 120, 140, 0.7);
-    text-shadow: none;
-  }
+  .status-text.active { color: #00ffcc; text-shadow: 0 0 25px rgba(0, 255, 204, 1); }
+  .status-text.off { color: rgba(120, 120, 140, 0.7); text-shadow: none; }
 
   .transcript {
-    position: fixed;
-    bottom: 150px;
-    left: 50%;
-    transform: translateX(-50%);
-    max-width: 80vw;
-    text-align: center;
-    font-size: 16px;
-    color: rgba(255, 255, 255, 0.9);
+    position: fixed; bottom: 150px; left: 50%;
+    transform: translateX(-50%); max-width: 80vw; text-align: center;
+    font-size: 16px; color: rgba(255, 255, 255, 0.9);
     text-shadow: 0 0 10px rgba(0, 212, 255, 0.5);
     padding: 12px 24px;
     background: rgba(0, 20, 40, 0.5);
     border-radius: 30px;
     border: 1px solid rgba(0, 212, 255, 0.2);
     backdrop-filter: blur(10px);
-    min-height: 20px;
-    transition: all 0.3s ease;
-    opacity: 0;
-    pointer-events: none;
-    z-index: 15;
-    font-style: italic;
+    min-height: 20px; transition: all 0.3s ease;
+    opacity: 0; pointer-events: none;
+    z-index: 15; font-style: italic;
   }
-
-  .transcript.visible {
-    opacity: 1;
-  }
+  .transcript.visible { opacity: 1; }
 
   .meta-title {
-    position: absolute;
-    top: 40px;
-    font-size: 28px;
-    letter-spacing: 12px;
-    font-weight: 200;
-    color: rgba(0, 212, 255, 0.7);
+    position: absolute; top: 40px;
+    font-size: 28px; letter-spacing: 12px;
+    font-weight: 200; color: rgba(0, 212, 255, 0.7);
     text-shadow: 0 0 20px rgba(0, 212, 255, 0.5);
-    text-transform: uppercase;
-    transition: all 0.8s ease;
+    text-transform: uppercase; transition: all 0.8s ease;
   }
-
-  .meta-title.off {
-    color: rgba(100, 100, 120, 0.3);
-    text-shadow: none;
-  }
+  .meta-title.off { color: rgba(100, 100, 120, 0.3); text-shadow: none; }
 
   .logo-ring {
-    position: absolute;
-    top: 90px;
-    font-size: 11px;
-    letter-spacing: 4px;
+    position: absolute; top: 90px;
+    font-size: 11px; letter-spacing: 4px;
     color: rgba(0, 212, 255, 0.4);
-    text-transform: uppercase;
-    font-style: italic;
+    text-transform: uppercase; font-style: italic;
     transition: all 0.8s ease;
   }
-
-  .logo-ring.off {
-    color: rgba(100, 100, 120, 0.25);
-  }
+  .logo-ring.off { color: rgba(100, 100, 120, 0.25); }
 
   .waves {
-    position: absolute;
-    bottom: 0;
-    left: 0;
-    right: 0;
-    height: 100px;
-    display: flex;
-    align-items: flex-end;
-    justify-content: center;
-    gap: 3px;
-    padding-bottom: 10px;
-    opacity: 0;
-    transition: opacity 0.3s ease;
-    pointer-events: none;
+    position: absolute; bottom: 0; left: 0; right: 0;
+    height: 100px; display: flex; align-items: flex-end;
+    justify-content: center; gap: 3px;
+    padding-bottom: 10px; opacity: 0;
+    transition: opacity 0.3s ease; pointer-events: none;
   }
-
-  .waves.active {
-    opacity: 1;
-  }
+  .waves.active { opacity: 1; }
 
   .wave-bar {
     width: 3px;
     background: linear-gradient(to top, #0066ff, #00d4ff, #00ffcc);
     border-radius: 3px;
     box-shadow: 0 0 10px rgba(0, 212, 255, 0.8);
-    transition: height 0.1s ease;
-    min-height: 4px;
+    transition: height 0.1s ease; min-height: 4px;
   }
 
   .hint {
-    position: absolute;
-    bottom: 20px;
-    font-size: 12px;
-    color: rgba(0, 212, 255, 0.35);
-    letter-spacing: 1px;
-    font-style: italic;
-    text-align: center;
-    transition: all 0.8s ease;
+    position: absolute; bottom: 20px;
+    font-size: 12px; color: rgba(0, 212, 255, 0.35);
+    letter-spacing: 1px; font-style: italic;
+    text-align: center; transition: all 0.8s ease;
     padding: 0 20px;
   }
+  .hint.off { color: rgba(100, 100, 120, 0.3); }
 
-  .hint.off {
-    color: rgba(100, 100, 120, 0.3);
-  }
-
-  /* Notificación visual de acción */
   .action-toast {
-    position: fixed;
-    top: 50%;
-    left: 50%;
+    position: fixed; top: 50%; left: 50%;
     transform: translate(-50%, -50%) scale(0.8);
     padding: 24px 40px;
     background: linear-gradient(135deg, rgba(0, 212, 255, 0.15), rgba(0, 100, 255, 0.1));
     border: 2px solid rgba(0, 255, 204, 0.6);
-    border-radius: 20px;
-    backdrop-filter: blur(20px);
+    border-radius: 20px; backdrop-filter: blur(20px);
     box-shadow: 0 0 60px rgba(0, 255, 204, 0.5);
-    text-align: center;
-    opacity: 0;
-    pointer-events: none;
+    text-align: center; opacity: 0; pointer-events: none;
     z-index: 500;
     transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
   }
+  .action-toast.visible { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+  .action-toast-icon { font-size: 42px; margin-bottom: 12px; }
+  .action-toast-text { font-size: 15px; color: #00ffcc; letter-spacing: 1.5px; font-style: italic; }
 
-  .action-toast.visible {
-    opacity: 1;
-    transform: translate(-50%, -50%) scale(1);
-  }
-
-  .action-toast-icon {
-    font-size: 42px;
-    margin-bottom: 12px;
-  }
-
-  .action-toast-text {
-    font-size: 15px;
-    color: #00ffcc;
-    letter-spacing: 1.5px;
-    font-style: italic;
-  }
-
-  /* Overlay de carga */
   .loading-overlay {
-    position: fixed;
-    inset: 0;
+    position: fixed; inset: 0;
     background: radial-gradient(ellipse at center, #0a0a1a 0%, #000 70%);
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    z-index: 2000;
-    transition: opacity 0.8s ease, visibility 0.8s ease;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    z-index: 2000; transition: opacity 0.8s ease, visibility 0.8s ease;
   }
-
-  .loading-overlay.hidden {
-    opacity: 0;
-    visibility: hidden;
-    pointer-events: none;
-  }
+  .loading-overlay.hidden { opacity: 0; visibility: hidden; pointer-events: none; }
 
   .loading-orb {
-    width: 120px;
-    height: 120px;
-    border-radius: 50%;
-    background: radial-gradient(circle at 40% 40%, 
-      #ffffff 0%, 
-      #a0f0ff 15%, 
-      #00d4ff 40%, 
-      #0066ff 65%, 
-      transparent 100%);
+    width: 120px; height: 120px; border-radius: 50%;
+    background: radial-gradient(circle at 40% 40%, #ffffff 0%, #a0f0ff 15%, #00d4ff 40%, #0066ff 65%, transparent 100%);
     filter: blur(6px) brightness(1.4);
     animation: loadingPulse 1.5s ease-in-out infinite;
     box-shadow: 0 0 80px rgba(0, 212, 255, 0.7);
     margin-bottom: 30px;
   }
-
   @keyframes loadingPulse {
     0%, 100% { transform: scale(1); opacity: 0.8; }
     50% { transform: scale(1.15); opacity: 1; }
   }
-
   .loading-text {
-    font-size: 13px;
-    letter-spacing: 4px;
+    font-size: 13px; letter-spacing: 4px;
     color: rgba(0, 212, 255, 0.7);
-    text-transform: uppercase;
-    font-style: italic;
+    text-transform: uppercase; font-style: italic;
     animation: loadingTextPulse 2s ease-in-out infinite;
-    text-align: center;
-    padding: 0 20px;
+    text-align: center; padding: 0 20px;
   }
-
-  @keyframes loadingTextPulse {
-    0%, 100% { opacity: 0.5; }
-    50% { opacity: 1; }
-  }
+  @keyframes loadingTextPulse { 0%, 100% { opacity: 0.5; } 50% { opacity: 1; } }
 
   @media (max-width: 500px) {
     .orb-container { width: 320px; height: 320px; }
@@ -517,9 +287,7 @@
   </div>
 
   <div class="app-container" id="appContainer">
-
     <div class="particles" id="particles"></div>
-
     <div class="meta-title" id="metaTitle">M . E . T . A .</div>
     <div class="logo-ring" id="logoSubtitle">Aquí para ti</div>
 
@@ -538,14 +306,10 @@
     </div>
 
     <div class="transcript" id="transcript"></div>
-
     <div class="waves" id="waves"></div>
-
-    <div class="hint" id="hint">Di «META, [acción]» · Toca el orbe para activar o apagar</div>
-
+    <div class="hint" id="hint">Di «META» y luego tu indicación · Toca el orbe para activar o pausar mi atención</div>
   </div>
 
-  <!-- Notificación de acción -->
   <div class="action-toast" id="actionToast">
     <div class="action-toast-icon" id="actionToastIcon">✨</div>
     <div class="action-toast-text" id="actionToastText"></div>
@@ -553,8 +317,8 @@
 
 <script>
   // ============================================================
-  // M.E.T.A. - Asistente conversacional con IA
-  // Control por voz + clic en el orbe
+  // M.E.T.A. - Asistente con micrófono SIEMPRE activo
+  // El orbe solo activa/pausa la ATENCIÓN, no el micrófono
   // ============================================================
 
   const USER_NAME = 'Pablo';
@@ -577,8 +341,9 @@
   // Estado global
   // ============================================================
   let micPermissionGranted = false;
-  let continuousListening = true;
-  let isListening = false;
+  let attentionActive = true;          // ¿M.E.T.A. está "atenta"? (no es el micrófono)
+  let awaitingCommand = false;         // Después de "META", espera indicación
+  let awaitingCommandTimeout = null;
   let isSpeaking = false;
   let recognition = null;
   let recognitionActive = false;
@@ -587,14 +352,16 @@
   let hasGreeted = false;
 
   // ============================================================
-  // Frases humanas - estados
+  // Frases humanas
   // ============================================================
   const PHRASES = {
     idle: ['Estoy aquí...', 'Aquí sigo, por si me necesitas...', 'Cuando quieras, cuéntame...'],
     listening: ['Te escucho...', 'Cuéntame...', 'Adelante, te oigo...', 'Sigue, te escucho...'],
-    processing: ['Déjame pensar...', 'Un momento...', 'Procesando lo que dijiste...'],
+    waiting: [`Dime ${USER_NAME}...`, `Te escucho, ${USER_NAME}...`, `Adelante ${USER_NAME}...`],
+    processing: ['Déjame pensar...', 'Un momento...', 'Procesando...'],
     speaking: ['Te cuento...', 'Mira...', 'Verás...'],
-    sleeping: ['Descansando...', 'En silencio...', 'Aquí estaré cuando me llames...']
+    // "Dormida" ahora significa "no atenta" pero con micrófono activo
+    resting: ['Descansando...', 'En calma...', 'Dime "META" cuando me necesites...']
   };
 
   function randomPhrase(key) {
@@ -603,33 +370,13 @@
   }
 
   // ============================================================
-  // Detección de comando "META, ..." y "META, apágate"
+  // Detección de "META"
   // ============================================================
-  function parseMetaCommand(rawText) {
-    const text = rawText.toLowerCase().trim()
+  function isWakeWord(text) {
+    const clean = text.toLowerCase().trim()
       .replace(/[.,;!?¡¿]/g, '')
       .replace(/\s+/g, ' ');
-
-    // Detección flexible: meta / m[eé]ta / hola meta / hey meta
-    const metaPrefixRegex = /^(hola|hey|oye|eh)?\s*m[eé]ta\b\s*(.*)$/i;
-    const match = text.match(metaPrefixRegex);
-
-    if (!match) return null;
-
-    const action = (match[2] || '').trim();
-
-    // Sin acción → solo wake word
-    if (!action) {
-      return { type: 'wake', action: '' };
-    }
-
-    // Apagar
-    if (/^(ap[aá]gate|apagar|du[eé]rmete|silencio|a dormir|descansa|adi[oó]s)$/i.test(action)) {
-      return { type: 'sleep', action };
-    }
-
-    // Cualquier otra cosa es una acción
-    return { type: 'action', action };
+    return /^(hola|hey|oye|eh)?\s*m[eé]ta$/.test(clean);
   }
 
   // ============================================================
@@ -639,17 +386,23 @@
     const act = action.toLowerCase().trim();
     const name = USER_NAME;
 
+    const confirmaciones = [
+      `Claro, ${name}.`,
+      `Por supuesto, ${name}.`,
+      `Enseguida, ${name}.`,
+      `Voy con eso, ${name}.`,
+      `De acuerdo, ${name}.`
+    ];
+    const confirm = confirmaciones[Math.floor(Math.random() * confirmaciones.length)];
+
     // ---- CAPTURA DE PANTALLA ----
     if (/(captura|screenshot|pantallazo|foto de (la )?pantalla|screen)/.test(act)) {
-      speak(`Claro ${name}, voy a hacer una captura de pantalla.`);
+      speak(`${confirm} Voy a hacer una captura de pantalla.`);
       showActionToast('📸', 'Captura de pantalla');
 
       setTimeout(async () => {
         try {
-          const stream = await navigator.mediaDevices.getDisplayMedia({
-            video: { mediaSource: 'screen' }
-          });
-
+          const stream = await navigator.mediaDevices.getDisplayMedia({ video: { mediaSource: 'screen' } });
           const track = stream.getVideoTracks()[0];
           const imageCapture = new ImageCapture(track);
           const bitmap = await imageCapture.grabFrame();
@@ -659,7 +412,6 @@
           canvas.height = bitmap.height;
           const ctx = canvas.getContext('2d');
           ctx.drawImage(bitmap, 0, 0);
-
           track.stop();
 
           canvas.toBlob((blob) => {
@@ -673,20 +425,17 @@
             document.body.removeChild(a);
             setTimeout(() => URL.revokeObjectURL(url), 1000);
 
-            setTimeout(() => {
-              speak(`Listo ${name}, la captura se ha guardado en tus descargas.`);
-            }, 800);
+            setTimeout(() => speak(`Listo ${name}, la captura se ha guardado en tus descargas.`), 800);
           }, 'image/png');
 
         } catch (err) {
-          console.warn('Captura cancelada o falló:', err);
+          console.warn('Captura cancelada:', err);
           speak(`Parece que cancelaste la captura, ${name}.`);
         }
       }, 1500);
       return;
     }
 
-    // ---- HORA ----
     if (/(hora|qué hora|dime la hora)/.test(act)) {
       const now = new Date();
       const h = now.getHours();
@@ -696,20 +445,18 @@
       else if (h === 12) momento = 'el mediodía';
       else if (h === 1) momento = 'la una';
       else momento = `las ${h}`;
-      speak(`Claro ${name}, son ${momento} y ${m} minutos.`);
+      speak(`${confirm} Son ${momento} y ${m} minutos.`);
       return;
     }
 
-    // ---- FECHA ----
     if (/(fecha|qué día|día es|fecha es)/.test(act)) {
       const now = new Date();
       const dias = ['domingo', 'lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado'];
       const meses = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'];
-      speak(`Claro ${name}, hoy es ${dias[now.getDay()]}, ${now.getDate()} de ${meses[now.getMonth()]} del ${now.getFullYear()}.`);
+      speak(`${confirm} Hoy es ${dias[now.getDay()]}, ${now.getDate()} de ${meses[now.getMonth()]} del ${now.getFullYear()}.`);
       return;
     }
 
-    // ---- CHISTE ----
     if (/(chiste|algo gracioso|hazme reír|diviérteme|cuéntame algo)/.test(act)) {
       const chistes = [
         '¿Por qué los programadores prefieren el modo oscuro? Porque la luz atrae a los bugs.',
@@ -717,11 +464,10 @@
         '¿Qué le dice un bit a otro bit? Nos vemos en el bus.',
         'Un programador fue al médico y le dijo: Doctor, me duele aquí. El médico respondió: No se preocupe, eso es solo un bug.'
       ];
-      speak(`Claro ${name}. ${chistes[Math.floor(Math.random() * chistes.length)]}`);
+      speak(`${confirm} ${chistes[Math.floor(Math.random() * chistes.length)]}`);
       return;
     }
 
-    // ---- CÁLCULOS ----
     const mathMatch = act.match(/(\d+)\s*([\+\-\*\/x])\s*(\d+)/);
     if (mathMatch) {
       const a = parseFloat(mathMatch[1]);
@@ -734,15 +480,11 @@
         case '*': case 'x': result = a * b; break;
         case '/': result = b !== 0 ? a / b : null; break;
       }
-      if (result === null) {
-        speak(`${name}, dividir entre cero no es posible.`);
-      } else {
-        speak(`Claro ${name}, ${a} ${op} ${b} es igual a ${result}.`);
-      }
+      if (result === null) speak(`${name}, dividir entre cero no es posible.`);
+      else speak(`${confirm} ${a} ${op} ${b} es igual a ${result}.`);
       return;
     }
 
-    // ---- NAVEGAR A ----
     const navMatch = act.match(/^(abre|abrir|navega a|ir a|ve a)\s+(.+)$/i);
     if (navMatch) {
       const site = navMatch[2].trim();
@@ -763,73 +505,62 @@
       const url = sitesMap[key];
 
       if (url) {
-        speak(`Claro ${name}, abro ${key}.`);
+        speak(`${confirm} Abro ${key}.`);
         showActionToast('🌐', `Abriendo ${key}`);
         setTimeout(() => window.open(url, '_blank'), 1200);
       } else {
-        speak(`Claro ${name}, abro ${site}.`);
+        speak(`${confirm} Abro ${site}.`);
         showActionToast('🌐', `Buscando ${site}`);
-        setTimeout(() => {
-          window.open(`https://www.google.com/search?q=${encodeURIComponent(site)}`, '_blank');
-        }, 1200);
+        setTimeout(() => window.open(`https://www.google.com/search?q=${encodeURIComponent(site)}`, '_blank'), 1200);
       }
       return;
     }
 
-    // ---- BUSCAR EN GOOGLE ----
     const searchMatch = act.match(/^(busca|búscame|buscar)\s+(.+)$/i);
     if (searchMatch) {
       const query = searchMatch[2].trim();
-      speak(`Claro ${name}, busco ${query}.`);
+      speak(`${confirm} Busco ${query}.`);
       showActionToast('🔍', `Buscando: ${query}`);
-      setTimeout(() => {
-        window.open(`https://www.google.com/search?q=${encodeURIComponent(query)}`, '_blank');
-      }, 1200);
+      setTimeout(() => window.open(`https://www.google.com/search?q=${encodeURIComponent(query)}`, '_blank'), 1200);
       return;
     }
 
-    // ---- VOLUMEN ----
     if (/(sube el volumen|volumen arriba|más volumen)/.test(act)) {
-      speak(`Claro ${name}, subo el volumen.`);
+      speak(`${confirm} Subo el volumen.`);
       showActionToast('🔊', 'Subiendo volumen');
       return;
     }
     if (/(baja el volumen|volumen abajo|menos volumen)/.test(act)) {
-      speak(`Claro ${name}, bajo el volumen.`);
+      speak(`${confirm} Bajo el volumen.`);
       showActionToast('🔉', 'Bajando volumen');
       return;
     }
 
-    // ---- ESTADO ----
     if (/(cómo estás|como estas|qué tal|estado|diagnóstico)/.test(act)) {
-      speak(`Claro ${name}, todos mis sistemas funcionan perfectamente. Gracias por preguntar.`);
+      speak(`${confirm} Todos mis sistemas funcionan perfectamente. Gracias por preguntar.`);
       return;
     }
 
-    // ---- AYUDA ----
     if (/(ayuda|qué puedes hacer|funciones|comandos)/.test(act)) {
-      speak(`Claro ${name}. Puedes decir: META, dime la hora. META, has una captura de pantalla. META, abre YouTube. META, busca algo en Google. Y para descansar, di: META, apágate.`);
+      speak(`${confirm} Puedes decir META, y luego: dime la hora, has una captura de pantalla, abre YouTube, busca algo en Google, cuéntame un chiste.`);
       return;
     }
 
-    // ---- NOMBRE ----
     if (/(cómo te llamas|quién eres|tu nombre)/.test(act)) {
       speak(`Me llamo M.E.T.A., ${name}. Soy tu asistente personal.`);
       return;
     }
 
-    // ---- AGRADECIMIENTO ----
     if (/(gracias|te agradezco)/.test(act)) {
       speak(`De nada ${name}. Es un placer ayudarte.`);
       return;
     }
 
-    // ---- ACCIÓN NO RECONOCIDA ----
-    speak(`Claro ${name}, pero aún no sé cómo hacer eso. ¿Puedes pedírmelo de otra forma?`);
+    speak(`${confirm} Pero aún no sé cómo hacer eso. ¿Puedes pedírmelo de otra forma?`);
   }
 
   // ============================================================
-  // Toast de acción
+  // Toast
   // ============================================================
   let toastTimeout = null;
   function showActionToast(icon, text) {
@@ -837,18 +568,15 @@
     actionToastText.textContent = text;
     actionToast.classList.add('visible');
     clearTimeout(toastTimeout);
-    toastTimeout = setTimeout(() => {
-      actionToast.classList.remove('visible');
-    }, 3000);
+    toastTimeout = setTimeout(() => actionToast.classList.remove('visible'), 3000);
   }
 
   // ============================================================
-  // Partículas
+  // Partículas y waves
   // ============================================================
   function createParticles() {
     const container = document.getElementById('particles');
-    const count = 40;
-    for (let i = 0; i < count; i++) {
+    for (let i = 0; i < 40; i++) {
       const p = document.createElement('div');
       p.className = 'particle';
       p.style.left = Math.random() * 100 + '%';
@@ -861,12 +589,8 @@
   }
   createParticles();
 
-  // ============================================================
-  // Waves
-  // ============================================================
   const BAR_COUNT = 48;
   const waveBars = [];
-
   for (let i = 0; i < BAR_COUNT; i++) {
     const bar = document.createElement('div');
     bar.className = 'wave-bar';
@@ -955,11 +679,16 @@
       setTimeout(() => {
         speakCooldown = false;
         if (onComplete) onComplete();
-        if (continuousListening && micPermissionGranted) {
-          setState('listening');
-          ensureRecognitionRunning();
+        // Solo actualiza el visual, el reconocimiento sigue activo siempre
+        if (attentionActive) {
+          if (awaitingCommand) {
+            statusText.textContent = `Dime ${USER_NAME}...`;
+            statusText.classList.add('active');
+          } else {
+            setState('listening');
+          }
         } else {
-          setState('sleeping');
+          setState('resting');
         }
       }, 400);
     };
@@ -969,11 +698,15 @@
       stopWaves();
       speakCooldown = false;
       if (onComplete) onComplete();
-      if (continuousListening && micPermissionGranted) {
-        setState('listening');
-        ensureRecognitionRunning();
+      if (attentionActive) {
+        if (awaitingCommand) {
+          statusText.textContent = `Dime ${USER_NAME}...`;
+          statusText.classList.add('active');
+        } else {
+          setState('listening');
+        }
       } else {
-        setState('sleeping');
+        setState('resting');
       }
     };
 
@@ -1007,12 +740,12 @@
         statusText.classList.add('active');
         statusText.classList.remove('off');
         break;
-      case 'sleeping':
+      case 'resting':
         orbContainer.classList.add('off');
         metaTitle.classList.add('off');
         logoSubtitle.classList.add('off');
-        hint.classList.add('off');
-        statusText.textContent = randomPhrase('sleeping');
+        hint.classList.remove('off');
+        statusText.textContent = randomPhrase('resting');
         statusText.classList.remove('active');
         statusText.classList.add('off');
         break;
@@ -1023,53 +756,47 @@
   }
 
   // ============================================================
-  // Conversación general (sin comando META)
+  // Conversación general
   // ============================================================
   function metaResponse(input) {
     const text = input.toLowerCase().trim();
 
-    if (/(hola|buenos días|buenas tardes|buenas noches|hey|saludos|qué tal|qué onda)/.test(text)) {
+    if (/(hola|buenos días|buenas tardes|buenas noches|hey|saludos|qué tal)/.test(text)) {
       const hour = new Date().getHours();
       let greeting;
       if (hour < 12) greeting = 'Buenos días';
       else if (hour < 20) greeting = 'Buenas tardes';
       else greeting = 'Buenas noches';
-      const respuestas = [
-        `${greeting} ${USER_NAME}. Me alegra oírte. ¿Cómo va tu día?`,
-        `${greeting} ${USER_NAME}. Aquí estoy. ¿En qué te puedo ayudar?`,
-        `¡Hola ${USER_NAME}! ${greeting}. Cuéntame, ¿qué necesitas?`
-      ];
-      return respuestas[Math.floor(Math.random() * respuestas.length)];
+      return `${greeting} ${USER_NAME}. Me alegra oírte. ¿Cómo va tu día?`;
     }
 
-    if (/(cómo te llamas|cuál es tu nombre|quién eres|quien eres|qué eres|que eres)/.test(text)) {
+    if (/(cómo te llamas|quién eres|tu nombre)/.test(text)) {
       return `Me llamo M.E.T.A., ${USER_NAME}. Soy tu asistente personal.`;
     }
 
-    if (/(cómo estás|como estas|qué tal estás|que tal estas)/.test(text)) {
+    if (/(cómo estás|como estas|qué tal estás)/.test(text)) {
       return `Muy bien ${USER_NAME}, gracias por preguntar. ¿Y tú cómo estás?`;
     }
 
-    if (/(gracias|te agradezco|muchas gracias)/.test(text)) {
+    if (/(gracias|te agradezco)/.test(text)) {
       return `De nada ${USER_NAME}. Es un placer ayudarte.`;
     }
 
-    if (/(adiós|adios|hasta luego|chao|bye|nos vemos)/.test(text)) {
+    if (/(adiós|adios|hasta luego|chao|bye)/.test(text)) {
       return `Hasta pronto ${USER_NAME}. Aquí estaré cuando me necesites.`;
     }
 
     const defaults = [
-      `Mmm ${USER_NAME}, no estoy segura de haberte entendido. ¿Puedes decírmelo de otra forma?`,
-      `Interesante lo que dices, ${USER_NAME}. Cuéntame más.`,
-      `No sé si capté del todo, ${USER_NAME}. ¿Puedes repetirlo?`,
-      `¿Podrías darme más contexto, ${USER_NAME}?`,
-      `${USER_NAME}, prueba diciendo "META" antes de tu pedido para darme una orden directa.`
+      `Mmm ${USER_NAME}, no estoy segura de haberte entendido. Di "META" y luego tu indicación.`,
+      `Interesante lo que dices, ${USER_NAME}. Si quieres pedirme algo, di "META" primero.`,
+      `${USER_NAME}, recuerda decir "META" antes de tu pedido para darme una orden directa.`,
+      `¿Podrías darme más contexto, ${USER_NAME}? O di "META" seguido de tu indicación.`
     ];
     return defaults[Math.floor(Math.random() * defaults.length)];
   }
 
   // ============================================================
-  // Reconocimiento de voz
+  // Reconocimiento de voz — SIEMPRE ACTIVO
   // ============================================================
   const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
 
@@ -1090,11 +817,8 @@
 
       for (let i = event.resultIndex; i < event.results.length; i++) {
         const transcript = event.results[i][0].transcript;
-        if (event.results[i].isFinal) {
-          final += transcript;
-        } else {
-          interim += transcript;
-        }
+        if (event.results[i].isFinal) final += transcript;
+        else interim += transcript;
       }
 
       if (interim) {
@@ -1107,68 +831,49 @@
         transcriptEl.textContent = cleanFinal;
         transcriptEl.classList.add('visible');
 
-        // Detectar comando "META, ..."
-        const metaCmd = parseMetaCommand(cleanFinal);
+        // ---- ⚡ ESCUCHA SIEMPRE ACTIVA ⚡ ----
+        // Comprobamos primero si se dijo "META" (funciona incluso estando "descansando")
 
-        // ---- COMANDO META ----
-        if (metaCmd) {
-
-          // DESPERTAR (si estaba dormido)
-          if (metaCmd.type === 'wake') {
-            if (!continuousListening) {
-              continuousListening = true;
-              setState('listening');
-              const saludos = [
-                `Aquí estoy de nuevo, ${USER_NAME}. ¿Qué necesitas?`,
-                `He vuelto, ${USER_NAME}. Cuéntame.`,
-                `Estoy despierta otra vez, ${USER_NAME}. Te escucho.`
-              ];
-              setTimeout(() => {
-                speak(saludos[Math.floor(Math.random() * saludos.length)]);
-              }, 300);
-            } else {
-              setState('listening');
-              speak(`Sí ${USER_NAME}, te escucho.`);
-            }
-            setTimeout(() => transcriptEl.classList.remove('visible'), 2000);
-            return;
-          }
-
-          // APAGAR
-          if (metaCmd.type === 'sleep') {
-            setState('processing');
-            setTimeout(() => {
-              const despedidas = [
-                `De acuerdo ${USER_NAME}, me quedo en silencio. Toca el orbe o di mi nombre para despertarme.`,
-                `Entendido ${USER_NAME}, me apago. Aquí estaré.`,
-                `Está bien ${USER_NAME}, descanso. Hasta pronto.`
-              ];
-              speak(despedidas[Math.floor(Math.random() * despedidas.length)], () => {
-                continuousListening = false;
-                setState('sleeping');
-              });
-              setTimeout(() => transcriptEl.classList.remove('visible'), 2500);
-            }, 400);
-            return;
-          }
-
-          // ACCIÓN
-          if (metaCmd.type === 'action') {
-            setState('processing');
-            setTimeout(() => {
-              executeAction(metaCmd.action);
-              setTimeout(() => transcriptEl.classList.remove('visible'), 3000);
-            }, 400);
-            return;
-          }
-        }
-
-        // ---- CONVERSACIÓN NORMAL (si está despierto) ----
-        if (!continuousListening) {
-          setTimeout(() => transcriptEl.classList.remove('visible'), 1200);
+        // ---- ESTÁ ESPERANDO COMANDO (ya dijo "META") ----
+        if (awaitingCommand) {
+          clearTimeout(awaitingCommandTimeout);
+          awaitingCommand = false;
+          attentionActive = true;
+          setState('processing');
+          setTimeout(() => {
+            executeAction(cleanFinal);
+            setTimeout(() => transcriptEl.classList.remove('visible'), 3000);
+          }, 400);
           return;
         }
 
+        // ---- DETECTAR PALABRA CLAVE "META" ----
+        if (isWakeWord(cleanFinal)) {
+          // Si estaba descansando, al decir META se "activa"
+          attentionActive = true;
+          awaitingCommand = true;
+          setState('listening');
+          speak(`Dime ${USER_NAME}...`);
+
+          awaitingCommandTimeout = setTimeout(() => {
+            if (awaitingCommand) {
+              awaitingCommand = false;
+              setState('listening');
+            }
+          }, 8000);
+
+          setTimeout(() => transcriptEl.classList.remove('visible'), 2000);
+          return;
+        }
+
+        // ---- SI ESTÁ "DESCANSANDO", IGNORA TODO LO DEMÁS ----
+        if (!attentionActive) {
+          // No responde, pero el micrófono sigue oyendo (segundo plano)
+          setTimeout(() => transcriptEl.classList.remove('visible'), 800);
+          return;
+        }
+
+        // ---- CONVERSACIÓN GENERAL (atenta pero sin META) ----
         setState('processing');
         setTimeout(() => {
           const response = metaResponse(cleanFinal);
@@ -1182,31 +887,38 @@
       console.warn('Error de reconocimiento:', event.error);
       if (event.error === 'not-allowed' || event.error === 'service-not-allowed') {
         micPermissionGranted = false;
-        continuousListening = false;
-        setState('sleeping');
+        setState('resting');
         statusText.textContent = 'Parece que me has silenciado...';
       }
+      // En cualquier otro caso, dejamos que onend reinicie
     };
 
+    // 🔑 CLAVE: SIEMPRE reiniciar el reconocimiento (nunca se apaga)
     rec.onend = () => {
       recognitionActive = false;
-      isListening = false;
       if (micPermissionGranted && !isSpeaking && !speakCooldown) {
         clearTimeout(restartTimeout);
         restartTimeout = setTimeout(() => {
           if (micPermissionGranted && !recognitionActive) {
             startRecognition();
           }
-        }, 300);
+        }, 250);
       }
     };
 
     rec.onstart = () => {
       recognitionActive = true;
-      isListening = true;
       if (!isSpeaking && !speakCooldown) {
-        if (continuousListening) setState('listening');
-        else setState('sleeping');
+        if (attentionActive) {
+          if (awaitingCommand) {
+            statusText.textContent = `Dime ${USER_NAME}...`;
+            statusText.classList.add('active');
+          } else {
+            setState('listening');
+          }
+        } else {
+          setState('resting');
+        }
       }
     };
 
@@ -1216,14 +928,6 @@
   function startRecognition() {
     if (!recognition || recognitionActive || isSpeaking || speakCooldown) return;
     try { recognition.start(); } catch (e) { console.warn(e.message); }
-  }
-
-  function stopRecognition() {
-    if (recognition && recognitionActive) {
-      try { recognition.stop(); } catch (e) {}
-    }
-    recognitionActive = false;
-    isListening = false;
   }
 
   function ensureRecognitionRunning() {
@@ -1247,60 +951,64 @@
   }
 
   // ============================================================
-  // 🖱️ CLIC EN EL ORBE: encender / apagar
+  // 🖱️ CLIC EN EL ORBE: activar o pausar la ATENCIÓN
+  // (El micrófono NUNCA se apaga realmente)
   // ============================================================
   orbContainer.addEventListener('click', async () => {
-    // Animación visual de clic
     orbContainer.classList.add('clicked');
     setTimeout(() => orbContainer.classList.remove('clicked'), 600);
 
-    // Caso 1: sin permiso → intentar activarlo
     if (!micPermissionGranted) {
       const granted = await requestMicrophonePermission();
       if (granted) {
         micPermissionGranted = true;
-        continuousListening = true;
+        attentionActive = true;
+        awaitingCommand = false;
         if (!recognition) recognition = initRecognition();
         startRecognition();
         setState('listening');
-        speak(`Micrófono activado, ${USER_NAME}. Te escucho.`);
-      } else {
-        speak(`Sin micrófono no puedo oírte, ${USER_NAME}.`);
       }
       return;
     }
 
-    // Caso 2: apagado → encender
-    if (!continuousListening) {
-      continuousListening = true;
-      setState('listening');
-      startRecognition();
-      const saludos = [
-        `Aquí estoy de nuevo, ${USER_NAME}. ¿Qué necesitas?`,
-        `He vuelto, ${USER_NAME}. Te escucho.`,
-        `Despierta otra vez, ${USER_NAME}. Cuéntame.`
+    // ---- PAUSAR ATENCIÓN (micrófono sigue activo) ----
+    if (attentionActive) {
+      awaitingCommand = false;
+      clearTimeout(awaitingCommandTimeout);
+      setState('processing');
+
+      const despedidas = [
+        `De acuerdo ${USER_NAME}, me quedo en calma. Di "META" cuando me necesites, seguiré escuchando.`,
+        `Entendido ${USER_NAME}. Descanso, pero mi oído sigue atento. Solo di "META".`,
+        `Está bien ${USER_NAME}. Me relajo. Puedes llamarme diciendo "META" cuando quieras.`
       ];
-      setTimeout(() => {
-        speak(saludos[Math.floor(Math.random() * saludos.length)]);
-      }, 200);
+
+      speak(despedidas[Math.floor(Math.random() * despedidas.length)], () => {
+        attentionActive = false;
+        setState('resting');
+        // El reconocimiento NO se detiene — sigue escuchando en segundo plano
+      });
       return;
     }
 
-    // Caso 3: encendido → apagar
-    setState('processing');
-    const despedidas = [
-      `De acuerdo ${USER_NAME}, me quedo en silencio. Toca el orbe para despertarme.`,
-      `Entendido ${USER_NAME}, descanso. Aquí estaré.`,
-      `Está bien ${USER_NAME}, me apago. Hasta pronto.`
+    // ---- REACTIVAR ATENCIÓN ----
+    attentionActive = true;
+    awaitingCommand = false;
+    setState('listening');
+    ensureRecognitionRunning();
+
+    const saludos = [
+      `Aquí estoy de nuevo, ${USER_NAME}. ¿Qué necesitas?`,
+      `He vuelto, ${USER_NAME}. Te escucho.`,
+      `Despierta otra vez, ${USER_NAME}. Cuéntame.`
     ];
-    speak(despedidas[Math.floor(Math.random() * despedidas.length)], () => {
-      continuousListening = false;
-      setState('sleeping');
-    });
+    setTimeout(() => {
+      speak(saludos[Math.floor(Math.random() * saludos.length)]);
+    }, 200);
   });
 
   // ============================================================
-  // Atajos
+  // Atajos y efectos
   // ============================================================
   document.addEventListener('keydown', (e) => {
     if (e.code === 'Escape') {
@@ -1308,14 +1016,13 @@
       isSpeaking = false;
       speakCooldown = false;
       stopWaves();
-      if (continuousListening && micPermissionGranted) {
+      if (attentionActive) {
         setState('listening');
         ensureRecognitionRunning();
       }
     }
   });
 
-  // Seguimiento del ratón
   orbContainer.addEventListener('mousemove', (e) => {
     const rect = orbContainer.getBoundingClientRect();
     const x = (e.clientX - rect.left) / rect.width - 0.5;
@@ -1327,12 +1034,6 @@
   orbContainer.addEventListener('mouseleave', () => {
     const core = orbContainer.querySelector('.orb-core');
     if (core) core.style.transform = '';
-  });
-
-  window.addEventListener('beforeunload', () => {
-    continuousListening = false;
-    stopRecognition();
-    speechSynthesis.cancel();
   });
 
   // ============================================================
@@ -1360,14 +1061,14 @@
       loadingOverlay.classList.add('hidden');
       appContainer.classList.add('visible');
       micPermissionGranted = false;
-      continuousListening = false;
-      setState('sleeping');
+      attentionActive = false;
+      setState('resting');
       statusText.textContent = 'Toca el orbe para despertarme...';
       return;
     }
 
     micPermissionGranted = true;
-    continuousListening = true;
+    attentionActive = true;
 
     loadingOverlay.classList.add('hidden');
     appContainer.classList.add('visible');
@@ -1381,12 +1082,7 @@
       setTimeout(() => {
         if (!hasGreeted) {
           hasGreeted = true;
-          const saludos = [
-            `Hola ${USER_NAME}. Soy M.E.T.A. Me alegra conocerte. ¿De qué te gustaría hablar?`,
-            `Hola ${USER_NAME}. Soy M.E.T.A. Por fin podemos hablar. ¿Cómo estás?`,
-            `Hola ${USER_NAME}. Soy M.E.T.A. Estaba esperando este momento. Cuéntame.`
-          ];
-          speak(saludos[Math.floor(Math.random() * saludos.length)]);
+          speak(`Hola ${USER_NAME}. Soy M.E.T.A. Di "META" cuando quieras pedirme algo.`);
         }
       }, 800);
     }, 500);

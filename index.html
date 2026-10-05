@@ -157,7 +157,7 @@
     min-height: 20px; font-style: italic;
   }
   .status-text.active { color: #00ffcc; text-shadow: 0 0 25px rgba(0, 255, 204, 1); }
-  .status-text.off { color: rgba(120, 120, 140, 0.7); text-shadow: none; }
+  .status-text.off { color: transparent; text-shadow: none; }
 
   .transcript {
     position: fixed; bottom: 150px; left: 50%;
@@ -184,15 +184,6 @@
   }
   .meta-title.off { color: rgba(100, 100, 120, 0.3); text-shadow: none; }
 
-  .logo-ring {
-    position: absolute; top: 90px;
-    font-size: 11px; letter-spacing: 4px;
-    color: rgba(0, 212, 255, 0.4);
-    text-transform: uppercase; font-style: italic;
-    transition: all 0.8s ease;
-  }
-  .logo-ring.off { color: rgba(100, 100, 120, 0.25); }
-
   .waves {
     position: absolute; bottom: 0; left: 0; right: 0;
     height: 100px; display: flex; align-items: flex-end;
@@ -209,15 +200,6 @@
     box-shadow: 0 0 10px rgba(0, 212, 255, 0.8);
     transition: height 0.1s ease; min-height: 4px;
   }
-
-  .hint {
-    position: absolute; bottom: 20px;
-    font-size: 12px; color: rgba(0, 212, 255, 0.35);
-    letter-spacing: 1px; font-style: italic;
-    text-align: center; transition: all 0.8s ease;
-    padding: 0 20px;
-  }
-  .hint.off { color: rgba(100, 100, 120, 0.3); }
 
   .action-toast {
     position: fixed; top: 50%; left: 50%;
@@ -289,7 +271,6 @@
   <div class="app-container" id="appContainer">
     <div class="particles" id="particles"></div>
     <div class="meta-title" id="metaTitle">M . E . T . A .</div>
-    <div class="logo-ring" id="logoSubtitle">Aquí para ti</div>
 
     <div class="orb-container" id="orbContainer">
       <div class="orb-layer orb-layer-3"></div>
@@ -307,7 +288,6 @@
 
     <div class="transcript" id="transcript"></div>
     <div class="waves" id="waves"></div>
-    <div class="hint" id="hint">Di «META» y luego tu indicación · Toca el orbe para activar o pausar mi atención</div>
   </div>
 
   <div class="action-toast" id="actionToast">
@@ -317,11 +297,11 @@
 
 <script>
   // ============================================================
-  // M.E.T.A. - Asistente con micrófono SIEMPRE activo
-  // El orbe solo activa/pausa la ATENCIÓN, no el micrófono
+  // M.E.T.A. - Asistente con auto-descanso de 5s
   // ============================================================
 
   const USER_NAME = 'Pablo';
+  const IDLE_TIMEOUT_MS = 5000; // 5 segundos sin voz → descanso
 
   const loadingOverlay = document.getElementById('loadingOverlay');
   const loadingText = document.getElementById('loadingText');
@@ -331,8 +311,6 @@
   const transcriptEl = document.getElementById('transcript');
   const wavesContainer = document.getElementById('waves');
   const metaTitle = document.getElementById('metaTitle');
-  const logoSubtitle = document.getElementById('logoSubtitle');
-  const hint = document.getElementById('hint');
   const actionToast = document.getElementById('actionToast');
   const actionToastIcon = document.getElementById('actionToastIcon');
   const actionToastText = document.getElementById('actionToastText');
@@ -341,9 +319,10 @@
   // Estado global
   // ============================================================
   let micPermissionGranted = false;
-  let attentionActive = true;          // ¿M.E.T.A. está "atenta"? (no es el micrófono)
-  let awaitingCommand = false;         // Después de "META", espera indicación
+  let attentionActive = true;
+  let awaitingCommand = false;
   let awaitingCommandTimeout = null;
+  let idleTimeout = null;              // ← Timer de 5s para auto-descanso
   let isSpeaking = false;
   let recognition = null;
   let recognitionActive = false;
@@ -355,18 +334,56 @@
   // Frases humanas
   // ============================================================
   const PHRASES = {
-    idle: ['Estoy aquí...', 'Aquí sigo, por si me necesitas...', 'Cuando quieras, cuéntame...'],
+    idle: ['Estoy aquí...', 'Aquí sigo...', 'Cuando quieras, cuéntame...'],
     listening: ['Te escucho...', 'Cuéntame...', 'Adelante, te oigo...', 'Sigue, te escucho...'],
     waiting: [`Dime ${USER_NAME}...`, `Te escucho, ${USER_NAME}...`, `Adelante ${USER_NAME}...`],
     processing: ['Déjame pensar...', 'Un momento...', 'Procesando...'],
-    speaking: ['Te cuento...', 'Mira...', 'Verás...'],
-    // "Dormida" ahora significa "no atenta" pero con micrófono activo
-    resting: ['Descansando...', 'En calma...', 'Dime "META" cuando me necesites...']
+    speaking: ['Te cuento...', 'Mira...', 'Verás...']
   };
 
   function randomPhrase(key) {
     const arr = PHRASES[key] || PHRASES.idle;
     return arr[Math.floor(Math.random() * arr.length)];
+  }
+
+  // ============================================================
+  // Timer de inactividad (5 segundos)
+  // ============================================================
+  function resetIdleTimer() {
+    clearTimeout(idleTimeout);
+    // Solo arranca el timer si está atenta, micrófono activo y no está hablando
+    if (!attentionActive || !micPermissionGranted || isSpeaking || speakCooldown) return;
+
+    idleTimeout = setTimeout(() => {
+      // Después de 5s sin voz → entra en descanso silenciosamente
+      if (attentionActive && !awaitingCommand && !isSpeaking && !speakCooldown) {
+        enterRestMode(true); // true = silencioso (sin hablar)
+      }
+    }, IDLE_TIMEOUT_MS);
+  }
+
+  function clearIdleTimer() {
+    clearTimeout(idleTimeout);
+  }
+
+  // ============================================================
+  // Entrar en modo descanso (silencioso o con despedida)
+  // ============================================================
+  function enterRestMode(silent = false) {
+    attentionActive = false;
+    awaitingCommand = false;
+    clearTimeout(awaitingCommandTimeout);
+    clearIdleTimer();
+    setState('resting');
+
+    if (!silent) {
+      const despedidas = [
+        `De acuerdo ${USER_NAME}, me quedo en calma. Di "META" cuando me necesites.`,
+        `Entendido ${USER_NAME}. Descanso, pero mi oído sigue atento. Solo di "META".`,
+        `Está bien ${USER_NAME}. Me relajo. Puedes llamarme diciendo "META".`
+      ];
+      speak(despedidas[Math.floor(Math.random() * despedidas.length)]);
+    }
   }
 
   // ============================================================
@@ -658,6 +675,7 @@
     }
 
     speakCooldown = true;
+    clearIdleTimer(); // ⏸️ no contar tiempo mientras habla
     speechSynthesis.cancel();
 
     const utterance = new SpeechSynthesisUtterance(text);
@@ -679,13 +697,13 @@
       setTimeout(() => {
         speakCooldown = false;
         if (onComplete) onComplete();
-        // Solo actualiza el visual, el reconocimiento sigue activo siempre
         if (attentionActive) {
           if (awaitingCommand) {
             statusText.textContent = `Dime ${USER_NAME}...`;
             statusText.classList.add('active');
           } else {
             setState('listening');
+            resetIdleTimer(); // ▶️ reiniciar cuenta de 5s
           }
         } else {
           setState('resting');
@@ -704,6 +722,7 @@
           statusText.classList.add('active');
         } else {
           setState('listening');
+          resetIdleTimer();
         }
       } else {
         setState('resting');
@@ -719,8 +738,6 @@
   function setState(state) {
     orbContainer.classList.remove('listening', 'speaking', 'off');
     metaTitle.classList.remove('off');
-    logoSubtitle.classList.remove('off');
-    hint.classList.remove('off');
 
     switch (state) {
       case 'listening':
@@ -743,9 +760,7 @@
       case 'resting':
         orbContainer.classList.add('off');
         metaTitle.classList.add('off');
-        logoSubtitle.classList.add('off');
-        hint.classList.remove('off');
-        statusText.textContent = randomPhrase('resting');
+        statusText.textContent = '';
         statusText.classList.remove('active');
         statusText.classList.add('off');
         break;
@@ -824,6 +839,8 @@
       if (interim) {
         transcriptEl.textContent = interim;
         transcriptEl.classList.add('visible');
+        // Detectó voz → reinicia el contador de 5s
+        if (attentionActive) resetIdleTimer();
       }
 
       if (final && final.trim().length > 0) {
@@ -831,12 +848,10 @@
         transcriptEl.textContent = cleanFinal;
         transcriptEl.classList.add('visible');
 
-        // ---- ⚡ ESCUCHA SIEMPRE ACTIVA ⚡ ----
-        // Comprobamos primero si se dijo "META" (funciona incluso estando "descansando")
-
-        // ---- ESTÁ ESPERANDO COMANDO (ya dijo "META") ----
+        // ---- ESPERANDO COMANDO ----
         if (awaitingCommand) {
           clearTimeout(awaitingCommandTimeout);
+          clearIdleTimer();
           awaitingCommand = false;
           attentionActive = true;
           setState('processing');
@@ -847,33 +862,34 @@
           return;
         }
 
-        // ---- DETECTAR PALABRA CLAVE "META" ----
+        // ---- DETECTAR "META" ----
         if (isWakeWord(cleanFinal)) {
-          // Si estaba descansando, al decir META se "activa"
           attentionActive = true;
           awaitingCommand = true;
           setState('listening');
           speak(`Dime ${USER_NAME}...`);
 
+          // ⏱️ Si no da comando en 5s → descanso silencioso
           awaitingCommandTimeout = setTimeout(() => {
             if (awaitingCommand) {
               awaitingCommand = false;
-              setState('listening');
+              enterRestMode(true); // silencioso
             }
-          }, 8000);
+          }, IDLE_TIMEOUT_MS);
 
           setTimeout(() => transcriptEl.classList.remove('visible'), 2000);
           return;
         }
 
-        // ---- SI ESTÁ "DESCANSANDO", IGNORA TODO LO DEMÁS ----
+        // ---- SI ESTÁ DESCANSANDO → ignora ----
         if (!attentionActive) {
-          // No responde, pero el micrófono sigue oyendo (segundo plano)
           setTimeout(() => transcriptEl.classList.remove('visible'), 800);
           return;
         }
 
-        // ---- CONVERSACIÓN GENERAL (atenta pero sin META) ----
+        // ---- CONVERSACIÓN GENERAL ----
+        // Detectó voz → resetea el contador de 5s
+        resetIdleTimer();
         setState('processing');
         setTimeout(() => {
           const response = metaResponse(cleanFinal);
@@ -888,12 +904,9 @@
       if (event.error === 'not-allowed' || event.error === 'service-not-allowed') {
         micPermissionGranted = false;
         setState('resting');
-        statusText.textContent = 'Parece que me has silenciado...';
       }
-      // En cualquier otro caso, dejamos que onend reinicie
     };
 
-    // 🔑 CLAVE: SIEMPRE reiniciar el reconocimiento (nunca se apaga)
     rec.onend = () => {
       recognitionActive = false;
       if (micPermissionGranted && !isSpeaking && !speakCooldown) {
@@ -915,6 +928,7 @@
             statusText.classList.add('active');
           } else {
             setState('listening');
+            resetIdleTimer();
           }
         } else {
           setState('resting');
@@ -951,8 +965,7 @@
   }
 
   // ============================================================
-  // 🖱️ CLIC EN EL ORBE: activar o pausar la ATENCIÓN
-  // (El micrófono NUNCA se apaga realmente)
+  // 🖱️ CLIC EN EL ORBE
   // ============================================================
   orbContainer.addEventListener('click', async () => {
     orbContainer.classList.add('clicked');
@@ -967,31 +980,18 @@
         if (!recognition) recognition = initRecognition();
         startRecognition();
         setState('listening');
+        resetIdleTimer();
       }
       return;
     }
 
-    // ---- PAUSAR ATENCIÓN (micrófono sigue activo) ----
+    // ---- PAUSAR ATENCIÓN ----
     if (attentionActive) {
-      awaitingCommand = false;
-      clearTimeout(awaitingCommandTimeout);
-      setState('processing');
-
-      const despedidas = [
-        `De acuerdo ${USER_NAME}, me quedo en calma. Di "META" cuando me necesites, seguiré escuchando.`,
-        `Entendido ${USER_NAME}. Descanso, pero mi oído sigue atento. Solo di "META".`,
-        `Está bien ${USER_NAME}. Me relajo. Puedes llamarme diciendo "META" cuando quieras.`
-      ];
-
-      speak(despedidas[Math.floor(Math.random() * despedidas.length)], () => {
-        attentionActive = false;
-        setState('resting');
-        // El reconocimiento NO se detiene — sigue escuchando en segundo plano
-      });
+      enterRestMode(false); // con despedida hablada
       return;
     }
 
-    // ---- REACTIVAR ATENCIÓN ----
+    // ---- REACTIVAR ----
     attentionActive = true;
     awaitingCommand = false;
     setState('listening');
@@ -1019,6 +1019,7 @@
       if (attentionActive) {
         setState('listening');
         ensureRecognitionRunning();
+        resetIdleTimer();
       }
     }
   });
@@ -1063,7 +1064,6 @@
       micPermissionGranted = false;
       attentionActive = false;
       setState('resting');
-      statusText.textContent = 'Toca el orbe para despertarme...';
       return;
     }
 
@@ -1078,6 +1078,7 @@
     setTimeout(() => {
       startRecognition();
       setState('listening');
+      resetIdleTimer(); // ▶️ arranca el contador de 5s
 
       setTimeout(() => {
         if (!hasGreeted) {

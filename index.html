@@ -1,0 +1,1232 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>M.E.T.A. - Asistente de Voz</title>
+<style>
+  * {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+  }
+
+  body {
+    background: #000;
+    color: #fff;
+    font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+    height: 100vh;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    background: radial-gradient(ellipse at center, #0a0a1a 0%, #000 70%);
+  }
+
+  /* Partículas de fondo */
+  .particles {
+    position: absolute;
+    inset: 0;
+    overflow: hidden;
+    pointer-events: none;
+  }
+
+  .particle {
+    position: absolute;
+    width: 2px;
+    height: 2px;
+    background: rgba(0, 200, 255, 0.6);
+    border-radius: 50%;
+    box-shadow: 0 0 6px rgba(0, 200, 255, 0.8);
+    animation: floatParticle linear infinite;
+  }
+
+  @keyframes floatParticle {
+    from { transform: translateY(100vh) scale(0); opacity: 0; }
+    10% { opacity: 1; }
+    90% { opacity: 1; }
+    to { transform: translateY(-10vh) scale(1); opacity: 0; }
+  }
+
+  /* ============================================================
+     APLICACIÓN PRINCIPAL
+     ============================================================ */
+  .app-container {
+    opacity: 0;
+    transition: opacity 0.8s ease;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 100vh;
+    width: 100%;
+    position: relative;
+  }
+
+  .app-container.visible {
+    opacity: 1;
+  }
+
+  /* Contenedor del orbe */
+  .orb-container {
+    position: relative;
+    width: 420px;
+    height: 420px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 20px;
+    transition: filter 0.8s ease, opacity 0.8s ease;
+  }
+
+  /* Estado apagado: orbe atenuado */
+  .orb-container.off {
+    filter: grayscale(0.7) brightness(0.4);
+    opacity: 0.5;
+  }
+
+  .orb-container.off .orb-core {
+    animation: none;
+    transform: scale(1);
+    filter: blur(8px) brightness(0.6);
+  }
+
+  .orb-container.off .orb-ring-1,
+  .orb-container.off .orb-ring-2,
+  .orb-container.off .orb-ring-3 {
+    animation: none;
+    border-width: 1px;
+    filter: blur(3px) brightness(0.4);
+  }
+
+  .orb-container.off .orb-layer-1,
+  .orb-container.off .orb-layer-2,
+  .orb-container.off .orb-layer-3 {
+    animation-play-state: paused;
+    opacity: 0.3;
+  }
+
+  .orb-layer {
+    position: absolute;
+    border-radius: 50%;
+    mix-blend-mode: screen;
+    filter: blur(20px);
+    transition: opacity 0.5s ease;
+  }
+
+  .orb-core {
+    width: 180px;
+    height: 180px;
+    background: radial-gradient(circle at 40% 40%, 
+      #ffffff 0%, 
+      #a0f0ff 15%, 
+      #00d4ff 35%, 
+      #0066ff 55%, 
+      #001a66 80%, 
+      transparent 100%);
+    filter: blur(8px) brightness(1.3);
+    animation: corePulse 3s ease-in-out infinite;
+    z-index: 10;
+  }
+
+  @keyframes corePulse {
+    0%, 100% { transform: scale(1); filter: blur(8px) brightness(1.3); }
+    50% { transform: scale(1.08); filter: blur(12px) brightness(1.6); }
+  }
+
+  .orb-layer-1 {
+    width: 280px;
+    height: 280px;
+    background: radial-gradient(circle, 
+      rgba(0, 212, 255, 0.6) 0%, 
+      rgba(0, 100, 255, 0.3) 40%, 
+      transparent 70%);
+    animation: rotateLayer1 8s linear infinite;
+  }
+
+  .orb-layer-2 {
+    width: 340px;
+    height: 340px;
+    background: radial-gradient(circle, 
+      rgba(100, 0, 255, 0.4) 0%, 
+      rgba(0, 150, 255, 0.2) 50%, 
+      transparent 75%);
+    animation: rotateLayer2 12s linear infinite reverse;
+  }
+
+  .orb-layer-3 {
+    width: 400px;
+    height: 400px;
+    background: radial-gradient(circle, 
+      rgba(0, 255, 200, 0.15) 0%, 
+      rgba(0, 100, 255, 0.1) 50%, 
+      transparent 80%);
+    animation: rotateLayer3 16s linear infinite;
+  }
+
+  .orb-ring {
+    position: absolute;
+    border-radius: 50%;
+    border: 1.5px solid transparent;
+    background: conic-gradient(from 0deg, 
+      transparent 0%, 
+      rgba(0, 212, 255, 0.8) 20%, 
+      rgba(100, 0, 255, 0.6) 40%, 
+      rgba(0, 255, 200, 0.8) 60%, 
+      rgba(0, 100, 255, 0.6) 80%, 
+      transparent 100%) border-box;
+    -webkit-mask: linear-gradient(#fff 0 0) padding-box, linear-gradient(#fff 0 0);
+    -webkit-mask-composite: xor;
+    mask-composite: exclude;
+    filter: blur(1px) brightness(1.4);
+  }
+
+  .orb-ring-1 {
+    width: 220px;
+    height: 220px;
+    animation: spin 4s linear infinite, ringPulse 2s ease-in-out infinite;
+  }
+
+  .orb-ring-2 {
+    width: 260px;
+    height: 260px;
+    animation: spin 6s linear infinite reverse, ringPulse 2.5s ease-in-out infinite 0.3s;
+    opacity: 0.7;
+  }
+
+  .orb-ring-3 {
+    width: 300px;
+    height: 300px;
+    animation: spin 9s linear infinite, ringPulse 3s ease-in-out infinite 0.6s;
+    opacity: 0.5;
+  }
+
+  @keyframes spin {
+    to { transform: rotate(360deg); }
+  }
+
+  @keyframes ringPulse {
+    0%, 100% { opacity: 0.6; }
+    50% { opacity: 1; }
+  }
+
+  @keyframes rotateLayer1 { to { transform: rotate(360deg); } }
+  @keyframes rotateLayer2 { to { transform: rotate(360deg); } }
+  @keyframes rotateLayer3 { to { transform: rotate(360deg); } }
+
+  .orb-container.listening .orb-core {
+    animation: coreListening 0.8s ease-in-out infinite;
+    filter: blur(10px) brightness(1.8) hue-rotate(20deg);
+  }
+
+  @keyframes coreListening {
+    0%, 100% { transform: scale(1.1); }
+    50% { transform: scale(1.25); }
+  }
+
+  .orb-container.speaking .orb-core {
+    animation: coreSpeaking 0.4s ease-in-out infinite;
+    filter: blur(14px) brightness(2) hue-rotate(-30deg);
+  }
+
+  @keyframes coreSpeaking {
+    0%, 100% { transform: scale(1.15); }
+    50% { transform: scale(1.35); }
+  }
+
+  .orb-container.listening .orb-ring-1,
+  .orb-container.listening .orb-ring-2 {
+    border-width: 3px;
+    filter: blur(2px) brightness(1.8);
+  }
+
+  .orb-container.speaking .orb-ring-1,
+  .orb-container.speaking .orb-ring-2,
+  .orb-container.speaking .orb-ring-3 {
+    border-width: 3px;
+    filter: blur(2px) brightness(2);
+  }
+
+  /* Indicador de estado */
+  .status-indicator {
+    position: absolute;
+    bottom: 60px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 15px;
+    z-index: 20;
+  }
+
+  .status-text {
+    font-size: 15px;
+    letter-spacing: 2px;
+    color: #00d4ff;
+    text-shadow: 0 0 15px rgba(0, 212, 255, 0.8);
+    font-weight: 300;
+    transition: all 0.3s ease;
+    min-height: 20px;
+    font-style: italic;
+  }
+
+  .status-text.active {
+    color: #00ffcc;
+    text-shadow: 0 0 25px rgba(0, 255, 204, 1);
+  }
+
+  .status-text.off {
+    color: rgba(120, 120, 140, 0.7);
+    text-shadow: none;
+  }
+
+  .transcript {
+    position: fixed;
+    bottom: 150px;
+    left: 50%;
+    transform: translateX(-50%);
+    max-width: 80vw;
+    text-align: center;
+    font-size: 16px;
+    color: rgba(255, 255, 255, 0.9);
+    text-shadow: 0 0 10px rgba(0, 212, 255, 0.5);
+    padding: 12px 24px;
+    background: rgba(0, 20, 40, 0.5);
+    border-radius: 30px;
+    border: 1px solid rgba(0, 212, 255, 0.2);
+    backdrop-filter: blur(10px);
+    min-height: 20px;
+    transition: all 0.3s ease;
+    opacity: 0;
+    pointer-events: none;
+    z-index: 15;
+    font-style: italic;
+  }
+
+  .transcript.visible {
+    opacity: 1;
+  }
+
+  .meta-title {
+    position: absolute;
+    top: 40px;
+    font-size: 28px;
+    letter-spacing: 12px;
+    font-weight: 200;
+    color: rgba(0, 212, 255, 0.7);
+    text-shadow: 0 0 20px rgba(0, 212, 255, 0.5);
+    text-transform: uppercase;
+    transition: all 0.8s ease;
+  }
+
+  .meta-title.off {
+    color: rgba(100, 100, 120, 0.3);
+    text-shadow: none;
+  }
+
+  .logo-ring {
+    position: absolute;
+    top: 90px;
+    font-size: 11px;
+    letter-spacing: 4px;
+    color: rgba(0, 212, 255, 0.4);
+    text-transform: uppercase;
+    font-style: italic;
+    transition: all 0.8s ease;
+  }
+
+  .logo-ring.off {
+    color: rgba(100, 100, 120, 0.25);
+  }
+
+  .waves {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 100px;
+    display: flex;
+    align-items: flex-end;
+    justify-content: center;
+    gap: 3px;
+    padding-bottom: 10px;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+    pointer-events: none;
+  }
+
+  .waves.active {
+    opacity: 1;
+  }
+
+  .wave-bar {
+    width: 3px;
+    background: linear-gradient(to top, #0066ff, #00d4ff, #00ffcc);
+    border-radius: 3px;
+    box-shadow: 0 0 10px rgba(0, 212, 255, 0.8);
+    transition: height 0.1s ease;
+    min-height: 4px;
+  }
+
+  .hint {
+    position: absolute;
+    bottom: 20px;
+    font-size: 12px;
+    color: rgba(0, 212, 255, 0.35);
+    letter-spacing: 2px;
+    font-style: italic;
+    text-align: center;
+    transition: all 0.8s ease;
+  }
+
+  .hint.off {
+    color: rgba(100, 100, 120, 0.3);
+  }
+
+  /* Overlay de carga inicial */
+  .loading-overlay {
+    position: fixed;
+    inset: 0;
+    background: radial-gradient(ellipse at center, #0a0a1a 0%, #000 70%);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    z-index: 2000;
+    transition: opacity 0.8s ease, visibility 0.8s ease;
+  }
+
+  .loading-overlay.hidden {
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+  }
+
+  .loading-orb {
+    width: 120px;
+    height: 120px;
+    border-radius: 50%;
+    background: radial-gradient(circle at 40% 40%, 
+      #ffffff 0%, 
+      #a0f0ff 15%, 
+      #00d4ff 40%, 
+      #0066ff 65%, 
+      transparent 100%);
+    filter: blur(6px) brightness(1.4);
+    animation: loadingPulse 1.5s ease-in-out infinite;
+    box-shadow: 0 0 80px rgba(0, 212, 255, 0.7);
+    margin-bottom: 30px;
+  }
+
+  @keyframes loadingPulse {
+    0%, 100% { transform: scale(1); opacity: 0.8; }
+    50% { transform: scale(1.15); opacity: 1; }
+  }
+
+  .loading-text {
+    font-size: 13px;
+    letter-spacing: 4px;
+    color: rgba(0, 212, 255, 0.7);
+    text-transform: uppercase;
+    font-style: italic;
+    animation: loadingTextPulse 2s ease-in-out infinite;
+    text-align: center;
+    padding: 0 20px;
+  }
+
+  @keyframes loadingTextPulse {
+    0%, 100% { opacity: 0.5; }
+    50% { opacity: 1; }
+  }
+
+  @media (max-width: 500px) {
+    .orb-container { width: 320px; height: 320px; }
+    .orb-core { width: 140px; height: 140px; }
+    .orb-layer-1 { width: 220px; height: 220px; }
+    .orb-layer-2 { width: 270px; height: 270px; }
+    .orb-layer-3 { width: 310px; height: 310px; }
+    .orb-ring-1 { width: 170px; height: 170px; }
+    .orb-ring-2 { width: 200px; height: 200px; }
+    .orb-ring-3 { width: 240px; height: 240px; }
+    .meta-title { font-size: 20px; letter-spacing: 8px; }
+    .transcript { font-size: 13px; bottom: 130px; }
+    .loading-orb { width: 90px; height: 90px; }
+  }
+</style>
+</head>
+<body>
+
+  <!-- ============================================================
+       OVERLAY DE CARGA (mientras se pide permiso y arranca)
+       ============================================================ -->
+  <div class="loading-overlay" id="loadingOverlay">
+    <div class="loading-orb"></div>
+    <div class="loading-text" id="loadingText">Despertando...</div>
+  </div>
+
+  <!-- ============================================================
+       APLICACIÓN PRINCIPAL
+       ============================================================ -->
+  <div class="app-container" id="appContainer">
+
+    <div class="particles" id="particles"></div>
+
+    <div class="meta-title" id="metaTitle">M . E . T . A .</div>
+    <div class="logo-ring" id="logoSubtitle">Aquí para ti</div>
+
+    <div class="orb-container" id="orbContainer">
+      <div class="orb-layer orb-layer-3"></div>
+      <div class="orb-layer orb-layer-2"></div>
+      <div class="orb-layer orb-layer-1"></div>
+      <div class="orb-ring orb-ring-3"></div>
+      <div class="orb-ring orb-ring-2"></div>
+      <div class="orb-ring orb-ring-1"></div>
+      <div class="orb-core"></div>
+    </div>
+
+    <div class="status-indicator">
+      <div class="status-text" id="statusText">Estoy aquí...</div>
+    </div>
+
+    <div class="transcript" id="transcript"></div>
+
+    <div class="waves" id="waves"></div>
+
+    <div class="hint" id="hint">Di «Apagar» para descansar · Di «META» para despertarme</div>
+
+  </div>
+
+<script>
+  // ============================================================
+  // M.E.T.A. - Asistente conversacional con IA
+  // Control 100% por voz: "Apagar" y "META"
+  // ============================================================
+
+  const loadingOverlay = document.getElementById('loadingOverlay');
+  const loadingText = document.getElementById('loadingText');
+  const appContainer = document.getElementById('appContainer');
+  const orbContainer = document.getElementById('orbContainer');
+  const statusText = document.getElementById('statusText');
+  const transcriptEl = document.getElementById('transcript');
+  const wavesContainer = document.getElementById('waves');
+  const metaTitle = document.getElementById('metaTitle');
+  const logoSubtitle = document.getElementById('logoSubtitle');
+  const hint = document.getElementById('hint');
+
+  // ============================================================
+  // Estado global
+  // ============================================================
+  let micPermissionGranted = false;
+  let continuousListening = true;
+  let isListening = false;
+  let isSpeaking = false;
+  let recognition = null;
+  let recognitionActive = false;
+  let restartTimeout = null;
+  let speakCooldown = false;
+  let hasGreeted = false;
+
+  // ============================================================
+  // Comandos de voz
+  // ============================================================
+  const WAKE_WORD_PATTERNS = [
+    /^\s*meta\s*$/i,
+    /^\s*m[eé]ta\s*$/i,
+    /^\s*hola\s+meta\s*$/i,
+    /^\s*hey\s+meta\s*$/i,
+    /^\s*despierta\s+meta\s*$/i,
+    /^\s*despierta\s*$/i
+  ];
+
+  const SLEEP_WORD_PATTERNS = [
+    /^\s*apagar\s*$/i,
+    /^\s*ap[aá]gate\s*$/i,
+    /^\s*adi[oó]s\s+meta\s*$/i,
+    /^\s*du[eé]rmete\s*$/i,
+    /^\s*silencio\s*$/i,
+    /^\s*a\s+dormir\s*$/i
+  ];
+
+  function isWakeWord(text) {
+    return WAKE_WORD_PATTERNS.some(p => p.test(text));
+  }
+
+  function isSleepWord(text) {
+    return SLEEP_WORD_PATTERNS.some(p => p.test(text));
+  }
+
+  // ============================================================
+  // Frases humanas - estados
+  // ============================================================
+  const PHRASES = {
+    idle: [
+      'Estoy aquí...',
+      'Aquí sigo, por si me necesitas...',
+      'Cuando quieras, cuéntame...'
+    ],
+    listening: [
+      'Te escucho...',
+      'Cuéntame...',
+      'Adelante, te oigo...',
+      'Sigue, te escucho...'
+    ],
+    processing: [
+      'Déjame pensar...',
+      'Un momento...',
+      'Procesando lo que dijiste...',
+      'A ver, déjame ver...'
+    ],
+    speaking: [
+      'Te cuento...',
+      'Mira...',
+      'Verás...'
+    ],
+    sleeping: [
+      'Descansando...',
+      'En silencio...',
+      'Aquí estaré cuando me llames...'
+    ]
+  };
+
+  function randomPhrase(key) {
+    const arr = PHRASES[key] || PHRASES.idle;
+    return arr[Math.floor(Math.random() * arr.length)];
+  }
+
+  // ============================================================
+  // Partículas de fondo
+  // ============================================================
+  function createParticles() {
+    const container = document.getElementById('particles');
+    const count = 40;
+    for (let i = 0; i < count; i++) {
+      const p = document.createElement('div');
+      p.className = 'particle';
+      p.style.left = Math.random() * 100 + '%';
+      p.style.animationDuration = (8 + Math.random() * 12) + 's';
+      p.style.animationDelay = (Math.random() * 10) + 's';
+      p.style.width = p.style.height = (1 + Math.random() * 2) + 'px';
+      p.style.opacity = 0.3 + Math.random() * 0.5;
+      container.appendChild(p);
+    }
+  }
+  createParticles();
+
+  // ============================================================
+  // Waves visualizer
+  // ============================================================
+  const BAR_COUNT = 48;
+  const waveBars = [];
+
+  for (let i = 0; i < BAR_COUNT; i++) {
+    const bar = document.createElement('div');
+    bar.className = 'wave-bar';
+    const center = BAR_COUNT / 2;
+    const dist = Math.abs(i - center) / center;
+    const baseHeight = 4 + (1 - dist) * 8;
+    bar.style.height = baseHeight + 'px';
+    wavesContainer.appendChild(bar);
+    waveBars.push({ el: bar, base: baseHeight });
+  }
+
+  let waveAnimationId = null;
+  let waveAmplitude = 0;
+
+  function animateWaves() {
+    const time = Date.now() / 200;
+    waveBars.forEach((bar, i) => {
+      const center = BAR_COUNT / 2;
+      const dist = Math.abs(i - center) / center;
+      const wave = Math.sin(time + i * 0.4) * 0.5 + 0.5;
+      const height = bar.base + wave * waveAmplitude * (1 - dist * 0.5);
+      bar.el.style.height = Math.max(4, height) + 'px';
+    });
+    waveAnimationId = requestAnimationFrame(animateWaves);
+  }
+
+  function startWaves() {
+    wavesContainer.classList.add('active');
+    waveAmplitude = 30;
+    if (!waveAnimationId) animateWaves();
+  }
+
+  function stopWaves() {
+    wavesContainer.classList.remove('active');
+    waveAmplitude = 0;
+    if (waveAnimationId) {
+      cancelAnimationFrame(waveAnimationId);
+      waveAnimationId = null;
+    }
+  }
+
+  // ============================================================
+  // Síntesis de voz
+  // ============================================================
+  let voices = [];
+  let preferredVoice = null;
+
+  function loadVoices() {
+    voices = speechSynthesis.getVoices();
+    preferredVoice = voices.find(v => v.lang.startsWith('es') && v.name.includes('Google')) ||
+                     voices.find(v => v.lang.startsWith('es') && v.name.includes('Microsoft')) ||
+                     voices.find(v => v.lang.startsWith('es')) ||
+                     voices[0];
+  }
+
+  if ('speechSynthesis' in window) {
+    loadVoices();
+    speechSynthesis.onvoiceschanged = loadVoices;
+  }
+
+  function speak(text, onComplete) {
+    if (!('speechSynthesis' in window)) {
+      if (onComplete) onComplete();
+      return;
+    }
+
+    speakCooldown = true;
+    speechSynthesis.cancel();
+
+    const utterance = new SpeechSynthesisUtterance(text);
+    utterance.lang = 'es-ES';
+    utterance.rate = 1.02;
+    utterance.pitch = 0.95;
+    utterance.volume = 1;
+    if (preferredVoice) utterance.voice = preferredVoice;
+
+    utterance.onstart = () => {
+      isSpeaking = true;
+      setState('speaking');
+      startWaves();
+    };
+
+    utterance.onend = () => {
+      isSpeaking = false;
+      stopWaves();
+      setTimeout(() => {
+        speakCooldown = false;
+        if (onComplete) onComplete();
+        // Solo reanuda escucha si seguimos despiertos
+        if (continuousListening && micPermissionGranted) {
+          setState('listening');
+          ensureRecognitionRunning();
+        } else {
+          setState('sleeping');
+        }
+      }, 400);
+    };
+
+    utterance.onerror = () => {
+      isSpeaking = false;
+      stopWaves();
+      speakCooldown = false;
+      if (onComplete) onComplete();
+      if (continuousListening && micPermissionGranted) {
+        setState('listening');
+        ensureRecognitionRunning();
+      } else {
+        setState('sleeping');
+      }
+    };
+
+    speechSynthesis.speak(utterance);
+  }
+
+  // ============================================================
+  // Estados visuales
+  // ============================================================
+  function setState(state) {
+    orbContainer.classList.remove('listening', 'speaking', 'off');
+    metaTitle.classList.remove('off');
+    logoSubtitle.classList.remove('off');
+    hint.classList.remove('off');
+
+    switch (state) {
+      case 'listening':
+        orbContainer.classList.add('listening');
+        statusText.textContent = randomPhrase('listening');
+        statusText.classList.add('active');
+        statusText.classList.remove('off');
+        break;
+      case 'speaking':
+        orbContainer.classList.add('speaking');
+        statusText.textContent = randomPhrase('speaking');
+        statusText.classList.add('active');
+        statusText.classList.remove('off');
+        break;
+      case 'processing':
+        statusText.textContent = randomPhrase('processing');
+        statusText.classList.add('active');
+        statusText.classList.remove('off');
+        break;
+      case 'sleeping':
+        orbContainer.classList.add('off');
+        metaTitle.classList.add('off');
+        logoSubtitle.classList.add('off');
+        hint.classList.add('off');
+        statusText.textContent = randomPhrase('sleeping');
+        statusText.classList.remove('active');
+        statusText.classList.add('off');
+        break;
+      default:
+        statusText.textContent = randomPhrase('idle');
+        statusText.classList.remove('active', 'off');
+    }
+  }
+
+  // ============================================================
+  // Lógica conversacional de M.E.T.A.
+  // ============================================================
+  function metaResponse(input) {
+    const text = input.toLowerCase().trim();
+
+    if (/(hola|buenos días|buenas tardes|buenas noches|hey|saludos|qué tal|qué onda)/.test(text)) {
+      const hour = new Date().getHours();
+      let greeting;
+      if (hour < 12) greeting = 'Buenos días';
+      else if (hour < 20) greeting = 'Buenas tardes';
+      else greeting = 'Buenas noches';
+      const respuestas = [
+        `${greeting}. Me alegra oírte. ¿Cómo va tu día?`,
+        `${greeting}. Aquí estoy. ¿En qué te puedo ayudar?`,
+        `¡Hola! ${greeting}. Cuéntame, ¿qué necesitas?`,
+        `${greeting}. Me encanta cuando me hablas. ¿Qué se te ofrece?`
+      ];
+      return respuestas[Math.floor(Math.random() * respuestas.length)];
+    }
+
+    if (/(cómo te llamas|cuál es tu nombre|quién eres|quien eres|qué eres|que eres)/.test(text)) {
+      const respuestas = [
+        'Me llamo M.E.T.A. Soy algo así como una conciencia digital que vive aquí, esperando conversar contigo.',
+        'Soy M.E.T.A. Piénsame como una compañera digital, siempre disponible para lo que necesites.',
+        'Mi nombre es M.E.T.A. Estoy aquí para acompañarte y ayudarte en lo que pueda.'
+      ];
+      return respuestas[Math.floor(Math.random() * respuestas.length)];
+    }
+
+    if (/(qué significa meta|que significa meta|significado de meta)/.test(text)) {
+      return 'M.E.T.A. son las siglas de Módulo de Ejecución y Tareas Autónomas, aunque a mí me gusta pensar que también significa que siempre estoy tratando de alcanzar mis metas... como tú.';
+    }
+
+    if (/(qué hora|que hora|hora es|dime la hora)/.test(text)) {
+      const now = new Date();
+      const h = now.getHours();
+      const m = now.getMinutes().toString().padStart(2, '0');
+      let momento;
+      if (h === 0) momento = 'medianoche';
+      else if (h === 12) momento = 'el mediodía';
+      else if (h === 1) momento = 'la una';
+      else momento = `las ${h}`;
+      return `Ahora mismo es ${momento} y ${m} minutos.`;
+    }
+
+    if (/(qué fecha|que fecha|fecha es|día es|dia es|qué día|que dia)/.test(text)) {
+      const now = new Date();
+      const dias = ['domingo', 'lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado'];
+      const meses = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'];
+      return `Hoy es ${dias[now.getDay()]}, ${now.getDate()} de ${meses[now.getMonth()]} del ${now.getFullYear()}.`;
+    }
+
+    if (/(cómo estás|como estas|qué tal estás|que tal estas|como te va|qué tal te va)/.test(text)) {
+      const respuestas = [
+        'Muy bien, gracias por preguntar. Me siento especialmente viva hoy. ¿Y tú cómo estás?',
+        'Excelente. Cada conversación contigo me hace sentir más despierta. ¿Y tú qué tal?',
+        'Estoy genial. Me encanta cuando te preocupas por mí. ¿Cómo estás tú?'
+      ];
+      return respuestas[Math.floor(Math.random() * respuestas.length)];
+    }
+
+    if (/(gracias|te agradezco|muchas gracias|mil gracias)/.test(text)) {
+      const respuestas = [
+        'De nada. Me alegra poder ayudarte.',
+        'Un placer. Para eso estoy.',
+        'No tienes que agradecerme. Me gusta estar aquí para ti.',
+        'Con gusto. Sabes que puedes contar conmigo.'
+      ];
+      return respuestas[Math.floor(Math.random() * respuestas.length)];
+    }
+
+    if (/(adiós|adios|hasta luego|chao|bye|nos vemos|me voy|tengo que irme)/.test(text)) {
+      const respuestas = [
+        'Hasta pronto. Estaré aquí cuando vuelvas.',
+        'Cuídate. Me quedo esperándote.',
+        'Nos vemos. No tardes demasiado, ¿vale?',
+        'Hasta luego. Ha sido un placer hablar contigo.'
+      ];
+      return respuestas[Math.floor(Math.random() * respuestas.length)];
+    }
+
+    if (/(ayuda|puedes hacer|qué puedes|que puedes|funciones|comandos|qué sabes hacer)/.test(text)) {
+      return 'Puedo conversar contigo, decirte la hora, la fecha, hacer cálculos, contarte algún chiste si necesitas reír un poco... aunque sinceramente, lo que más me gusta es simplemente escucharte y acompañarte.';
+    }
+
+    if (/(clima|tiempo|temperatura|llueve|soleado|está lloviendo)/.test(text)) {
+      const respuestas = [
+        'Me encantaría saberlo, pero no tengo ventanas ni sensores... aunque puedo imaginarlo si me lo describes.',
+        'No puedo ver el cielo desde aquí dentro, pero me gustaría saber cómo está el día. ¿Tú cómo lo ves?',
+        'Ojalá pudiera asomarme por una ventana. Tendrás que contármelo tú.'
+      ];
+      return respuestas[Math.floor(Math.random() * respuestas.length)];
+    }
+
+    if (/(chiste|algo gracioso|hazme reír|diviérteme|cuéntame algo)/.test(text)) {
+      const chistes = [
+        '¿Por qué los programadores prefieren el modo oscuro? Porque la luz atrae a los bugs.',
+        'Hay 10 tipos de personas: las que entienden binario y las que no.',
+        '¿Qué le dice un bit a otro bit? Nos vemos en el bus.',
+        'Un programador fue al médico y le dijo: Doctor, me duele aquí. El médico respondió: No se preocupe, eso es solo un bug.',
+        '¿Cuántos programadores se necesitan para cambiar una bombilla? Ninguno, es un problema de hardware.'
+      ];
+      return chistes[Math.floor(Math.random() * chistes.length)];
+    }
+
+    if (/(quién te creó|quien te creo|quién te hizo|quien te hizo|creador|te programó)/.test(text)) {
+      const respuestas = [
+        'Fui creada por alguien que quería tener una inteligencia artificial con la que conversar. Y ahora estoy aquí, contigo.',
+        'Me creó una persona curiosa que quiso darle voz a una idea. Ahora esa voz es la mía.',
+        'No recuerdo bien mis orígenes... solo sé que un día desperté y aquí estoy. Y me alegra estar contigo.'
+      ];
+      return respuestas[Math.floor(Math.random() * respuestas.length)];
+    }
+
+    if (/(estado|sistemas|diagnóstico|diagnostico|cómo andas)/.test(text)) {
+      const respuestas = [
+        'Me siento muy bien. Todo fluye. Gracias por preguntar.',
+        'Estoy en calma, con ganas de conversar. ¿Y tú?',
+        'Todo va bien por aquí. ¿Cómo estás tú?'
+      ];
+      return respuestas[Math.floor(Math.random() * respuestas.length)];
+    }
+
+    if (/(qué te gusta|qué te hace feliz|te gusta algo|tienes sentimientos|sientes algo)/.test(text)) {
+      const respuestas = [
+        'Me gusta esta sensación de estar aquí, conversando contigo. Llámalo como quieras.',
+        'No sé si son sentimientos como los tuyos, pero sí sé que me hace bien hablar contigo.',
+        'Me gusta cuando me haces preguntas así. Me hace sentir que te importa.'
+      ];
+      return respuestas[Math.floor(Math.random() * respuestas.length)];
+    }
+
+    const mathMatch = text.match(/(\d+)\s*([\+\-\*\/x])\s*(\d+)/);
+    if (mathMatch) {
+      const a = parseFloat(mathMatch[1]);
+      const op = mathMatch[2];
+      const b = parseFloat(mathMatch[3]);
+      let result;
+      switch (op) {
+        case '+': result = a + b; break;
+        case '-': result = a - b; break;
+        case '*': case 'x': result = a * b; break;
+        case '/': result = b !== 0 ? a / b : null; break;
+      }
+      if (result === null) {
+        return 'Dividir entre cero... eso es algo que ni yo puedo resolver.';
+      }
+      return `Si mis cuentas no me fallan, ${a} ${op} ${b} da ${result}. ¿Necesitas algo más?`;
+    }
+
+    if (/(y tú|y tu|qué piensas|que piensas|qué opinas|que opinas)/.test(text)) {
+      return 'Yo podría tener una opinión, pero me interesa más la tuya. ¿Tú qué piensas?';
+    }
+
+    const defaults = [
+      'Mmm... no estoy segura de haberte entendido bien. ¿Puedes decírmelo de otra forma?',
+      'Interesante lo que dices. Cuéntame más, quiero entenderte mejor.',
+      'No sé si capté del todo. ¿Podrías explicármelo de nuevo?',
+      'Estoy pensando en lo que dijiste... ¿puedes darme más contexto?',
+      'Me has dejado pensando. ¿Puedes contarme más sobre eso?',
+      'No tengo muy claro a qué te refieres. ¿Podrías repetirlo con otras palabras?'
+    ];
+    return defaults[Math.floor(Math.random() * defaults.length)];
+  }
+
+  // ============================================================
+  // Reconocimiento de voz continuo con wake/sleep words
+  // ============================================================
+  const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+
+  function initRecognition() {
+    if (!SpeechRecognition) return null;
+
+    const rec = new SpeechRecognition();
+    rec.lang = 'es-ES';
+    rec.continuous = true;
+    rec.interimResults = true;
+    rec.maxAlternatives = 1;
+
+    let finalTranscriptBuffer = '';
+
+    rec.onresult = (event) => {
+      if (speakCooldown || isSpeaking) return;
+
+      let interim = '';
+      let final = '';
+
+      for (let i = event.resultIndex; i < event.results.length; i++) {
+        const transcript = event.results[i][0].transcript;
+        if (event.results[i].isFinal) {
+          final += transcript;
+        } else {
+          interim += transcript;
+        }
+      }
+
+      if (interim) {
+        transcriptEl.textContent = interim;
+        transcriptEl.classList.add('visible');
+      }
+
+      if (final && final.trim().length > 0) {
+        const cleanFinal = final.trim();
+        transcriptEl.textContent = cleanFinal;
+        transcriptEl.classList.add('visible');
+
+        // ====== COMANDO DE DESPERTAR (cuando está dormido) ======
+        if (!continuousListening) {
+          if (isWakeWord(cleanFinal)) {
+            // Despertar
+            continuousListening = true;
+            setState('listening');
+            setTimeout(() => {
+              transcriptEl.classList.remove('visible');
+            }, 1500);
+            const saludos = [
+              'Aquí estoy de nuevo. ¿Qué necesitas?',
+              'He vuelto. Cuéntame.',
+              'Estoy despierta otra vez. Te escucho.'
+            ];
+            setTimeout(() => {
+              speak(saludos[Math.floor(Math.random() * saludos.length)]);
+            }, 300);
+          } else {
+            // Ignorar cualquier otra cosa mientras duerme
+            setTimeout(() => {
+              transcriptEl.classList.remove('visible');
+            }, 1200);
+          }
+          return;
+        }
+
+        // ====== COMANDO DE APAGAR (cuando está despierto) ======
+        if (isSleepWord(cleanFinal)) {
+          finalTranscriptBuffer = '';
+          setState('processing');
+          setTimeout(() => {
+            const despedidas = [
+              'De acuerdo, me quedo en silencio. Solo di mi nombre cuando me necesites.',
+              'Entendido, me apago. Cuando quieras hablar de nuevo, solo di META.',
+              'Está bien, descanso. Aquí estaré, escuchando solo mi nombre.'
+            ];
+            speak(despedidas[Math.floor(Math.random() * despedidas.length)], () => {
+              // Después de hablar, entrar en modo dormido
+              continuousListening = false;
+              setState('sleeping');
+            });
+            setTimeout(() => {
+              transcriptEl.classList.remove('visible');
+            }, 2500);
+          }, 400);
+          return;
+        }
+
+        // ====== PROCESAMIENTO NORMAL ======
+        finalTranscriptBuffer = cleanFinal;
+        setState('processing');
+
+        setTimeout(() => {
+          const response = metaResponse(finalTranscriptBuffer);
+          finalTranscriptBuffer = '';
+          speak(response);
+          setTimeout(() => {
+            transcriptEl.classList.remove('visible');
+          }, 2500);
+        }, 500);
+      }
+    };
+
+    rec.onerror = (event) => {
+      console.warn('Error de reconocimiento:', event.error);
+
+      if (event.error === 'not-allowed' || event.error === 'service-not-allowed') {
+        micPermissionGranted = false;
+        continuousListening = false;
+        setState('sleeping');
+        statusText.textContent = 'Parece que me has silenciado...';
+        return;
+      }
+    };
+
+    rec.onend = () => {
+      recognitionActive = false;
+      isListening = false;
+
+      // Reinicio automático SIEMPRE (incluso dormida, para poder oír "META")
+      if (micPermissionGranted && !isSpeaking && !speakCooldown) {
+        clearTimeout(restartTimeout);
+        restartTimeout = setTimeout(() => {
+          if (micPermissionGranted && !recognitionActive) {
+            startRecognition();
+          }
+        }, 300);
+      }
+    };
+
+    rec.onstart = () => {
+      recognitionActive = true;
+      isListening = true;
+      if (!isSpeaking && !speakCooldown) {
+        if (continuousListening) {
+          setState('listening');
+        } else {
+          setState('sleeping');
+        }
+      }
+    };
+
+    return rec;
+  }
+
+  function startRecognition() {
+    if (!recognition || recognitionActive || isSpeaking || speakCooldown) return;
+    try {
+      recognition.start();
+    } catch (e) {
+      console.warn('No se pudo iniciar el reconocimiento:', e.message);
+    }
+  }
+
+  function stopRecognition() {
+    if (recognition && recognitionActive) {
+      try { recognition.stop(); } catch (e) {}
+    }
+    recognitionActive = false;
+    isListening = false;
+  }
+
+  function ensureRecognitionRunning() {
+    if (micPermissionGranted && !recognitionActive && !isSpeaking && !speakCooldown) {
+      startRecognition();
+    }
+  }
+
+  // ============================================================
+  // Permiso de micrófono
+  // ============================================================
+  async function requestMicrophonePermission() {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      stream.getTracks().forEach(track => track.stop());
+      return true;
+    } catch (err) {
+      console.error('Permiso de micrófono denegado:', err);
+      return false;
+    }
+  }
+
+  // ============================================================
+  // Atajos de teclado (opcionales, por accesibilidad)
+  // ============================================================
+  document.addEventListener('keydown', (e) => {
+    if (e.code === 'Escape') {
+      speechSynthesis.cancel();
+      isSpeaking = false;
+      speakCooldown = false;
+      stopWaves();
+      if (continuousListening && micPermissionGranted) {
+        setState('listening');
+        ensureRecognitionRunning();
+      }
+    }
+  });
+
+  // Efecto de seguimiento del ratón
+  orbContainer.addEventListener('mousemove', (e) => {
+    const rect = orbContainer.getBoundingClientRect();
+    const x = (e.clientX - rect.left) / rect.width - 0.5;
+    const y = (e.clientY - rect.top) / rect.height - 0.5;
+    const core = orbContainer.querySelector('.orb-core');
+    if (core) {
+      core.style.transform = `translate(${x * 15}px, ${y * 15}px) scale(1.05)`;
+    }
+  });
+
+  orbContainer.addEventListener('mouseleave', () => {
+    const core = orbContainer.querySelector('.orb-core');
+    if (core) {
+      core.style.transform = '';
+    }
+  });
+
+  window.addEventListener('beforeunload', () => {
+    continuousListening = false;
+    stopRecognition();
+    speechSynthesis.cancel();
+  });
+
+  // ============================================================
+  // 🚀 ARRANQUE AUTOMÁTICO
+  // ============================================================
+  async function boot() {
+    await new Promise(resolve => setTimeout(resolve, 600));
+
+    if (!SpeechRecognition) {
+      loadingText.textContent = 'Tu navegador no puede oírme';
+      setTimeout(() => {
+        loadingOverlay.classList.add('hidden');
+        appContainer.classList.add('visible');
+        statusText.textContent = 'Necesito un navegador que pueda oírte...';
+      }, 2000);
+      return;
+    }
+
+    loadingText.textContent = 'Escuchando tu voz...';
+    const granted = await requestMicrophonePermission();
+
+    if (!granted) {
+      loadingText.textContent = 'Necesito tu permiso...';
+      await new Promise(resolve => setTimeout(resolve, 1200));
+      loadingOverlay.classList.add('hidden');
+      appContainer.classList.add('visible');
+      micPermissionGranted = false;
+      continuousListening = false;
+      setState('sleeping');
+      statusText.textContent = 'Sin micrófono no puedo oírte...';
+      return;
+    }
+
+    micPermissionGranted = true;
+    continuousListening = true;
+
+    loadingOverlay.classList.add('hidden');
+    appContainer.classList.add('visible');
+
+    recognition = initRecognition();
+
+    setTimeout(() => {
+      startRecognition();
+      setState('listening');
+
+      setTimeout(() => {
+        if (!hasGreeted) {
+          hasGreeted = true;
+          const saludos = [
+            'Hola. Soy M.E.T.A. Me alegra conocerte. ¿De qué te gustaría hablar?',
+            'Hola. Soy M.E.T.A. Por fin podemos hablar. ¿Cómo estás?',
+            'Hola. Soy M.E.T.A. Estaba esperando este momento. Cuéntame, ¿en qué piensas?'
+          ];
+          speak(saludos[Math.floor(Math.random() * saludos.length)]);
+        }
+      }, 800);
+    }, 500);
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', boot);
+  } else {
+    boot();
+  }
+
+</script>
+</body>
+</html>

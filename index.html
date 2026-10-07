@@ -950,48 +950,116 @@
     filter: drop-shadow(0 0 6px rgba(var(--orb-glow), 1));
   }
 
+  /* ============================================================
+     MOBILE: panel de apps arriba o abajo del orbe (sin encimarse)
+     ============================================================ */
   @media (max-width: 800px) {
     .side-apps-panel {
-      width: min(200px, 40vw);
-      max-height: min(280px, 48vh);
+      /* Reset del layout lateral de escritorio */
+      top: auto;
+      left: 50% !important;
+      right: auto !important;
+      transform: translateX(-50%) scale(0.92);
+      transform-origin: center center;
+
+      width: min(360px, 94vw);
+      max-width: 94vw;
+      max-height: 55vh;
+      overflow: hidden;
     }
-    .side-apps-panel.side-left {
-      left: calc(50% - min(175px, 50vw));
-      transform: translate(-100%, -50%) scale(0.95);
+
+    /* Variante: se despliega ARRIBA del orbe */
+    .side-apps-panel.mobile-top {
+      top: 50%;
+      left: 50% !important;
+      bottom: auto;
+      transform: translate(-50%, calc(-100% - min(190px, 30vmin))) scale(0.92);
     }
-    .side-apps-panel.side-left.visible {
-      transform: translate(-100%, -50%) scale(1);
+    .side-apps-panel.mobile-top.visible {
+      transform: translate(-50%, calc(-100% - min(190px, 30vmin))) scale(1);
     }
-    .side-apps-panel.side-right {
-      left: calc(50% + min(175px, 50vw));
-      transform: translate(0, -50%) scale(0.95);
+
+    /* Variante: se despliega ABAJO del orbe */
+    .side-apps-panel.mobile-bottom {
+      top: 50%;
+      left: 50% !important;
+      bottom: auto;
+      transform: translate(-50%, min(190px, 30vmin)) scale(0.92);
     }
-    .side-apps-panel.side-right.visible {
-      transform: translate(0, -50%) scale(1);
+    .side-apps-panel.mobile-bottom.visible {
+      transform: translate(-50%, min(190px, 30vmin)) scale(1);
     }
-    .side-apps-title { font-size: 0.52rem; }
-    .side-apps-list { grid-template-columns: repeat(2, 1fr); gap: 5px; padding: 8px; }
-    .side-app-item { padding: 8px 4px; gap: 4px; min-height: 50px; }
-    .side-app-item-label { font-size: 0.42rem; }
-    .side-app-item-icon { width: 22px; height: 22px; font-size: 0.6rem; }
+
+    /* Lista de apps en móvil: 3 columnas, más compacta */
+    .side-apps-panel.mobile-top .side-apps-list,
+    .side-apps-panel.mobile-bottom .side-apps-list {
+      grid-template-columns: repeat(3, 1fr);
+      gap: 6px;
+      padding: 10px;
+      max-height: calc(55vh - 60px);
+      overflow-y: auto;
+    }
+
+    .side-apps-panel.mobile-top .side-app-item,
+    .side-apps-panel.mobile-bottom .side-app-item {
+      min-height: 64px;
+      padding: 8px 5px;
+      gap: 5px;
+    }
+
+    .side-apps-panel.mobile-top .side-app-item-label,
+    .side-apps-panel.mobile-bottom .side-app-item-label {
+      font-size: 0.58rem;
+      line-height: 1.2;
+    }
+
+    .side-apps-panel.mobile-top .side-app-item-icon,
+    .side-apps-panel.mobile-bottom .side-app-item-icon {
+      width: 30px;
+      height: 30px;
+      font-size: 0.85rem;
+    }
+
+    .side-apps-panel.mobile-top .side-apps-title,
+    .side-apps-panel.mobile-bottom .side-apps-title {
+      font-size: 0.62rem;
+    }
   }
+
   @media (max-width: 500px) {
-    .side-apps-panel {
-      width: min(140px, 38vw);
-      max-height: min(240px, 42vh);
+    .side-apps-panel.mobile-top {
+      transform: translate(-50%, calc(-100% - min(170px, 30vmin))) scale(0.92);
     }
-    .side-apps-panel.side-left {
-      left: calc(50% - min(135px, 49vw));
+    .side-apps-panel.mobile-top.visible {
+      transform: translate(-50%, calc(-100% - min(170px, 30vmin))) scale(1);
     }
-    .side-apps-panel.side-right {
-      left: calc(50% + min(135px, 49vw));
+    .side-apps-panel.mobile-bottom {
+      transform: translate(-50%, min(170px, 30vmin)) scale(0.92);
     }
-    .side-apps-header { padding: 6px 8px; gap: 4px; }
-    .side-apps-icon { width: 22px; height: 22px; font-size: 0.65rem; }
-    .side-apps-title { font-size: 0.42rem; letter-spacing: 0.3px; }
-    .side-apps-list { grid-template-columns: 1fr 1fr; gap: 4px; padding: 6px; }
-    .side-app-item { min-height: 44px; padding: 5px 2px; }
-    .side-app-item-label { font-size: 0.38rem; }
+    .side-apps-panel.mobile-bottom.visible {
+      transform: translate(-50%, min(170px, 30vmin)) scale(1);
+    }
+    .side-apps-panel.mobile-top .side-apps-list,
+    .side-apps-panel.mobile-bottom .side-apps-list {
+      max-height: calc(52vh - 55px);
+      padding: 8px;
+      gap: 5px;
+    }
+    .side-apps-panel.mobile-top .side-app-item,
+    .side-apps-panel.mobile-bottom .side-app-item {
+      min-height: 58px;
+      padding: 7px 4px;
+    }
+    .side-apps-panel.mobile-top .side-app-item-label,
+    .side-apps-panel.mobile-bottom .side-app-item-label {
+      font-size: 0.5rem;
+    }
+    .side-apps-panel.mobile-top .side-app-item-icon,
+    .side-apps-panel.mobile-bottom .side-app-item-icon {
+      width: 26px;
+      height: 26px;
+      font-size: 0.72rem;
+    }
   }
 
   
@@ -1113,13 +1181,25 @@
     box-shadow: 0 6px 18px rgba(0,0,0,0.3);
     opacity: 0;
     pointer-events: none;
-    transition: opacity 0.4s ease;
+    transition: opacity 0.6s ease, transform 0.6s cubic-bezier(0.16, 1, 0.3, 1), filter 0.6s ease;
   }
   .rest-message.visible {
     opacity: 1;
+    transform: translateY(0) scale(1);
+    filter: blur(0);
   }
-  .rest-message:empty,
-  .rest-message:not(.visible) {
+  /* Animación de entrada/salida de la frase */
+  .rest-message.fading-out {
+    opacity: 0 !important;
+    transform: translateY(-12px) scale(0.96);
+    filter: blur(6px);
+  }
+  .rest-message.fading-in {
+    opacity: 0;
+    transform: translateY(12px) scale(0.96);
+    filter: blur(6px);
+  }
+  .rest-message:empty {
     display: none;
   }
   @media (max-width: 600px) {
@@ -1177,6 +1257,36 @@
     margin-top: 14px;
     font-size: 0.6rem;
     color: rgba(255,255,255,0.35);
+  }
+
+  /* Lista de frases en configuración */
+  .rest-phrase-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 10px;
+    margin-bottom: 5px;
+    background: rgba(255,255,255,0.04);
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 8px;
+    font-size: 0.68rem;
+    color: rgba(255,255,255,0.85);
+  }
+  .rest-phrase-item .rp-text { flex: 1; min-width: 0; word-break: break-word; }
+  .rest-phrase-item .rp-del {
+    width: 22px; height: 22px;
+    border-radius: 50%;
+    border: 1px solid rgba(255,80,80,0.4);
+    background: rgba(255,60,60,0.15);
+    color: #ff6b6b;
+    cursor: pointer;
+    font-size: 0.65rem;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+  }
+  .rest-phrase-item .rp-del:hover {
+    background: rgba(255,60,60,0.3);
+    border-color: rgba(255,80,80,0.7);
   }
 
   /* Orb fully at rest — blurred / off */
@@ -2165,9 +2275,13 @@
           <div class="reminder-list" id="reminderList"></div>
         </div>
         <div class="settings-section">
-          <div class="settings-label">Frase en modo descanso</div>
-          <textarea id="restPhraseInput" class="settings-input" rows="3" maxlength="200" placeholder="Ej: El control interno es responsabilidad de todos" style="width:100%;resize:vertical;min-height:64px;padding:8px 10px;border-radius:8px;border:1px solid rgba(255,255,255,0.12);background:rgba(0,0,0,0.3);color:#fff;font-size:0.75rem;font-family:inherit;"></textarea>
-          <div class="settings-info" style="margin-top:6px;">Se muestra arriba del clima y los recordatorios cuando META descansa.</div>
+          <div class="settings-label">Frases en modo descanso</div>
+          <div class="reminder-form">
+            <textarea id="restPhraseInput" class="settings-input" rows="2" maxlength="200" placeholder="Escribe una frase y presiona Agregar..." style="width:100%;resize:vertical;min-height:52px;padding:8px 10px;border-radius:8px;border:1px solid rgba(255,255,255,0.12);background:rgba(0,0,0,0.3);color:#fff;font-size:0.75rem;font-family:inherit;"></textarea>
+            <button type="button" class="reminder-add-btn" id="restPhraseAddBtn">+ Agregar frase</button>
+          </div>
+          <div class="reminder-list" id="restPhraseList"></div>
+          <div class="settings-info" style="margin-top:6px;">Se muestran rotando cada 1 minuto cuando META descansa.</div>
         </div>
         <div class="settings-section">
           <div class="settings-label">Herramientas internas</div>
@@ -2196,10 +2310,23 @@
     MOUSE_FOLLOW: true,
     ORB_SIZE: 100,
     IDLE_TIMEOUT_MS: 10000,
-    REST_PHRASE: 'El control interno es responsabilidad de todos'
+    REST_PHRASES: ['El control interno es responsabilidad de todos']
   };
   let settings = { ...DEFAULT_SETTINGS };
   try { const s = localStorage.getItem('meta-hud-settings'); if (s) Object.assign(settings, JSON.parse(s)); } catch (e) {}
+
+  // ⭐ Migración: si venimos de la versión con REST_PHRASE (string), lo convertimos a array
+  if (typeof settings.REST_PHRASE === 'string') {
+    const old = settings.REST_PHRASE.trim();
+    if (old && (!Array.isArray(settings.REST_PHRASES) || settings.REST_PHRASES.length === 0)) {
+      settings.REST_PHRASES = [old];
+    }
+    delete settings.REST_PHRASE;
+  }
+  if (!Array.isArray(settings.REST_PHRASES) || settings.REST_PHRASES.length === 0) {
+    settings.REST_PHRASES = [...DEFAULT_SETTINGS.REST_PHRASES];
+  }
+
   function saveSettings() { try { localStorage.setItem('meta-hud-settings', JSON.stringify(settings)); } catch (e) {} }
 
   const voiceSettings = { voiceName: null, rate: 1.05, pitch: 1.15, volume: 1.0 };
@@ -2259,7 +2386,7 @@
   const connectorSvg = document.getElementById('connectorSvg');
   const stage = document.getElementById('stage');
   const hiddenAppsGrid = document.getElementById('hiddenAppsGrid');
-  const statusText = document.getElementById('statusText'); // ← será null si no existe en HTML
+  const statusText = document.getElementById('statusText'); // ← null si no existe en HTML
 
   const settingsButton = document.getElementById('settingsButton');
   const settingsPanel = document.getElementById('settingsPanel');
@@ -2437,6 +2564,7 @@
     if (dash) dash.classList.remove('visible');
     document.getElementById('restMessage')?.classList.remove('visible');
     stopRestClock();
+    stopPhraseRotation(); // ⭐ Detener rotación de frases
 
     lastActivityAt = Date.now();
     resetIdleTimer();
@@ -2453,6 +2581,11 @@
     const r = localStorage.getItem('meta-reminders');
     if (r) reminders = JSON.parse(r);
   } catch (e) {}
+
+  // ⭐ Rotador de frases en modo descanso
+  let restPhraseInterval = null;
+  let currentPhraseIndex = 0;
+  const REST_PHRASE_DURATION_MS = 60000; // 1 minuto por frase
 
   function saveReminders() {
     try { localStorage.setItem('meta-reminders', JSON.stringify(reminders)); } catch (e) {}
@@ -2542,13 +2675,83 @@
   function updateRestDashboard() {
     tickRestClock();
     renderRestReminders();
+    startPhraseRotation();
+  }
+
+  // ⭐ Sistema de rotación de frases
+  function getPhrases() {
+    return (settings.REST_PHRASES || []).map(p => (p || '').trim()).filter(Boolean);
+  }
+
+  function startPhraseRotation() {
+    stopPhraseRotation();
+    const phrases = getPhrases();
     const msg = document.getElementById('restMessage');
-    if (msg) {
-      const phrase = (settings.REST_PHRASE || '').trim();
-      msg.textContent = phrase;
-      if (phrase) msg.classList.add('visible');
-      else msg.classList.remove('visible');
+    if (!msg) return;
+
+    if (phrases.length === 0) {
+      msg.classList.remove('visible');
+      msg.textContent = '';
+      return;
     }
+
+    currentPhraseIndex = 0;
+    showPhrase(msg, phrases[0], false);
+    if (phrases.length > 1) {
+      restPhraseInterval = setInterval(() => {
+        currentPhraseIndex = (currentPhraseIndex + 1) % phrases.length;
+        showPhraseAnimated(phrases[currentPhraseIndex]);
+      }, REST_PHRASE_DURATION_MS);
+    }
+  }
+
+  function stopPhraseRotation() {
+    if (restPhraseInterval) {
+      clearInterval(restPhraseInterval);
+      restPhraseInterval = null;
+    }
+  }
+
+  function showPhrase(el, text, animated) {
+    el.textContent = text;
+    el.classList.remove('fading-out', 'fading-in');
+    if (animated) {
+      requestAnimationFrame(() => {
+        el.classList.add('fading-in');
+        requestAnimationFrame(() => {
+          el.classList.remove('fading-in');
+          el.classList.add('visible');
+        });
+      });
+    } else {
+      el.classList.add('visible');
+    }
+  }
+
+  // Transición dinámica entre frases
+  function showPhraseAnimated(text) {
+    const msg = document.getElementById('restMessage');
+    if (!msg) return;
+
+    // 1) Fade out
+    msg.classList.add('fading-out');
+    msg.classList.remove('fading-in');
+
+    setTimeout(() => {
+      // 2) Cambiar texto y preparar estado invisible
+      msg.textContent = text;
+      msg.classList.remove('visible');
+      msg.classList.remove('fading-out');
+      msg.classList.add('fading-in');
+
+      // 3) Forzar reflow y animar entrada
+      void msg.offsetWidth;
+
+      requestAnimationFrame(() => {
+        msg.classList.remove('fading-in');
+        msg.classList.add('visible');
+      });
+    }, 620);
   }
 
   function getPendingReminders() {
@@ -2595,6 +2798,43 @@
         deleteReminder(btn.dataset.id);
       });
     });
+  }
+
+  function renderRestPhrases() {
+    const list = document.getElementById('restPhraseList');
+    if (!list) return;
+    const phrases = getPhrases();
+    if (!phrases.length) {
+      list.innerHTML = '<div class="rest-empty" style="padding:8px">No hay frases configuradas</div>';
+      return;
+    }
+    list.innerHTML = phrases.map((p, i) => `
+      <div class="rest-phrase-item">
+        <div class="rp-text">${escapeHtml(p)}</div>
+        <button type="button" class="rp-del" data-idx="${i}" title="Eliminar"><i class="fas fa-times"></i></button>
+      </div>
+    `).join('');
+    list.querySelectorAll('.rp-del').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const idx = parseInt(btn.dataset.idx, 10);
+        settings.REST_PHRASES.splice(idx, 1);
+        if (settings.REST_PHRASES.length === 0) {
+          settings.REST_PHRASES = [...DEFAULT_SETTINGS.REST_PHRASES];
+        }
+        saveSettings();
+        renderRestPhrases();
+      });
+    });
+  }
+
+  function escapeHtml(s) {
+    return String(s)
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#39;');
   }
 
   function addReminder(title, dateStr, timeStr) {
@@ -2652,17 +2892,17 @@
   function checkRemindersDue() {
     const now = Date.now();
     const alert = document.getElementById('reminderAlert');
-    if (alert && alert.classList.contains('visible')) return; // one at a time
+    if (alert && alert.classList.contains('visible')) return;
     const due = reminders.find(r => !r.done && !r.dismissed && r.at <= now && r.at > now - 5 * 60 * 1000);
     if (due) {
-      due.done = true; // mark so we don't re-fire; keep until dismissed
+      due.done = true;
       saveReminders();
       showReminderAlert(due);
     }
   }
 
   // Voice multi-step reminder capture
-  let reminderCapture = null; // { step, title, dateStr, timeStr }
+  let reminderCapture = null;
 
   function startReminderCapture() {
     reminderCapture = { step: 'title', title: '', dateStr: '', timeStr: '' };
@@ -2731,7 +2971,6 @@
       if (d < now) d = new Date(year + 1, month, day);
       return d.toISOString().slice(0, 10);
     }
-    // ISO-like
     const iso = t.match(/(\d{4})-(\d{2})-(\d{2})/);
     if (iso) return `${iso[1]}-${iso[2]}-${iso[3]}`;
     return null;
@@ -2739,7 +2978,6 @@
 
   function parseSpokenTime(text) {
     const t = text.toLowerCase().normalize('NFD').replace(/\p{Diacritic}/gu, '');
-    // 15:30 or 15 30
     let m = t.match(/(\d{1,2})\s*[:\s]\s*(\d{2})/);
     if (m) {
       let h = parseInt(m[1], 10), min = parseInt(m[2], 10);
@@ -2842,9 +3080,6 @@
       setTimeout(() => {
         speakCooldown = false;
         if (onComplete) onComplete();
-        // ⭐ Reiniciar el timer de inactividad DESPUÉS de que META termina de hablar.
-        // Así el auto-descanso cuenta desde que META deja de hablar,
-        // y no desde la última actividad manual del usuario.
         if (attentionActive && micPermissionGranted) {
           lastActivityAt = Date.now();
           resetIdleTimer();
@@ -2879,14 +3114,8 @@
         if (event.results[i].isFinal) final += t; else interim += t;
       }
       
-      // ⭐ El ruido ambiente NO cuenta como actividad.
-      // Solo los comandos que empiezan con "META" reinician el timer.
-      // (ver abajo: registerActivity se llama solo tras detectar "META")
-      
       if (final && final.trim().length > 0) {
         const clean = final.trim().toLowerCase().replace(/[.,;!?¡¿]/g, '').replace(/\s+/g, ' ').trim();
-        // ⭐ SOLO los comandos que empiezan con "META" cuentan como actividad real.
-        // Esto evita que el ruido ambiente (TV, conversaciones) mantenga el orbe despierto.
         if (/^(hola|hey|oye|eh)?\s*m[eé]ta\b/.test(clean)) {
           registerActivity();
           wakeUp();
@@ -2895,12 +3124,10 @@
           else speak(`Dime, ¿qué necesitas?`);
           return;
         }
-        // While capturing a reminder, route speech there
         if (reminderCapture) {
           handleReminderCapture(clean);
           return;
         }
-        // "META despierta" even from rest (attentionActive false)
         if (!attentionActive) {
           if (/(despierta|activar|reactivar|levanta|meta)/.test(clean) && /(despierta|activar|reactivar|levanta)/.test(clean)) {
             wakeUp();
@@ -3010,7 +3237,6 @@
     }
     if (/(gracias)/.test(act)) { speak(`De nada ${settings.USER_NAME}.`); return; }
 
-    // Clima
     if (/(clima|tiempo|temperatura)/.test(act)) {
       speak('Consultando el clima...');
       fetchWeather().then(w => {
@@ -3023,7 +3249,6 @@
       return;
     }
 
-    // Descanso / despertar
     if (/(descansa|descanso|a\s*dormir|duerme|reposo)/.test(act)) {
       enterRestMode(false);
       return;
@@ -3034,9 +3259,7 @@
       return;
     }
 
-    // Recordatorio
     if (/(recordatorio|recu[eé]rdame|agregar\s+recordatorio)/.test(act)) {
-      // Try one-shot: "recordatorio reunión mañana a las 3"
       const oneShot = tryParseOneShotReminder(act);
       if (oneShot) {
         const item = addReminder(oneShot.title, oneShot.dateStr, oneShot.timeStr);
@@ -3054,17 +3277,14 @@
   }
 
   function tryParseOneShotReminder(act) {
-    // "recordatorio X mañana a las 15" / "recuérdame X el 10 de octubre a las 3 de la tarde"
     let t = act.replace(/^(meta\s*)?(recordatorio|recu[eé]rdame|agregar\s+recordatorio)\s*/i, '').trim();
     if (!t || t.length < 3) return null;
-    // Extract time
     const timeMatch = t.match(/(?:a\s+las\s+)?(\d{1,2})(?:\s*[:\s]\s*(\d{2}))?\s*(de\s+la\s+)?(manana|tarde|noche|pm|am)?/i);
     let timeStr = null;
     if (timeMatch) {
       timeStr = parseSpokenTime(timeMatch[0]);
       t = t.replace(timeMatch[0], ' ').trim();
     }
-    // Extract date
     let dateStr = null;
     const datePatterns = [
       /(pasado\s*mañana|manana|hoy)/i,
@@ -3144,8 +3364,6 @@
     return window.matchMedia('(max-width: 800px)').matches;
   }
 
-  // Order of modules around the ring (clockwise from top)
-  // Clockwise from top-left: 2 top, 2 lower sides, 1 bottom center
   const RING_ORDER = ['normatividad', 'riesgos', 'administracion', 'cultura', 'ingenieria'];
 
   function polarToCartesian(cx, cy, r, angleDeg) {
@@ -3154,7 +3372,6 @@
   }
 
   function describeDonutSegment(cx, cy, rInner, rOuter, startAngle, endAngle) {
-    // Slight gap between segments
     const gap = 2.5;
     const s = startAngle + gap / 2;
     const e = endAngle - gap / 2;
@@ -3181,8 +3398,8 @@
     const cx = 150, cy = 150;
     const rOuter = 142;
     const rInner = 88;
-    const rMid = (rOuter + rInner) / 2; // center of segment band — icon here
-    const rText = rMid + 20; // name further out (only visible on hover/preview)
+    const rMid = (rOuter + rInner) / 2;
+    const rText = rMid + 20;
 
     const n = RING_ORDER.length;
     const sweep = 360 / n;
@@ -3233,21 +3450,17 @@
 
     svg.innerHTML = markup;
 
-    const tooltip = document.getElementById('segTooltip');
-
     svg.querySelectorAll('.ring-seg-group').forEach(g => {
       const sectionId = g.dataset.section;
       const meta = SECTIONS[sectionId];
       const name = meta ? meta.title : sectionId;
 
-      // Full segment clickable (path covers the whole wedge)
       g.addEventListener('click', (e) => {
         e.stopPropagation();
         hideSegTooltip();
         handleSegmentInteraction(sectionId);
       });
 
-      // PC: tooltip follows cursor
       g.addEventListener('pointerenter', (e) => {
         if (window.matchMedia('(hover: hover) and (pointer: fine)').matches) {
           showSegTooltip(name, e.clientX, e.clientY);
@@ -3269,7 +3482,6 @@
     if (!tip) return;
     tip.textContent = text;
     tip.classList.add('visible');
-    // Keep tooltip on screen
     const pad = 14;
     const tw = tip.offsetWidth || 120;
     const th = tip.offsetHeight || 28;
@@ -3290,7 +3502,6 @@
     document.querySelectorAll('.ring-seg-group').forEach(g => {
       const on = g.dataset.section === sectionId;
       g.classList.toggle('active', on);
-      // clear preview when activating or clearing
       if (!on) g.classList.remove('preview');
     });
     document.querySelectorAll('.ring-segment').forEach(s => {
@@ -3301,21 +3512,15 @@
   let previewModule = null;
 
   function handleSegmentInteraction(sectionId, fromVoice) {
-    // Mobile: first tap = show name (preview), second tap = open apps
-    // Desktop / voice: open apps directly
     if (isMobileView() && !fromVoice) {
       if (previewModule === sectionId && activeModule !== sectionId) {
-        // second tap → open apps
         previewModule = null;
         toggleModule(sectionId, false);
       } else if (activeModule === sectionId) {
-        // already open → close
         toggleModule(sectionId, false);
         previewModule = null;
       } else {
-        // first tap → preview name only
         if (activeModule) {
-          // close any open panel first
           if (moduleBlocks[activeModule]) moduleBlocks[activeModule].el.classList.remove('active');
           activeModule = null;
           closeSideAppsPanel();
@@ -3330,7 +3535,6 @@
       }
       return;
     }
-    // Desktop or voice: open directly
     previewModule = null;
     document.querySelectorAll('.ring-seg-group').forEach(g => g.classList.remove('preview'));
     toggleModule(sectionId, fromVoice);
@@ -3365,26 +3569,34 @@
       list.appendChild(item);
     });
 
-    // Side of apps panel:
-    // - Segments more to the right → apps on the right
-    // - Segments more to the left → apps on the left
-    // - Bottom center (Cultura) → apps on the right
+    // Calcular ángulo medio del segmento
     const idx = RING_ORDER.indexOf(sectionId);
     const sweep = 360 / RING_ORDER.length;
     const angleOffset = -sweep;
     let midAngle = (idx * sweep + angleOffset + sweep / 2) % 360;
     if (midAngle < 0) midAngle += 360;
-    // Left side: midAngle roughly 216–360 (Ingeniería + Normatividad)
-    const goLeft = midAngle >= 216 && midAngle < 360;
-    panel.classList.remove('side-left', 'side-right');
-    panel.classList.add(goLeft ? 'side-left' : 'side-right');
 
-    // Clear previous connector immediately
+    // Limpiar clases previas
+    panel.classList.remove('side-left', 'side-right', 'mobile-top', 'mobile-bottom');
+
+    if (isMobileView()) {
+      // ⭐ MÓVIL: 2 segmentos superiores → arriba del orbe
+      //          3 segmentos inferiores → abajo del orbe
+      const isTop = midAngle >= 270 || midAngle < 90;
+      panel.classList.add(isTop ? 'mobile-top' : 'mobile-bottom');
+    } else {
+      // 💻 ESCRITORIO: mantener lógica lateral original
+      const goLeft = midAngle >= 216 && midAngle < 360;
+      panel.classList.add(goLeft ? 'side-left' : 'side-right');
+    }
+
+    // Limpiar conector previo
     const conn = document.getElementById('sideConnectorSvg');
     if (conn) { conn.classList.remove('visible'); conn.innerHTML = ''; }
 
     panel.classList.add('visible');
-    // Wait for layout/transform to settle, then draw line from segment → panel
+
+    // Dibujar conector (escritorio lateral, móvil arriba/abajo)
     requestAnimationFrame(() => {
       requestAnimationFrame(() => drawSideConnector(sectionId));
     });
@@ -3394,7 +3606,7 @@
 
   function closeSideAppsPanel() {
     const panel = document.getElementById('sideAppsPanel');
-    if (panel) panel.classList.remove('visible', 'side-left', 'side-right');
+    if (panel) panel.classList.remove('visible', 'side-left', 'side-right', 'mobile-top', 'mobile-bottom');
     const conn = document.getElementById('sideConnectorSvg');
     if (conn) {
       conn.classList.remove('visible');
@@ -3414,7 +3626,6 @@
     const panelRect = panel.getBoundingClientRect();
     const ringRect = ring.getBoundingClientRect();
 
-    // Guard: panel must have real size (layout done)
     if (panelRect.width < 10 || panelRect.height < 10) return;
 
     const idx = RING_ORDER.indexOf(sectionId);
@@ -3424,7 +3635,6 @@
     let midAngle = (idx * sweep + angleOffset + sweep / 2) % 360;
     if (midAngle < 0) midAngle += 360;
 
-    // Segment center on the ring band
     const cx = ringRect.left + ringRect.width / 2;
     const cy = ringRect.top + ringRect.height / 2;
     const r = (ringRect.width / 2) * ( (142 + 88) / 2 / 150 );
@@ -3432,12 +3642,26 @@
     const segX = cx + r * Math.cos(rad) - stageRect.left;
     const segY = cy + r * Math.sin(rad) - stageRect.top;
 
-    // Panel edge closest to the ring
+    // ⭐ Elegir el borde del panel más cercano al segmento
     const isLeft = panel.classList.contains('side-left');
-    const panelX = isLeft
-      ? (panelRect.right - stageRect.left)
-      : (panelRect.left - stageRect.left);
-    const panelY = (panelRect.top + panelRect.height / 2) - stageRect.top;
+    const isMobileTop = panel.classList.contains('mobile-top');
+    const isMobileBottom = panel.classList.contains('mobile-bottom');
+
+    let panelX, panelY;
+    if (isMobileTop) {
+      // Conectar al borde inferior del panel (que está arriba del orbe)
+      panelX = (panelRect.left + panelRect.width / 2) - stageRect.left;
+      panelY = (panelRect.bottom - stageRect.top);
+    } else if (isMobileBottom) {
+      // Conectar al borde superior del panel (que está abajo del orbe)
+      panelX = (panelRect.left + panelRect.width / 2) - stageRect.left;
+      panelY = (panelRect.top - stageRect.top);
+    } else {
+      panelX = isLeft
+        ? (panelRect.right - stageRect.left)
+        : (panelRect.left - stageRect.left);
+      panelY = (panelRect.top + panelRect.height / 2) - stageRect.top;
+    }
 
     conn.setAttribute('viewBox', `0 0 ${stageRect.width} ${stageRect.height}`);
     conn.setAttribute('preserveAspectRatio', 'none');
@@ -3459,7 +3683,6 @@
     conn.classList.add('visible');
   }
 
-  // Keep old names as aliases so existing calls don't break
   function openMobileAppsSheet(sectionId) { openSideAppsPanel(sectionId); }
   function closeMobileAppsSheet() { closeSideAppsPanel(); }
 
@@ -3477,7 +3700,6 @@
       activeModule = sectionId;
       updateRingActive(sectionId);
       openSideAppsPanel(sectionId);
-      // Speak name when opened by click (not already announced by voice command)
       if (!fromVoice) {
         const meta = SECTIONS[sectionId];
         const name = meta ? meta.title : sectionId;
@@ -3512,7 +3734,6 @@
       ring.classList.add('visible');
       ring.setAttribute('aria-hidden', 'false');
     }
-    // Fit orb inside the ring hole
     if (orbContainer && !isMobileView()) {
       orbContainer.style.transform = `scale(${Math.min((settings.ORB_SIZE || 100) / 100, 0.72)})`;
     }
@@ -3538,7 +3759,6 @@
     closeSideAppsPanel();
     connectorSvg.classList.remove('visible');
     connectorSvg.innerHTML = '';
-    // Restore orb size
     if (orbContainer) {
       orbContainer.style.transform = `scale(${(settings.ORB_SIZE || 100) / 100})`;
     }
@@ -3611,7 +3831,6 @@
     else showMenu();
   });
 
-  // Solo efecto visual del orbe, sin afectar el timer
   orbContainer.addEventListener('mousemove', (e) => {
     if (!settings.MOUSE_FOLLOW) return;
     const r = orbContainer.getBoundingClientRect();
@@ -3639,7 +3858,7 @@
   settingsButton.addEventListener('click', () => {
     const o = settingsPanel.classList.toggle('visible');
     settingsButton.classList.toggle('open', o);
-    if (o) { populateVoiceSelect(); updateInfoPanel(); }
+    if (o) { populateVoiceSelect(); updateInfoPanel(); renderRestPhrases(); }
   });
   document.addEventListener('click', (e) => {
     if (!settingsPanel.contains(e.target) && !settingsButton.contains(e.target)) {
@@ -3649,7 +3868,6 @@
   });
   settingsPanel.addEventListener('click', (e) => e.stopPropagation());
 
-  // Side apps panel close
   document.getElementById('sideAppsClose')?.addEventListener('click', (e) => {
     e.stopPropagation();
     closeSideAppsPanel();
@@ -3664,15 +3882,11 @@
     e.stopPropagation();
   });
 
-  // Click anywhere outside the apps panel → close it
   document.addEventListener('click', (e) => {
     const panel = document.getElementById('sideAppsPanel');
     if (!panel || !panel.classList.contains('visible')) return;
-    // Ignore clicks inside the panel
     if (panel.contains(e.target)) return;
-    // Ignore clicks on ring segments (those are handled by toggle)
     if (e.target.closest && e.target.closest('.ring-seg-group')) return;
-    // Close apps panel
     closeSideAppsPanel();
     if (activeModule && moduleBlocks[activeModule]) {
       moduleBlocks[activeModule].el.classList.remove('active');
@@ -3856,7 +4070,6 @@
     gpsStatus.textContent = '';
   });
 
-  // Recordatorios (configuración)
   document.getElementById('remAddBtn')?.addEventListener('click', () => {
     const title = document.getElementById('remTitleInput')?.value;
     const date = document.getElementById('remDateInput')?.value;
@@ -3877,15 +4090,29 @@
     e.stopPropagation();
     dismissReminderAlert();
   });
-  document.getElementById('restPhraseInput')?.addEventListener('change', (e) => {
-    settings.REST_PHRASE = e.target.value.trim();
+
+  // ⭐ Frases del modo descanso (múltiples)
+  document.getElementById('restPhraseAddBtn')?.addEventListener('click', () => {
+    const input = document.getElementById('restPhraseInput');
+    const value = (input?.value || '').trim();
+    if (!value) return;
+    if (!Array.isArray(settings.REST_PHRASES)) settings.REST_PHRASES = [];
+    if (settings.REST_PHRASES.length >= 20) {
+      alert('Máximo 20 frases');
+      return;
+    }
+    settings.REST_PHRASES.push(value);
     saveSettings();
+    if (input) input.value = '';
+    renderRestPhrases();
   });
-  document.getElementById('restPhraseInput')?.addEventListener('input', (e) => {
-    settings.REST_PHRASE = e.target.value;
-    saveSettings();
+  document.getElementById('restPhraseInput')?.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) {
+      e.preventDefault();
+      document.getElementById('restPhraseAddBtn')?.click();
+    }
   });
-  // Prevent alert box click from bubbling incorrectly
+
   document.querySelector('.reminder-alert-box')?.addEventListener('click', e => e.stopPropagation());
 
   resetSettingsButton.addEventListener('click', () => {
@@ -3924,8 +4151,6 @@
     orbContainer.style.transform = `scale(${settings.ORB_SIZE/100})`;
     userNameInput.value = settings.USER_NAME;
     defaultCityInput.value = settings.DEFAULT_CITY;
-    const restPhraseInput = document.getElementById('restPhraseInput');
-    if (restPhraseInput) restPhraseInput.value = settings.REST_PHRASE || '';
     toggleParticles.checked = settings.SHOW_PARTICLES;
     toggleMouseFollow.checked = settings.MOUSE_FOLLOW;
     idleTimeoutSlider.value = (settings.IDLE_TIMEOUT_MS || 10000) / 1000;
@@ -3937,18 +4162,15 @@
     buildHiddenApps();
     updateInfoPanel();
     renderSettingsReminders();
+    renderRestPhrases();
     setInterval(checkRemindersDue, 15000);
-    // Preload weather in background
     setTimeout(() => fetchWeather().catch(() => {}), 2000);
 
-    // ⭐ Activar detección de actividad real
     bindActivityEvents();
 
     // ⭐ DESPERTAR CON CLIC EN CUALQUIER PARTE DE LA PANTALLA
     document.addEventListener('click', (e) => {
-      // Si el orbe está dormido (modo descanso), cualquier clic lo despierta
       if (!attentionActive) {
-        // Evitar que se dispare si el clic fue en el panel de configuración o en un botón
         if (e.target.closest('.settings-panel') ||
             e.target.closest('.settings-button') ||
             e.target.closest('.fullscreen-button') ||
@@ -3960,7 +4182,7 @@
         wakeUp();
         speak(`Hola ${settings.USER_NAME}. ¿En qué puedo ayudarte?`);
       }
-    }, true); // useCapture: true para que se ejecute antes que otros listeners
+    }, true);
 
     setTimeout(() => {
       loadVoices();
@@ -3979,7 +4201,6 @@
             hasGreeted = true;
             const h = new Date().getHours();
             const saludo = h < 12 ? 'buenos días' : h < 20 ? 'buenas tardes' : 'buenas noches';
-            // speak() reiniciará el timer al terminar de hablar (ver u.onend)
             speak(`Hola ${settings.USER_NAME}, ${saludo}. ¿En que puedo ayudarte?`);
           } else {
             lastActivityAt = Date.now();
@@ -3997,7 +4218,6 @@
       }
     }
 
-    // Log de debug para verificar el timer
     console.log('⏱️ Auto-descanso configurado:', settings.IDLE_TIMEOUT_MS, 'ms');
     console.log('💡 Abre la consola y observa: verás "🛌 Auto-descanso tras X ms" cuando se active.');
   }

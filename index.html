@@ -45,7 +45,6 @@
   body.theme-orange { --orb-color-1: #f5a54a; --orb-color-2: #EB8014; --orb-color-3: #5a3005; --orb-glow: 235, 128, 20; --accent: #EB8014; --gold: #EB8014; }
   body.theme-forest { --orb-color-1: #3dcc72; --orb-color-2: #0A9946; --orb-color-3: #033318; --orb-glow: 10, 153, 70; --accent: #0A9946; --gold: #0A9946; }
   body.theme-violet { --orb-color-1: #9a4ad4; --orb-color-2: #5E059E; --orb-color-3: #22023a; --orb-glow: 94, 5, 158; --accent: #5E059E; --gold: #5E059E; }
-
   body.theme-graphite { --orb-color-1: #6a7f92; --orb-color-2: #3D4F5F; --orb-color-3: #1a242c; --orb-glow: 61, 79, 95; --accent: #3D4F5F; --gold: #3D4F5F; }
   body.theme-slate    { --orb-color-1: #8a9aa3; --orb-color-2: #5C6B73; --orb-color-3: #2a3236; --orb-glow: 92, 107, 115; --accent: #5C6B73; --gold: #5C6B73; }
   body.theme-champagne{ --orb-color-1: #c9c0b3; --orb-color-2: #A89F91; --orb-color-3: #4a453e; --orb-glow: 168, 159, 145; --accent: #A89F91; --gold: #A89F91; }
@@ -614,11 +613,9 @@
     .hud-column { width: 240px; }
   }
   /* ========== MOBILE: anillo segmentado alrededor del orbe ========== */
-  /* Hide classic column HUD — ring menu is used on all sizes */
   .hud-container { display: none !important; }
   .connector-svg { display: none !important; }
 
-  /* Ring menu — all screen sizes */
   .ring-menu {
     display: block;
     position: absolute;
@@ -638,28 +635,29 @@
     pointer-events: auto;
   }
 
+  /* ⭐ En móvil el anillo es más pequeño para dejar espacio arriba/abajo para el panel de apps */
   @media (max-width: 800px) {
     .stage { overflow: hidden; }
 
     #header { padding: 4px 10px 3px; }
-    .logo { max-width: min(70px, 16vw); }
-    .header-depto { font-size: clamp(0.72rem, 3vw, 1.1rem); margin-bottom: 1px; }
-    .header-subtitle { font-size: clamp(0.58rem, 2.2vw, 0.82rem); }
+    .logo { max-width: min(60px, 14vw); }
+    .header-depto { font-size: clamp(0.68rem, 2.8vw, 1rem); margin-bottom: 1px; }
+    .header-subtitle { font-size: clamp(0.54rem, 2vw, 0.78rem); }
 
     .ring-menu {
-      width: min(320px, 92vw);
-      height: min(320px, 92vw);
+      width: min(230px, 60vw);
+      height: min(230px, 60vw);
     }
 
-    .orb-container { width: 110px; height: 110px; }
-    .orb-core { width: 50px; height: 50px; }
-    .orb-layer-1 { width: 76px; height: 76px; }
-    .orb-layer-2 { width: 92px; height: 92px; }
-    .orb-layer-3 { width: 106px; height: 106px; }
-    .orb-ring-1 { width: 62px; height: 62px; }
-    .orb-ring-2 { width: 76px; height: 76px; }
-    .orb-ring-3 { width: 90px; height: 90px; }
-    .status-text { bottom: -32px; font-size: 11px; z-index: 25; }
+    .orb-container { width: 80px; height: 80px; }
+    .orb-core { width: 38px; height: 38px; }
+    .orb-layer-1 { width: 56px; height: 56px; }
+    .orb-layer-2 { width: 68px; height: 68px; }
+    .orb-layer-3 { width: 78px; height: 78px; }
+    .orb-ring-1 { width: 46px; height: 46px; }
+    .orb-ring-2 { width: 56px; height: 56px; }
+    .orb-ring-3 { width: 66px; height: 66px; }
+    .status-text { bottom: -24px; font-size: 10px; }
   }
 
   .ring-svg {
@@ -688,8 +686,6 @@
     filter: drop-shadow(0 0 20px rgba(var(--orb-glow), 0.7));
   }
 
-
-
   .ring-labels { display: none !important; }
 
   .ring-segment-icon {
@@ -710,9 +706,7 @@
     opacity: 0;
     transition: opacity 0.25s ease;
   }
-  /* PC: show name on hover */
   .ring-seg-group:hover .ring-segment-label { opacity: 1; }
-  /* Show when previewed (mobile first tap) or active (apps open) */
   .ring-seg-group.preview .ring-segment-label,
   .ring-seg-group.active .ring-segment-label { opacity: 1; }
 
@@ -727,12 +721,10 @@
   .ring-seg-group .ring-segment-icon {
     pointer-events: none;
   }
-  /* Hide fixed SVG labels on desktop — tooltip follows cursor instead */
   @media (hover: hover) and (pointer: fine) {
     .ring-segment-label { display: none !important; }
   }
 
-  /* Floating cursor-following tooltip */
   .seg-tooltip {
     position: fixed;
     z-index: 400;
@@ -757,45 +749,7 @@
     opacity: 1;
   }
 
-  @media (max-width: 550px) {
-    .ring-menu {
-      width: min(290px, 94vw);
-      height: min(290px, 94vw);
-    }
-    .orb-container { width: 95px; height: 95px; }
-    .orb-core { width: 44px; height: 44px; }
-    .orb-layer-1 { width: 66px; height: 66px; }
-    .orb-layer-2 { width: 80px; height: 80px; }
-    .orb-layer-3 { width: 92px; height: 92px; }
-    .orb-ring-1 { width: 54px; height: 54px; }
-    .orb-ring-2 { width: 66px; height: 66px; }
-    .orb-ring-3 { width: 78px; height: 78px; }
-    .status-text { bottom: -28px; font-size: 10px; }
-    .ring-label { padding: 4px 7px; gap: 4px; max-width: 110px; }
-    .ring-label-icon { width: 18px; height: 18px; font-size: 0.55rem; }
-    .ring-label-text { font-size: 0.46rem; }
-    #header { padding: 3px 8px 2px; }
-    .logo { max-width: min(55px, 14vw); }
-  }
-
-  @media (max-width: 400px) {
-    .ring-menu {
-      width: min(260px, 96vw);
-      height: min(260px, 96vw);
-    }
-    .orb-container { width: 82px; height: 82px; }
-    .orb-core { width: 38px; height: 38px; }
-    .orb-layer-1 { width: 58px; height: 58px; }
-    .orb-layer-2 { width: 70px; height: 70px; }
-    .orb-layer-3 { width: 80px; height: 80px; }
-    .orb-ring-1 { width: 48px; height: 48px; }
-    .orb-ring-2 { width: 58px; height: 58px; }
-    .orb-ring-3 { width: 68px; height: 68px; }
-    .ring-label-text { font-size: 0.42rem; }
-    .ring-label { max-width: 96px; padding: 3px 6px; }
-  }
-
-  /* --- Side apps panel (left/right with connector line) --- */
+  /* --- Side apps panel --- */
   .side-apps-panel {
     display: none;
     position: absolute;
@@ -819,7 +773,6 @@
     opacity: 1;
     pointer-events: auto;
   }
-  /* Outside the ring with comfortable gap */
   .side-apps-panel.side-left {
     left: calc(50% - min(310px, 48vmin));
     right: auto;
@@ -951,118 +904,122 @@
   }
 
   /* ============================================================
-     MOBILE: panel de apps arriba o abajo del orbe (sin encimarse)
+     MOBILE: panel de apps arriba/abajo, ANCLADO al stage
      ============================================================ */
   @media (max-width: 800px) {
     .side-apps-panel {
-      /* Reset del layout lateral de escritorio */
       top: auto;
-      left: 50% !important;
-      right: auto !important;
-      transform: translateX(-50%) scale(0.92);
-      transform-origin: center center;
-
-      width: min(360px, 94vw);
-      max-width: 94vw;
-      max-height: 55vh;
+      left: 12px !important;
+      right: 12px !important;
+      width: auto;
+      max-width: none;
+      max-height: none;
       overflow: hidden;
+      border-radius: 12px;
     }
 
-    /* Variante: se despliega ARRIBA del orbe */
+    /* Arriba del orbe: pegado al borde SUPERIOR del stage */
     .side-apps-panel.mobile-top {
-      top: 50%;
-      left: 50% !important;
+      top: 6px;
       bottom: auto;
-      transform: translate(-50%, calc(-100% - min(190px, 30vmin))) scale(0.92);
+      transform: translateY(-12px) scale(0.96);
+      transform-origin: top center;
     }
     .side-apps-panel.mobile-top.visible {
-      transform: translate(-50%, calc(-100% - min(190px, 30vmin))) scale(1);
+      transform: translateY(0) scale(1);
     }
 
-    /* Variante: se despliega ABAJO del orbe */
+    /* Abajo del orbe: pegado al borde INFERIOR del stage */
     .side-apps-panel.mobile-bottom {
-      top: 50%;
-      left: 50% !important;
-      bottom: auto;
-      transform: translate(-50%, min(190px, 30vmin)) scale(0.92);
+      top: auto;
+      bottom: 6px;
+      transform: translateY(12px) scale(0.96);
+      transform-origin: bottom center;
     }
     .side-apps-panel.mobile-bottom.visible {
-      transform: translate(-50%, min(190px, 30vmin)) scale(1);
+      transform: translateY(0) scale(1);
     }
 
-    /* Lista de apps en móvil: 3 columnas, más compacta */
+    /* Lista en 3 columnas */
     .side-apps-panel.mobile-top .side-apps-list,
     .side-apps-panel.mobile-bottom .side-apps-list {
       grid-template-columns: repeat(3, 1fr);
       gap: 6px;
       padding: 10px;
-      max-height: calc(55vh - 60px);
+      max-height: 34vh;
       overflow-y: auto;
     }
 
     .side-apps-panel.mobile-top .side-app-item,
     .side-apps-panel.mobile-bottom .side-app-item {
-      min-height: 64px;
+      min-height: 62px;
       padding: 8px 5px;
       gap: 5px;
     }
 
     .side-apps-panel.mobile-top .side-app-item-label,
     .side-apps-panel.mobile-bottom .side-app-item-label {
-      font-size: 0.58rem;
-      line-height: 1.2;
+      font-size: 0.55rem;
+      line-height: 1.15;
     }
 
     .side-apps-panel.mobile-top .side-app-item-icon,
     .side-apps-panel.mobile-bottom .side-app-item-icon {
-      width: 30px;
-      height: 30px;
-      font-size: 0.85rem;
+      width: 28px;
+      height: 28px;
+      font-size: 0.8rem;
     }
 
     .side-apps-panel.mobile-top .side-apps-title,
     .side-apps-panel.mobile-bottom .side-apps-title {
+      font-size: 0.6rem;
+    }
+
+    .side-apps-panel.mobile-top .side-apps-header,
+    .side-apps-panel.mobile-bottom .side-apps-header {
+      padding: 8px 10px 7px;
+      gap: 7px;
+    }
+
+    .side-apps-panel.mobile-top .side-apps-icon,
+    .side-apps-panel.mobile-bottom .side-apps-icon {
+      width: 24px;
+      height: 24px;
+      font-size: 0.72rem;
+    }
+
+    .side-apps-panel.mobile-top .side-apps-close,
+    .side-apps-panel.mobile-bottom .side-apps-close {
+      width: 22px;
+      height: 22px;
       font-size: 0.62rem;
     }
   }
 
   @media (max-width: 500px) {
-    .side-apps-panel.mobile-top {
-      transform: translate(-50%, calc(-100% - min(170px, 30vmin))) scale(0.92);
-    }
-    .side-apps-panel.mobile-top.visible {
-      transform: translate(-50%, calc(-100% - min(170px, 30vmin))) scale(1);
-    }
-    .side-apps-panel.mobile-bottom {
-      transform: translate(-50%, min(170px, 30vmin)) scale(0.92);
-    }
-    .side-apps-panel.mobile-bottom.visible {
-      transform: translate(-50%, min(170px, 30vmin)) scale(1);
-    }
     .side-apps-panel.mobile-top .side-apps-list,
     .side-apps-panel.mobile-bottom .side-apps-list {
-      max-height: calc(52vh - 55px);
+      max-height: 32vh;
       padding: 8px;
       gap: 5px;
     }
     .side-apps-panel.mobile-top .side-app-item,
     .side-apps-panel.mobile-bottom .side-app-item {
-      min-height: 58px;
-      padding: 7px 4px;
+      min-height: 56px;
+      padding: 6px 4px;
     }
     .side-apps-panel.mobile-top .side-app-item-label,
     .side-apps-panel.mobile-bottom .side-app-item-label {
-      font-size: 0.5rem;
+      font-size: 0.48rem;
     }
     .side-apps-panel.mobile-top .side-app-item-icon,
     .side-apps-panel.mobile-bottom .side-app-item-icon {
-      width: 26px;
-      height: 26px;
-      font-size: 0.72rem;
+      width: 24px;
+      height: 24px;
+      font-size: 0.68rem;
     }
   }
 
-  
   /* --- Rest mode dashboard --- */
   .rest-dashboard {
     display: none;
@@ -1129,7 +1086,6 @@
     font-size: 0.75rem;
     color: rgba(255,255,255,0.7);
   }
-  /* Frase pegada arriba del módulo de descanso, sin solaparse */
   .rest-stack {
     position: absolute;
     top: 50%;
@@ -1188,7 +1144,6 @@
     transform: translateY(0) scale(1);
     filter: blur(0);
   }
-  /* Animación de entrada/salida de la frase */
   .rest-message.fading-out {
     opacity: 0 !important;
     transform: translateY(-12px) scale(0.96);
@@ -1259,7 +1214,6 @@
     color: rgba(255,255,255,0.35);
   }
 
-  /* Lista de frases en configuración */
   .rest-phrase-item {
     display: flex;
     align-items: center;
@@ -1289,7 +1243,6 @@
     border-color: rgba(255,80,80,0.7);
   }
 
-  /* Orb fully at rest — blurred / off */
   .orb-container.rest-dim {
     opacity: 0;
     transform: scale(0.5);
@@ -1306,7 +1259,6 @@
     z-index: 25;
   }
 
-  /* --- Reminder alert modal --- */
   .reminder-alert {
     display: none;
     position: fixed;
@@ -1373,7 +1325,6 @@
     background: linear-gradient(135deg, rgba(var(--orb-glow), 0.55), rgba(var(--orb-glow), 0.25));
   }
 
-  /* --- Reminder form in settings --- */
   .reminder-form {
     display: flex;
     flex-direction: column;
@@ -1509,7 +1460,6 @@
     padding-top: 2px;
   }
 
-  /* Fullscreen button — mirror of settings-button on the left */
   .fullscreen-button {
     position: fixed;
     bottom: 18px;
@@ -2315,7 +2265,6 @@
   let settings = { ...DEFAULT_SETTINGS };
   try { const s = localStorage.getItem('meta-hud-settings'); if (s) Object.assign(settings, JSON.parse(s)); } catch (e) {}
 
-  // ⭐ Migración: si venimos de la versión con REST_PHRASE (string), lo convertimos a array
   if (typeof settings.REST_PHRASE === 'string') {
     const old = settings.REST_PHRASE.trim();
     if (old && (!Array.isArray(settings.REST_PHRASES) || settings.REST_PHRASES.length === 0)) {
@@ -2386,7 +2335,7 @@
   const connectorSvg = document.getElementById('connectorSvg');
   const stage = document.getElementById('stage');
   const hiddenAppsGrid = document.getElementById('hiddenAppsGrid');
-  const statusText = document.getElementById('statusText'); // ← null si no existe en HTML
+  const statusText = document.getElementById('statusText');
 
   const settingsButton = document.getElementById('settingsButton');
   const settingsPanel = document.getElementById('settingsPanel');
@@ -2415,9 +2364,6 @@
   const infoApps = document.getElementById('infoApps');
   const resetSettingsButton = document.getElementById('resetSettingsButton');
 
-  // ============================================================
-  // ESTADO GLOBAL
-  // ============================================================
   let menuVisible = false;
   let activeModule = null;
   const moduleBlocks = {};
@@ -2437,16 +2383,11 @@
   let attentionActive = true;
   let hasGreeted = false;
 
-  // ⭐ Control de inactividad REAL
   let lastMousePos = { x: 0, y: 0 };
   let lastActivityAt = Date.now();
   let mouseInitialized = false;
 
-  // ============================================================
-  // AUTO-DESCANSO POR INACTIVIDAD REAL
-  // ============================================================
   function registerActivity() {
-    // No contar como actividad mientras META habla o está en cooldown
     if (isSpeaking || speakCooldown) return;
     lastActivityAt = Date.now();
     resetIdleTimer();
@@ -2461,12 +2402,10 @@
     
     idleTimeout = setTimeout(() => {
       const elapsed = Date.now() - lastActivityAt;
-      // Solo entra en descanso si realmente han pasado los segundos sin actividad
       if (elapsed >= timeout - 300 && attentionActive && !awaitingCommand && !isSpeaking && !speakCooldown) {
         console.log('🛌 Auto-descanso tras', elapsed, 'ms de inactividad real');
         enterRestMode(true);
       } else {
-        // Hubo actividad, reiniciar
         resetIdleTimer();
       }
     }, timeout);
@@ -2477,7 +2416,6 @@
   function bindActivityEvents() {
     const guarded = (fn) => (e) => { if (!isSpeaking && !speakCooldown) fn(e); };
 
-    // ⭐ Ratón con UMBRAL mínimo de 15px — evita micro-movimientos fantasma
     window.addEventListener('mousemove', guarded((e) => {
       if (!mouseInitialized) {
         lastMousePos = { x: e.clientX, y: e.clientY };
@@ -2486,30 +2424,19 @@
       }
       const dx = Math.abs(e.clientX - lastMousePos.x);
       const dy = Math.abs(e.clientY - lastMousePos.y);
-      // Solo cuenta como actividad real si se mueve más de 15px
       if (dx + dy > 15) {
         lastMousePos = { x: e.clientX, y: e.clientY };
         registerActivity();
       }
     }), { passive: true });
 
-    // Clics (mousedown en vez de click para ser más sensible)
     window.addEventListener('mousedown', guarded(registerActivity), { passive: true });
-
-    // Teclas
     window.addEventListener('keydown', guarded(registerActivity));
-
-    // Touch en móviles
     window.addEventListener('touchstart', guarded(registerActivity), { passive: true });
     window.addEventListener('touchmove', guarded(registerActivity), { passive: true });
-
-    // Rueda del ratón (scroll activo)
     window.addEventListener('wheel', guarded(registerActivity), { passive: true });
-
-    // Cuando la ventana recupera foco
     window.addEventListener('focus', guarded(registerActivity));
 
-    // Al cambiar de pestaña
     document.addEventListener('visibilitychange', () => {
       if (!document.hidden && !isSpeaking && !speakCooldown) registerActivity();
     });
@@ -2524,7 +2451,6 @@
     closeSideAppsPanel();
     hideSegTooltip();
 
-    // Apagar / difuminar orbe por completo
     orbContainer.classList.add('rest-dim', 'off');
     if (statusText) {
       statusText.textContent = '';
@@ -2564,15 +2490,12 @@
     if (dash) dash.classList.remove('visible');
     document.getElementById('restMessage')?.classList.remove('visible');
     stopRestClock();
-    stopPhraseRotation(); // ⭐ Detener rotación de frases
+    stopPhraseRotation();
 
     lastActivityAt = Date.now();
     resetIdleTimer();
   }
 
-  // ============================================================
-  // REST DASHBOARD + CLIMA + RECORDATORIOS
-  // ============================================================
   let restClockInterval = null;
   let weatherCache = null;
   let weatherCacheAt = 0;
@@ -2582,10 +2505,9 @@
     if (r) reminders = JSON.parse(r);
   } catch (e) {}
 
-  // ⭐ Rotador de frases en modo descanso
   let restPhraseInterval = null;
   let currentPhraseIndex = 0;
-  const REST_PHRASE_DURATION_MS = 60000; // 1 minuto por frase
+  const REST_PHRASE_DURATION_MS = 60000;
 
   function saveReminders() {
     try { localStorage.setItem('meta-reminders', JSON.stringify(reminders)); } catch (e) {}
@@ -2678,7 +2600,6 @@
     startPhraseRotation();
   }
 
-  // ⭐ Sistema de rotación de frases
   function getPhrases() {
     return (settings.REST_PHRASES || []).map(p => (p || '').trim()).filter(Boolean);
   }
@@ -2728,23 +2649,19 @@
     }
   }
 
-  // Transición dinámica entre frases
   function showPhraseAnimated(text) {
     const msg = document.getElementById('restMessage');
     if (!msg) return;
 
-    // 1) Fade out
     msg.classList.add('fading-out');
     msg.classList.remove('fading-in');
 
     setTimeout(() => {
-      // 2) Cambiar texto y preparar estado invisible
       msg.textContent = text;
       msg.classList.remove('visible');
       msg.classList.remove('fading-out');
       msg.classList.add('fading-in');
 
-      // 3) Forzar reflow y animar entrada
       void msg.offsetWidth;
 
       requestAnimationFrame(() => {
@@ -2755,7 +2672,6 @@
   }
 
   function getPendingReminders() {
-    const now = Date.now();
     return reminders
       .filter(r => !r.done && !r.dismissed)
       .sort((a, b) => a.at - b.at);
@@ -2901,7 +2817,6 @@
     }
   }
 
-  // Voice multi-step reminder capture
   let reminderCapture = null;
 
   function startReminderCapture() {
@@ -2996,9 +2911,6 @@
     return null;
   }
 
-  // ============================================================
-  // VOZ
-  // ============================================================
   function loadVoices() {
     voices = speechSynthesis.getVoices();
     if (voiceSettings.voiceName) {
@@ -3095,9 +3007,6 @@
     speechSynthesis.speak(u);
   }
 
-  // ============================================================
-  // RECONOCIMIENTO
-  // ============================================================
   function initRecognition() {
     if (!SpeechRecognition) return null;
     const rec = new SpeechRecognition();
@@ -3168,9 +3077,6 @@
     } catch (e) { return false; }
   }
 
-  // ============================================================
-  // COMANDOS
-  // ============================================================
   function executeCommand(cmd) {
     const act = cmd.toLowerCase().trim();
     
@@ -3303,10 +3209,6 @@
     return { title: t, dateStr, timeStr: timeStr || '09:00' };
   }
 
-
-  // ============================================================
-  // MÓDULOS
-  // ============================================================
   function buildModules() {
     hudLeft.innerHTML = '';
     hudRight.innerHTML = '';
@@ -3569,34 +3471,27 @@
       list.appendChild(item);
     });
 
-    // Calcular ángulo medio del segmento
     const idx = RING_ORDER.indexOf(sectionId);
     const sweep = 360 / RING_ORDER.length;
     const angleOffset = -sweep;
     let midAngle = (idx * sweep + angleOffset + sweep / 2) % 360;
     if (midAngle < 0) midAngle += 360;
 
-    // Limpiar clases previas
     panel.classList.remove('side-left', 'side-right', 'mobile-top', 'mobile-bottom');
 
     if (isMobileView()) {
-      // ⭐ MÓVIL: 2 segmentos superiores → arriba del orbe
-      //          3 segmentos inferiores → abajo del orbe
       const isTop = midAngle >= 270 || midAngle < 90;
       panel.classList.add(isTop ? 'mobile-top' : 'mobile-bottom');
     } else {
-      // 💻 ESCRITORIO: mantener lógica lateral original
       const goLeft = midAngle >= 216 && midAngle < 360;
       panel.classList.add(goLeft ? 'side-left' : 'side-right');
     }
 
-    // Limpiar conector previo
     const conn = document.getElementById('sideConnectorSvg');
     if (conn) { conn.classList.remove('visible'); conn.innerHTML = ''; }
 
     panel.classList.add('visible');
 
-    // Dibujar conector (escritorio lateral, móvil arriba/abajo)
     requestAnimationFrame(() => {
       requestAnimationFrame(() => drawSideConnector(sectionId));
     });
@@ -3642,18 +3537,15 @@
     const segX = cx + r * Math.cos(rad) - stageRect.left;
     const segY = cy + r * Math.sin(rad) - stageRect.top;
 
-    // ⭐ Elegir el borde del panel más cercano al segmento
     const isLeft = panel.classList.contains('side-left');
     const isMobileTop = panel.classList.contains('mobile-top');
     const isMobileBottom = panel.classList.contains('mobile-bottom');
 
     let panelX, panelY;
     if (isMobileTop) {
-      // Conectar al borde inferior del panel (que está arriba del orbe)
       panelX = (panelRect.left + panelRect.width / 2) - stageRect.left;
       panelY = (panelRect.bottom - stageRect.top);
     } else if (isMobileBottom) {
-      // Conectar al borde superior del panel (que está abajo del orbe)
       panelX = (panelRect.left + panelRect.width / 2) - stageRect.left;
       panelY = (panelRect.top - stageRect.top);
     } else {
@@ -4091,16 +3983,11 @@
     dismissReminderAlert();
   });
 
-  // ⭐ Frases del modo descanso (múltiples)
   document.getElementById('restPhraseAddBtn')?.addEventListener('click', () => {
     const input = document.getElementById('restPhraseInput');
     const value = (input?.value || '').trim();
     if (!value) return;
     if (!Array.isArray(settings.REST_PHRASES)) settings.REST_PHRASES = [];
-    if (settings.REST_PHRASES.length >= 20) {
-      alert('Máximo 20 frases');
-      return;
-    }
     settings.REST_PHRASES.push(value);
     saveSettings();
     if (input) input.value = '';
@@ -4130,9 +4017,6 @@
     }
   }
 
-  // ============================================================
-  // ARRANQUE
-  // ============================================================
   async function boot() {
     document.body.classList.remove('theme-blue','theme-pink','theme-green','theme-purple','theme-red','theme-gold','theme-teal','theme-silver','theme-steel','theme-crimson','theme-orange','theme-forest','theme-violet','theme-graphite','theme-slate','theme-champagne','theme-ivory','theme-navy','theme-corpblue','theme-sage','theme-deeptl','theme-bronze','theme-terra','theme-burgundy');
     document.body.classList.add(settings.THEME);
@@ -4168,7 +4052,6 @@
 
     bindActivityEvents();
 
-    // ⭐ DESPERTAR CON CLIC EN CUALQUIER PARTE DE LA PANTALLA
     document.addEventListener('click', (e) => {
       if (!attentionActive) {
         if (e.target.closest('.settings-panel') ||

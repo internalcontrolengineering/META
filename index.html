@@ -2924,7 +2924,7 @@
 
   testVoiceButton.addEventListener('click', () => {
     speechSynthesis.cancel();
-    const testTexts = [`Hola ${settings.USER_NAME}, soy META, Esta es mi voz actual.`,`${settings.USER_NAME}, así sueno con la configuración actual.`,`Hola, ¿te gusta cómo suena mi voz, ${settings.USER_NAME}?`];
+    const testTexts = [`Hola ${settings.USER_NAME}, Esta es mi voz actual.`,`${settings.USER_NAME}, así sueno con la configuración actual.`,`Hola, ¿te gusta cómo suena mi voz, ${settings.USER_NAME}?`];
     const u = new SpeechSynthesisUtterance(testTexts[Math.floor(Math.random()*testTexts.length)]);
     u.lang = preferredVoice?.lang || 'es-ES';
     if (preferredVoice) u.voice = preferredVoice;
@@ -3100,7 +3100,9 @@
           resetIdleTimer();
           if (!hasGreeted) {
             hasGreeted = true;
-            speak(`Hola ${settings.USER_NAME}. Soy META. Di "META" para activarme.`);
+            const h = new Date().getHours();
+            const saludo = h < 12 ? 'buenos días' : h < 20 ? 'buenas tardes' : 'buenas noches';
+            speak(`Hola ${settings.USER_NAME}, ${saludo}. ¿En qué puedo ayudarte?.`);
           }
         }, 800);
       } else {

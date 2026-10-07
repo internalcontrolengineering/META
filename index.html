@@ -994,7 +994,349 @@
     .side-app-item-label { font-size: 0.38rem; }
   }
 
-    #footer {
+  
+  /* --- Rest mode dashboard --- */
+  .rest-dashboard {
+    display: none;
+    position: relative;
+    top: auto;
+    left: auto;
+    transform: none;
+    z-index: 20;
+    width: 100%;
+    padding: 28px 24px 22px;
+    background: linear-gradient(160deg, rgba(10,16,28,0.92), rgba(6,10,18,0.96));
+    border: 1.5px solid rgba(var(--orb-glow), 0.4);
+    border-radius: 20px;
+    backdrop-filter: blur(24px);
+    box-shadow: 0 16px 50px rgba(0,0,0,0.55), 0 0 40px rgba(var(--orb-glow), 0.15);
+    text-align: center;
+    opacity: 0;
+    transition: opacity 0.4s ease;
+    pointer-events: none;
+  }
+  .rest-dashboard.visible {
+    display: block;
+    opacity: 1;
+    pointer-events: auto;
+  }
+  .rest-clock {
+    font-size: clamp(2.4rem, 8vw, 3.4rem);
+    font-weight: 300;
+    letter-spacing: 2px;
+    color: #fff;
+    line-height: 1.1;
+    margin-bottom: 4px;
+  }
+  .rest-date {
+    font-size: 0.85rem;
+    color: rgba(255,255,255,0.7);
+    margin-bottom: 16px;
+    text-transform: capitalize;
+  }
+  .rest-weather {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    padding: 12px 16px;
+    background: rgba(var(--orb-glow), 0.1);
+    border: 1px solid rgba(var(--orb-glow), 0.25);
+    border-radius: 12px;
+    margin-bottom: 14px;
+  }
+  .rest-weather-icon {
+    font-size: 1.8rem;
+    color: rgb(var(--orb-glow));
+  }
+  .rest-weather-info {
+    text-align: left;
+  }
+  .rest-weather-temp {
+    font-size: 1.4rem;
+    font-weight: 600;
+    color: #fff;
+  }
+  .rest-weather-desc {
+    font-size: 0.75rem;
+    color: rgba(255,255,255,0.7);
+  }
+  /* Frase pegada arriba del módulo de descanso, sin solaparse */
+  .rest-stack {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    z-index: 25;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+    width: min(840px, 92vw);
+    pointer-events: none;
+  }
+  .rest-stack .rest-dashboard {
+    position: relative;
+    top: auto;
+    left: auto;
+    transform: none;
+    width: 100%;
+    pointer-events: auto;
+  }
+  .rest-message {
+    position: relative;
+    left: auto;
+    top: auto;
+    transform: none;
+    z-index: 26;
+    width: 100%;
+    max-width: 100%;
+    box-sizing: border-box;
+    font-size: clamp(1rem, 2.8vw, 1.35rem);
+    font-weight: 600;
+    letter-spacing: 0.5px;
+    color: rgba(255, 255, 255, 0.95);
+    line-height: 1.4;
+    white-space: normal;
+    overflow: visible;
+    text-overflow: unset;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+    text-align: center;
+    margin: 0;
+    padding: 16px 28px;
+    background: linear-gradient(135deg, rgba(var(--orb-glow), 0.2), rgba(var(--orb-glow), 0.08));
+    border: 1px solid rgba(var(--orb-glow), 0.4);
+    border-radius: 14px;
+    text-shadow: 0 1px 8px rgba(0,0,0,0.45);
+    backdrop-filter: blur(12px);
+    box-shadow: 0 6px 18px rgba(0,0,0,0.3);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.4s ease;
+  }
+  .rest-message.visible {
+    opacity: 1;
+  }
+  .rest-message:empty,
+  .rest-message:not(.visible) {
+    display: none;
+  }
+  @media (max-width: 600px) {
+    .rest-stack { width: min(560px, 94vw); gap: 10px; }
+    .rest-message {
+      font-size: 0.95rem;
+      padding: 12px 20px;
+    }
+  }
+  .rest-location {
+    font-size: 0.72rem;
+    color: rgba(255,255,255,0.55);
+    margin-bottom: 14px;
+  }
+  .rest-reminders {
+    text-align: left;
+    max-height: 140px;
+    overflow-y: auto;
+  }
+  .rest-reminders-title {
+    font-size: 0.65rem;
+    font-weight: 700;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    color: rgb(var(--orb-glow));
+    margin-bottom: 8px;
+  }
+  .rest-reminder-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    padding: 8px 10px;
+    margin-bottom: 5px;
+    background: rgba(255,255,255,0.04);
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 8px;
+    font-size: 0.7rem;
+    color: rgba(255,255,255,0.85);
+  }
+  .rest-reminder-item i {
+    color: rgb(var(--orb-glow));
+    margin-top: 2px;
+  }
+  .rest-reminder-time {
+    font-size: 0.6rem;
+    color: rgba(255,255,255,0.45);
+    margin-top: 2px;
+  }
+  .rest-empty {
+    font-size: 0.68rem;
+    color: rgba(255,255,255,0.4);
+    font-style: italic;
+  }
+  .rest-hint {
+    margin-top: 14px;
+    font-size: 0.6rem;
+    color: rgba(255,255,255,0.35);
+  }
+
+  /* Orb fully at rest — blurred / off */
+  .orb-container.rest-dim {
+    opacity: 0;
+    transform: scale(0.5);
+    pointer-events: none;
+    filter: blur(12px);
+    transition: opacity 0.5s ease, transform 0.5s ease, filter 0.5s ease;
+  }
+  .orb-container.off {
+    opacity: 0.15;
+    filter: blur(8px) grayscale(0.4);
+    pointer-events: none;
+  }
+  .rest-dashboard {
+    z-index: 25;
+  }
+
+  /* --- Reminder alert modal --- */
+  .reminder-alert {
+    display: none;
+    position: fixed;
+    inset: 0;
+    z-index: 500;
+    background: rgba(0,0,0,0.65);
+    backdrop-filter: blur(8px);
+    align-items: center;
+    justify-content: center;
+  }
+  .reminder-alert.visible {
+    display: flex;
+  }
+  .reminder-alert-box {
+    width: min(400px, 90vw);
+    padding: 28px 24px;
+    background: linear-gradient(160deg, rgba(14,20,32,0.98), rgba(8,12,20,0.99));
+    border: 2px solid rgba(var(--orb-glow), 0.6);
+    border-radius: 18px;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.6), 0 0 50px rgba(var(--orb-glow), 0.3);
+    text-align: center;
+    animation: reminderPulse 2s ease-in-out infinite;
+  }
+  @keyframes reminderPulse {
+    0%, 100% { box-shadow: 0 20px 60px rgba(0,0,0,0.6), 0 0 40px rgba(var(--orb-glow), 0.25); }
+    50% { box-shadow: 0 20px 60px rgba(0,0,0,0.6), 0 0 60px rgba(var(--orb-glow), 0.5); }
+  }
+  .reminder-alert-icon {
+    font-size: 2.2rem;
+    color: rgb(var(--orb-glow));
+    margin-bottom: 12px;
+  }
+  .reminder-alert-title {
+    font-size: 0.7rem;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: rgb(var(--orb-glow));
+    margin-bottom: 8px;
+  }
+  .reminder-alert-msg {
+    font-size: 1.15rem;
+    font-weight: 600;
+    color: #fff;
+    margin-bottom: 8px;
+  }
+  .reminder-alert-time {
+    font-size: 0.75rem;
+    color: rgba(255,255,255,0.5);
+    margin-bottom: 20px;
+  }
+  .reminder-alert-close {
+    padding: 10px 28px;
+    border-radius: 10px;
+    border: 1px solid rgba(var(--orb-glow), 0.5);
+    background: linear-gradient(135deg, rgba(var(--orb-glow), 0.35), rgba(var(--orb-glow), 0.15));
+    color: #fff;
+    font-weight: 700;
+    font-size: 0.8rem;
+    letter-spacing: 1px;
+    cursor: pointer;
+    text-transform: uppercase;
+  }
+  .reminder-alert-close:hover {
+    background: linear-gradient(135deg, rgba(var(--orb-glow), 0.55), rgba(var(--orb-glow), 0.25));
+  }
+
+  /* --- Reminder form in settings --- */
+  .reminder-form {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-top: 8px;
+  }
+  .reminder-form input {
+    width: 100%;
+    padding: 8px 10px;
+    border-radius: 8px;
+    border: 1px solid rgba(255,255,255,0.12);
+    background: rgba(0,0,0,0.3);
+    color: #fff;
+    font-size: 0.75rem;
+  }
+  .reminder-form input:focus {
+    outline: none;
+    border-color: rgba(var(--orb-glow), 0.5);
+  }
+  .reminder-form-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+  }
+  .reminder-add-btn {
+    padding: 9px 14px;
+    border-radius: 8px;
+    border: 1px solid rgba(var(--orb-glow), 0.45);
+    background: linear-gradient(135deg, rgba(var(--orb-glow), 0.3), rgba(var(--orb-glow), 0.12));
+    color: #fff;
+    font-weight: 700;
+    font-size: 0.72rem;
+    letter-spacing: 0.5px;
+    cursor: pointer;
+    text-transform: uppercase;
+  }
+  .reminder-add-btn:hover {
+    background: linear-gradient(135deg, rgba(var(--orb-glow), 0.5), rgba(var(--orb-glow), 0.2));
+  }
+  .reminder-list {
+    margin-top: 10px;
+    max-height: 160px;
+    overflow-y: auto;
+  }
+  .reminder-list-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 10px;
+    margin-bottom: 5px;
+    background: rgba(255,255,255,0.04);
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 8px;
+    font-size: 0.68rem;
+    color: rgba(255,255,255,0.85);
+  }
+  .reminder-list-item .ri-text { flex: 1; min-width: 0; }
+  .reminder-list-item .ri-time {
+    font-size: 0.58rem;
+    color: rgba(255,255,255,0.4);
+  }
+  .reminder-list-item .ri-del {
+    width: 22px; height: 22px;
+    border-radius: 50%;
+    border: 1px solid rgba(255,80,80,0.4);
+    background: rgba(255,60,60,0.15);
+    color: #ff6b6b;
+    cursor: pointer;
+    font-size: 0.65rem;
+    display: flex; align-items: center; justify-content: center;
+  }
+
+  #footer {
     display: flex; align-items: center; justify-content: center;
     padding: clamp(7px, 1.2vh, 11px) 14px;
     font-size: 0.70rem;
@@ -1557,6 +1899,27 @@
         <div class="ring-labels" id="ringLabels"></div>
       </div>
 
+      <!-- Rest mode dashboard -->
+      <div class="rest-stack" id="restStack">
+      <div class="rest-message" id="restMessage"></div>
+      <div class="rest-dashboard" id="restDashboard">
+        <div class="rest-clock" id="restClock">--:--</div>
+        <div class="rest-date" id="restDate">—</div>
+        <div class="rest-weather" id="restWeather">
+          <div class="rest-weather-icon"><i class="fas fa-cloud-sun"></i></div>
+          <div class="rest-weather-info">
+            <div class="rest-weather-temp" id="restTemp">--°</div>
+            <div class="rest-weather-desc" id="restWeatherDesc">Cargando clima…</div>
+          </div>
+        </div>
+        <div class="rest-location" id="restLocation">—</div>
+        <div class="rest-reminders" id="restReminders">
+          <div class="rest-reminders-title">Recordatorios pendientes</div>
+          <div id="restRemindersList"><div class="rest-empty">Sin recordatorios</div></div>
+        </div>
+      </div>
+      </div><!-- /rest-stack -->
+
       <!-- Cursor-following segment tooltip -->
       <div class="seg-tooltip" id="segTooltip"></div>
 
@@ -1625,6 +1988,17 @@
       </div>
     </footer>
 
+  </div>
+
+  <!-- Reminder due alert -->
+  <div class="reminder-alert" id="reminderAlert">
+    <div class="reminder-alert-box">
+      <div class="reminder-alert-icon"><i class="fas fa-bell"></i></div>
+      <div class="reminder-alert-title">Recordatorio</div>
+      <div class="reminder-alert-msg" id="reminderAlertMsg">—</div>
+      <div class="reminder-alert-time" id="reminderAlertTime"></div>
+      <button type="button" class="reminder-alert-close" id="reminderAlertClose">Cerrar</button>
+    </div>
   </div>
 
   <div class="action-toast" id="actionToast">
@@ -1750,7 +2124,7 @@
             <div class="slider-header"><span class="slider-label">Segundos sin actividad</span><span class="slider-value" id="idleTimeoutValue">10s</span></div>
             <input type="range" class="settings-slider" id="idleTimeoutSlider" min="3" max="60" step="1" value="10">
           </div>
-          <div class="settings-hint">El contador se reinicia solo con actividad real: mover el ratón &gt;8px, clics, teclas o voz clara.</div>
+          <div class="settings-hint">El contador se reinicia solo con actividad real: mover el ratón &gt;15px, clics, teclas o comandos de voz que empiecen con "META".</div>
         </div>
         <div class="settings-section">
           <div class="settings-label">Ubicación para el clima</div>
@@ -1779,6 +2153,23 @@
 
       <div class="settings-tab-content" data-content="oculto">
         <div class="settings-section">
+          <div class="settings-label">Recordatorios</div>
+          <div class="reminder-form">
+            <input type="text" id="remTitleInput" placeholder="Tema del recordatorio" maxlength="80">
+            <div class="reminder-form-row">
+              <input type="date" id="remDateInput">
+              <input type="time" id="remTimeInput">
+            </div>
+            <button type="button" class="reminder-add-btn" id="remAddBtn">+ Agregar recordatorio</button>
+          </div>
+          <div class="reminder-list" id="reminderList"></div>
+        </div>
+        <div class="settings-section">
+          <div class="settings-label">Frase en modo descanso</div>
+          <textarea id="restPhraseInput" class="settings-input" rows="3" maxlength="200" placeholder="Ej: El control interno es responsabilidad de todos" style="width:100%;resize:vertical;min-height:64px;padding:8px 10px;border-radius:8px;border:1px solid rgba(255,255,255,0.12);background:rgba(0,0,0,0.3);color:#fff;font-size:0.75rem;font-family:inherit;"></textarea>
+          <div class="settings-info" style="margin-top:6px;">Se muestra arriba del clima y los recordatorios cuando META descansa.</div>
+        </div>
+        <div class="settings-section">
           <div class="settings-label">Herramientas internas</div>
           <div class="hidden-apps-grid" id="hiddenAppsGrid"></div>
         </div>
@@ -1804,7 +2195,8 @@
     SHOW_PARTICLES: true,
     MOUSE_FOLLOW: true,
     ORB_SIZE: 100,
-    IDLE_TIMEOUT_MS: 10000
+    IDLE_TIMEOUT_MS: 10000,
+    REST_PHRASE: 'El control interno es responsabilidad de todos'
   };
   let settings = { ...DEFAULT_SETTINGS };
   try { const s = localStorage.getItem('meta-hud-settings'); if (s) Object.assign(settings, JSON.parse(s)); } catch (e) {}
@@ -1867,7 +2259,7 @@
   const connectorSvg = document.getElementById('connectorSvg');
   const stage = document.getElementById('stage');
   const hiddenAppsGrid = document.getElementById('hiddenAppsGrid');
-  const statusText = document.getElementById('statusText');
+  const statusText = document.getElementById('statusText'); // ← será null si no existe en HTML
 
   const settingsButton = document.getElementById('settingsButton');
   const settingsPanel = document.getElementById('settingsPanel');
@@ -1927,6 +2319,8 @@
   // AUTO-DESCANSO POR INACTIVIDAD REAL
   // ============================================================
   function registerActivity() {
+    // No contar como actividad mientras META habla o está en cooldown
+    if (isSpeaking || speakCooldown) return;
     lastActivityAt = Date.now();
     resetIdleTimer();
   }
@@ -1954,8 +2348,10 @@
   function clearIdleTimer() { clearTimeout(idleTimeout); }
 
   function bindActivityEvents() {
+    const guarded = (fn) => (e) => { if (!isSpeaking && !speakCooldown) fn(e); };
+
     // ⭐ Ratón con UMBRAL mínimo de 15px — evita micro-movimientos fantasma
-    window.addEventListener('mousemove', (e) => {
+    window.addEventListener('mousemove', guarded((e) => {
       if (!mouseInitialized) {
         lastMousePos = { x: e.clientX, y: e.clientY };
         mouseInitialized = true;
@@ -1968,27 +2364,27 @@
         lastMousePos = { x: e.clientX, y: e.clientY };
         registerActivity();
       }
-    }, { passive: true });
+    }), { passive: true });
 
     // Clics (mousedown en vez de click para ser más sensible)
-    window.addEventListener('mousedown', registerActivity, { passive: true });
+    window.addEventListener('mousedown', guarded(registerActivity), { passive: true });
 
     // Teclas
-    window.addEventListener('keydown', registerActivity);
+    window.addEventListener('keydown', guarded(registerActivity));
 
     // Touch en móviles
-    window.addEventListener('touchstart', registerActivity, { passive: true });
-    window.addEventListener('touchmove', registerActivity, { passive: true });
+    window.addEventListener('touchstart', guarded(registerActivity), { passive: true });
+    window.addEventListener('touchmove', guarded(registerActivity), { passive: true });
 
     // Rueda del ratón (scroll activo)
-    window.addEventListener('wheel', registerActivity, { passive: true });
+    window.addEventListener('wheel', guarded(registerActivity), { passive: true });
 
     // Cuando la ventana recupera foco
-    window.addEventListener('focus', registerActivity);
+    window.addEventListener('focus', guarded(registerActivity));
 
     // Al cambiar de pestaña
     document.addEventListener('visibilitychange', () => {
-      if (!document.hidden) registerActivity();
+      if (!document.hidden && !isSpeaking && !speakCooldown) registerActivity();
     });
   }
 
@@ -1998,13 +2394,31 @@
     clearTimeout(awaitingCommandTimeout);
     clearIdleTimer();
     if (menuVisible) hideMenu();
-    orbContainer.classList.add('off');
-    statusText.textContent = '';
-    statusText.classList.remove('active');
-    statusText.classList.add('off');
+    closeSideAppsPanel();
+    hideSegTooltip();
+
+    // Apagar / difuminar orbe por completo
+    orbContainer.classList.add('rest-dim', 'off');
+    if (statusText) {
+      statusText.textContent = '';
+      statusText.classList.remove('active');
+      statusText.classList.add('off');
+    }
+
+    const dash = document.getElementById('restDashboard');
+    if (dash) dash.classList.add('visible');
+
+    updateRestDashboard();
+    startRestClock();
+    refreshWeatherForRest();
     updateInfoPanel();
+
     if (!silent) {
-      const despedidas = [`De acuerdo, me quedo en calma.`, `Entendido. Solo di "META" cuando me necesites.`, `Está bien. Descanso.`];
+      const despedidas = [
+        `De acuerdo, me quedo en calma.`,
+        `Entendido. Solo di "META, despierta" cuando me necesites.`,
+        `Está bien. Descanso.`
+      ];
       speak(despedidas[Math.floor(Math.random()*despedidas.length)]);
     }
   }
@@ -2012,12 +2426,336 @@
   function wakeUp() {
     attentionActive = true;
     awaitingCommand = false;
-    orbContainer.classList.remove('off');
-    statusText.classList.remove('off');
-    statusText.classList.add('active');
-    statusText.textContent = 'Te escucho...';
+    orbContainer.classList.remove('off', 'rest-dim');
+    if (statusText) {
+      statusText.classList.remove('off');
+      statusText.classList.add('active');
+      statusText.textContent = 'Te escucho...';
+    }
+
+    const dash = document.getElementById('restDashboard');
+    if (dash) dash.classList.remove('visible');
+    document.getElementById('restMessage')?.classList.remove('visible');
+    stopRestClock();
+
     lastActivityAt = Date.now();
     resetIdleTimer();
+  }
+
+  // ============================================================
+  // REST DASHBOARD + CLIMA + RECORDATORIOS
+  // ============================================================
+  let restClockInterval = null;
+  let weatherCache = null;
+  let weatherCacheAt = 0;
+  let reminders = [];
+  try {
+    const r = localStorage.getItem('meta-reminders');
+    if (r) reminders = JSON.parse(r);
+  } catch (e) {}
+
+  function saveReminders() {
+    try { localStorage.setItem('meta-reminders', JSON.stringify(reminders)); } catch (e) {}
+  }
+
+  function startRestClock() {
+    stopRestClock();
+    tickRestClock();
+    restClockInterval = setInterval(tickRestClock, 1000);
+  }
+  function stopRestClock() {
+    if (restClockInterval) { clearInterval(restClockInterval); restClockInterval = null; }
+  }
+  function tickRestClock() {
+    const el = document.getElementById('restClock');
+    const de = document.getElementById('restDate');
+    if (!el) return;
+    const n = new Date();
+    el.textContent = n.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+    if (de) {
+      de.textContent = n.toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+    }
+  }
+
+  const WMO = {
+    0: ['Despejado', 'fa-sun'], 1: ['Mayormente despejado', 'fa-sun'], 2: ['Parcialmente nublado', 'fa-cloud-sun'],
+    3: ['Nublado', 'fa-cloud'], 45: ['Niebla', 'fa-smog'], 48: ['Niebla helada', 'fa-smog'],
+    51: ['Llovizna ligera', 'fa-cloud-rain'], 53: ['Llovizna', 'fa-cloud-rain'], 55: ['Llovizna intensa', 'fa-cloud-rain'],
+    61: ['Lluvia ligera', 'fa-cloud-showers-heavy'], 63: ['Lluvia', 'fa-cloud-showers-heavy'], 65: ['Lluvia fuerte', 'fa-cloud-showers-heavy'],
+    71: ['Nieve ligera', 'fa-snowflake'], 73: ['Nieve', 'fa-snowflake'], 75: ['Nieve intensa', 'fa-snowflake'],
+    80: ['Chubascos', 'fa-cloud-showers-heavy'], 81: ['Chubascos', 'fa-cloud-showers-heavy'], 82: ['Chubascos fuertes', 'fa-cloud-showers-heavy'],
+    95: ['Tormenta', 'fa-bolt'], 96: ['Tormenta con granizo', 'fa-bolt'], 99: ['Tormenta fuerte', 'fa-bolt']
+  };
+
+  async function resolveCoords() {
+    if (settings.LAT != null && settings.LON != null) {
+      return { lat: settings.LAT, lon: settings.LON, name: settings.DEFAULT_CITY || 'Tu ubicación' };
+    }
+    const city = (settings.DEFAULT_CITY || 'Madrid').trim();
+    try {
+      const res = await fetch(`https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(city)}&count=1&language=es&format=json`);
+      const data = await res.json();
+      if (data.results && data.results[0]) {
+        const r = data.results[0];
+        return { lat: r.latitude, lon: r.longitude, name: r.name + (r.admin1 ? ', ' + r.admin1 : '') };
+      }
+    } catch (e) {}
+    return { lat: 40.42, lon: -3.70, name: city };
+  }
+
+  async function fetchWeather() {
+    const now = Date.now();
+    if (weatherCache && (now - weatherCacheAt) < 10 * 60 * 1000) return weatherCache;
+    try {
+      const loc = await resolveCoords();
+      const url = `https://api.open-meteo.com/v1/forecast?latitude=${loc.lat}&longitude=${loc.lon}&current=temperature_2m,weather_code,relative_humidity_2m,wind_speed_10m&timezone=auto`;
+      const res = await fetch(url);
+      const data = await res.json();
+      const cur = data.current || {};
+      const code = cur.weather_code ?? 0;
+      const [desc, icon] = WMO[code] || ['Clima', 'fa-cloud'];
+      weatherCache = {
+        temp: Math.round(cur.temperature_2m),
+        humidity: cur.relative_humidity_2m,
+        wind: cur.wind_speed_10m,
+        desc, icon, location: loc.name
+      };
+      weatherCacheAt = now;
+      return weatherCache;
+    } catch (e) {
+      return weatherCache || { temp: null, desc: 'No disponible', icon: 'fa-cloud', location: settings.DEFAULT_CITY || '—' };
+    }
+  }
+
+  async function refreshWeatherForRest() {
+    const w = await fetchWeather();
+    const tempEl = document.getElementById('restTemp');
+    const descEl = document.getElementById('restWeatherDesc');
+    const locEl = document.getElementById('restLocation');
+    const iconWrap = document.querySelector('#restWeather .rest-weather-icon');
+    if (tempEl) tempEl.textContent = w.temp != null ? `${w.temp}°C` : '--°';
+    if (descEl) descEl.textContent = w.desc + (w.humidity != null ? ` · ${w.humidity}% humedad` : '');
+    if (locEl) locEl.textContent = `📍 ${w.location || '—'}`;
+    if (iconWrap) iconWrap.innerHTML = `<i class="fas ${w.icon}"></i>`;
+  }
+
+  function updateRestDashboard() {
+    tickRestClock();
+    renderRestReminders();
+    const msg = document.getElementById('restMessage');
+    if (msg) {
+      const phrase = (settings.REST_PHRASE || '').trim();
+      msg.textContent = phrase;
+      if (phrase) msg.classList.add('visible');
+      else msg.classList.remove('visible');
+    }
+  }
+
+  function getPendingReminders() {
+    const now = Date.now();
+    return reminders
+      .filter(r => !r.done && !r.dismissed)
+      .sort((a, b) => a.at - b.at);
+  }
+
+  function renderRestReminders() {
+    const list = document.getElementById('restRemindersList');
+    if (!list) return;
+    const pending = getPendingReminders().filter(r => r.at > Date.now() - 60000);
+    if (!pending.length) {
+      list.innerHTML = '<div class="rest-empty">Sin recordatorios pendientes</div>';
+      return;
+    }
+    list.innerHTML = pending.slice(0, 8).map(r => {
+      const d = new Date(r.at);
+      const when = d.toLocaleString('es-ES', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
+      return `<div class="rest-reminder-item"><i class="fas fa-bell"></i><div><div>${r.title}</div><div class="rest-reminder-time">${when}</div></div></div>`;
+    }).join('');
+  }
+
+  function renderSettingsReminders() {
+    const list = document.getElementById('reminderList');
+    if (!list) return;
+    const pending = getPendingReminders();
+    if (!pending.length) {
+      list.innerHTML = '<div class="rest-empty" style="padding:8px">No hay recordatorios</div>';
+      return;
+    }
+    list.innerHTML = pending.map(r => {
+      const d = new Date(r.at);
+      const when = d.toLocaleString('es-ES', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+      return `<div class="reminder-list-item" data-id="${r.id}">
+        <div class="ri-text"><div>${r.title}</div><div class="ri-time">${when}</div></div>
+        <button type="button" class="ri-del" data-id="${r.id}" title="Eliminar"><i class="fas fa-times"></i></button>
+      </div>`;
+    }).join('');
+    list.querySelectorAll('.ri-del').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        deleteReminder(btn.dataset.id);
+      });
+    });
+  }
+
+  function addReminder(title, dateStr, timeStr) {
+    const titleClean = (title || '').trim();
+    if (!titleClean) return null;
+    const at = new Date(`${dateStr}T${timeStr || '09:00'}`);
+    if (isNaN(at.getTime())) return null;
+    const item = {
+      id: 'r' + Date.now() + Math.random().toString(36).slice(2, 6),
+      title: titleClean,
+      at: at.getTime(),
+      done: false,
+      dismissed: false
+    };
+    reminders.push(item);
+    saveReminders();
+    renderSettingsReminders();
+    renderRestReminders();
+    return item;
+  }
+
+  function deleteReminder(id) {
+    reminders = reminders.filter(r => r.id !== id);
+    saveReminders();
+    renderSettingsReminders();
+    renderRestReminders();
+  }
+
+  function showReminderAlert(rem) {
+    const alert = document.getElementById('reminderAlert');
+    const msg = document.getElementById('reminderAlertMsg');
+    const time = document.getElementById('reminderAlertTime');
+    if (!alert) return;
+    msg.textContent = rem.title;
+    const d = new Date(rem.at);
+    time.textContent = d.toLocaleString('es-ES', { weekday: 'long', day: 'numeric', month: 'long', hour: '2-digit', minute: '2-digit' });
+    alert.dataset.remId = rem.id;
+    alert.classList.add('visible');
+    speak(`Recordatorio: ${rem.title}`);
+  }
+
+  function dismissReminderAlert() {
+    const alert = document.getElementById('reminderAlert');
+    if (!alert) return;
+    const id = alert.dataset.remId;
+    if (id) {
+      const rem = reminders.find(r => r.id === id);
+      if (rem) { rem.dismissed = true; rem.done = true; saveReminders(); }
+    }
+    alert.classList.remove('visible');
+    renderSettingsReminders();
+    renderRestReminders();
+  }
+
+  function checkRemindersDue() {
+    const now = Date.now();
+    const alert = document.getElementById('reminderAlert');
+    if (alert && alert.classList.contains('visible')) return; // one at a time
+    const due = reminders.find(r => !r.done && !r.dismissed && r.at <= now && r.at > now - 5 * 60 * 1000);
+    if (due) {
+      due.done = true; // mark so we don't re-fire; keep until dismissed
+      saveReminders();
+      showReminderAlert(due);
+    }
+  }
+
+  // Voice multi-step reminder capture
+  let reminderCapture = null; // { step, title, dateStr, timeStr }
+
+  function startReminderCapture() {
+    reminderCapture = { step: 'title', title: '', dateStr: '', timeStr: '' };
+    speak('¿Cuál es el tema del recordatorio?');
+  }
+
+  function handleReminderCapture(text) {
+    if (!reminderCapture) return false;
+    const t = text.trim();
+    if (reminderCapture.step === 'title') {
+      reminderCapture.title = t;
+      reminderCapture.step = 'date';
+      speak('¿Para qué fecha? Puedes decir mañana, o el día y el mes.');
+      return true;
+    }
+    if (reminderCapture.step === 'date') {
+      const parsed = parseSpokenDate(t);
+      if (!parsed) {
+        speak('No entendí la fecha. Prueba con mañana, o por ejemplo quince de octubre.');
+        return true;
+      }
+      reminderCapture.dateStr = parsed;
+      reminderCapture.step = 'time';
+      speak('¿A qué hora?');
+      return true;
+    }
+    if (reminderCapture.step === 'time') {
+      const tm = parseSpokenTime(t);
+      if (!tm) {
+        speak('No entendí la hora. Di por ejemplo tres de la tarde, o quince treinta.');
+        return true;
+      }
+      reminderCapture.timeStr = tm;
+      const item = addReminder(reminderCapture.title, reminderCapture.dateStr, reminderCapture.timeStr);
+      reminderCapture = null;
+      if (item) {
+        const d = new Date(item.at);
+        speak(`Recordatorio guardado: ${item.title}, el ${d.toLocaleDateString('es-ES')} a las ${d.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })}.`);
+      } else {
+        speak('No pude guardar el recordatorio.');
+      }
+      return true;
+    }
+    return false;
+  }
+
+  function parseSpokenDate(text) {
+    const t = text.toLowerCase().normalize('NFD').replace(/\p{Diacritic}/gu, '');
+    const now = new Date();
+    if (/manana/.test(t)) {
+      const d = new Date(now); d.setDate(d.getDate() + 1);
+      return d.toISOString().slice(0, 10);
+    }
+    if (/hoy/.test(t)) return now.toISOString().slice(0, 10);
+    if (/pasado\s*manana/.test(t)) {
+      const d = new Date(now); d.setDate(d.getDate() + 2);
+      return d.toISOString().slice(0, 10);
+    }
+    const months = { enero:0, febrero:1, marzo:2, abril:3, mayo:4, junio:5, julio:6, agosto:7, septiembre:8, setiembre:8, octubre:9, noviembre:10, diciembre:11 };
+    const mMatch = t.match(/(\d{1,2})\s+(?:de\s+)?([a-z]+)/);
+    if (mMatch && months[mMatch[2]] != null) {
+      let year = now.getFullYear();
+      const month = months[mMatch[2]];
+      const day = parseInt(mMatch[1], 10);
+      let d = new Date(year, month, day);
+      if (d < now) d = new Date(year + 1, month, day);
+      return d.toISOString().slice(0, 10);
+    }
+    // ISO-like
+    const iso = t.match(/(\d{4})-(\d{2})-(\d{2})/);
+    if (iso) return `${iso[1]}-${iso[2]}-${iso[3]}`;
+    return null;
+  }
+
+  function parseSpokenTime(text) {
+    const t = text.toLowerCase().normalize('NFD').replace(/\p{Diacritic}/gu, '');
+    // 15:30 or 15 30
+    let m = t.match(/(\d{1,2})\s*[:\s]\s*(\d{2})/);
+    if (m) {
+      let h = parseInt(m[1], 10), min = parseInt(m[2], 10);
+      if (/tarde|pm/.test(t) && h < 12) h += 12;
+      if (/noche/.test(t) && h < 12) h += 12;
+      return `${String(h).padStart(2,'0')}:${String(min).padStart(2,'0')}`;
+    }
+    m = t.match(/(\d{1,2})\s*(?:de\s+la\s+)?(manana|tarde|noche|pm|am)?/);
+    if (m) {
+      let h = parseInt(m[1], 10);
+      const period = m[2] || '';
+      if ((period === 'tarde' || period === 'pm' || period === 'noche') && h < 12) h += 12;
+      if (period === 'manana' && h === 12) h = 0;
+      return `${String(h).padStart(2,'0')}:00`;
+    }
+    return null;
   }
 
   // ============================================================
@@ -2104,16 +2842,12 @@
       setTimeout(() => {
         speakCooldown = false;
         if (onComplete) onComplete();
-        // ⚠️ NO reiniciar el timer aquí. Solo se reinicia con actividad real del usuario.
-        // Si el usuario no hace nada, el timer ya está corriendo con lastActivityAt antiguo.
+        // ⭐ Reiniciar el timer de inactividad DESPUÉS de que META termina de hablar.
+        // Así el auto-descanso cuenta desde que META deja de hablar,
+        // y no desde la última actividad manual del usuario.
         if (attentionActive && micPermissionGranted) {
-          // Dejar que el timer de inactividad actual decida
-          const elapsed = Date.now() - lastActivityAt;
-          const timeout = settings.IDLE_TIMEOUT_MS || 10000;
-          if (elapsed >= timeout) {
-            // Ya pasó el tiempo, entrar en descanso
-            enterRestMode(true);
-          }
+          lastActivityAt = Date.now();
+          resetIdleTimer();
         }
       }, 300);
     };
@@ -2145,22 +2879,35 @@
         if (event.results[i].isFinal) final += t; else interim += t;
       }
       
-      // ⭐ SOLO cuenta como actividad si hay VOZ REAL (≥3 caracteres)
-      const detectedText = (final + interim).trim();
-      if (detectedText.length >= 3) {
-        registerActivity();
-      }
+      // ⭐ El ruido ambiente NO cuenta como actividad.
+      // Solo los comandos que empiezan con "META" reinician el timer.
+      // (ver abajo: registerActivity se llama solo tras detectar "META")
       
       if (final && final.trim().length > 0) {
         const clean = final.trim().toLowerCase().replace(/[.,;!?¡¿]/g, '').replace(/\s+/g, ' ').trim();
+        // ⭐ SOLO los comandos que empiezan con "META" cuentan como actividad real.
+        // Esto evita que el ruido ambiente (TV, conversaciones) mantenga el orbe despierto.
         if (/^(hola|hey|oye|eh)?\s*m[eé]ta\b/.test(clean)) {
+          registerActivity();
           wakeUp();
           const cmdAfterMeta = clean.replace(/^(hola|hey|oye|eh)?\s*m[eé]ta\b\s*/, '').trim();
           if (cmdAfterMeta) executeCommand(cmdAfterMeta);
           else speak(`Dime, ¿qué necesitas?`);
           return;
         }
-        if (!attentionActive) return;
+        // While capturing a reminder, route speech there
+        if (reminderCapture) {
+          handleReminderCapture(clean);
+          return;
+        }
+        // "META despierta" even from rest (attentionActive false)
+        if (!attentionActive) {
+          if (/(despierta|activar|reactivar|levanta|meta)/.test(clean) && /(despierta|activar|reactivar|levanta)/.test(clean)) {
+            wakeUp();
+            speak(`Hola ${settings.USER_NAME}. ¿En qué puedo ayudarte?`);
+          }
+          return;
+        }
         executeCommand(clean);
       }
     };
@@ -2262,8 +3009,80 @@
       return;
     }
     if (/(gracias)/.test(act)) { speak(`De nada ${settings.USER_NAME}.`); return; }
+
+    // Clima
+    if (/(clima|tiempo|temperatura)/.test(act)) {
+      speak('Consultando el clima...');
+      fetchWeather().then(w => {
+        if (w.temp != null) {
+          speak(`En ${w.location} hay ${w.temp} grados. ${w.desc}.`);
+        } else {
+          speak('No pude obtener el clima en este momento.');
+        }
+      });
+      return;
+    }
+
+    // Descanso / despertar
+    if (/(descansa|descanso|a\s*dormir|duerme|reposo)/.test(act)) {
+      enterRestMode(false);
+      return;
+    }
+    if (/(despierta|activar|reactivar|levanta)/.test(act)) {
+      wakeUp();
+      speak(`Hola ${settings.USER_NAME}. ¿En qué puedo ayudarte?`);
+      return;
+    }
+
+    // Recordatorio
+    if (/(recordatorio|recu[eé]rdame|agregar\s+recordatorio)/.test(act)) {
+      // Try one-shot: "recordatorio reunión mañana a las 3"
+      const oneShot = tryParseOneShotReminder(act);
+      if (oneShot) {
+        const item = addReminder(oneShot.title, oneShot.dateStr, oneShot.timeStr);
+        if (item) {
+          const d = new Date(item.at);
+          speak(`Recordatorio guardado: ${item.title}, el ${d.toLocaleDateString('es-ES')} a las ${d.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })}.`);
+        } else speak('No pude guardar el recordatorio.');
+        return;
+      }
+      startReminderCapture();
+      return;
+    }
+
     speak(`Mmm, no estoy seguro. Di "META, abre menú" para ver las secciones.`);
   }
+
+  function tryParseOneShotReminder(act) {
+    // "recordatorio X mañana a las 15" / "recuérdame X el 10 de octubre a las 3 de la tarde"
+    let t = act.replace(/^(meta\s*)?(recordatorio|recu[eé]rdame|agregar\s+recordatorio)\s*/i, '').trim();
+    if (!t || t.length < 3) return null;
+    // Extract time
+    const timeMatch = t.match(/(?:a\s+las\s+)?(\d{1,2})(?:\s*[:\s]\s*(\d{2}))?\s*(de\s+la\s+)?(manana|tarde|noche|pm|am)?/i);
+    let timeStr = null;
+    if (timeMatch) {
+      timeStr = parseSpokenTime(timeMatch[0]);
+      t = t.replace(timeMatch[0], ' ').trim();
+    }
+    // Extract date
+    let dateStr = null;
+    const datePatterns = [
+      /(pasado\s*mañana|manana|hoy)/i,
+      /(\d{1,2})\s+(?:de\s+)?(enero|febrero|marzo|abril|mayo|junio|julio|agosto|septiembre|setiembre|octubre|noviembre|diciembre)/i
+    ];
+    for (const p of datePatterns) {
+      const m = t.match(p);
+      if (m) {
+        dateStr = parseSpokenDate(m[0]);
+        t = t.replace(m[0], ' ').trim();
+        break;
+      }
+    }
+    t = t.replace(/(a\s+las|el|la|para|de)/gi, ' ').replace(/\s+/g, ' ').trim();
+    if (!t || !dateStr) return null;
+    return { title: t, dateStr, timeStr: timeStr || '09:00' };
+  }
+
 
   // ============================================================
   // MÓDULOS
@@ -2997,6 +3816,7 @@
           }
           settings.DEFAULT_CITY = cityName;
           defaultCityInput.value = cityName;
+          weatherCache = null;
           saveSettings();
           gpsStatus.textContent = `✅ ${cityName}`;
           gpsStatus.className = 'gps-status success';
@@ -3029,9 +3849,44 @@
   defaultCityInput.addEventListener('change', (e) => {
     settings.DEFAULT_CITY = e.target.value.trim() || DEFAULT_SETTINGS.DEFAULT_CITY;
     settings.CITY_AUTO = false;
+    settings.LAT = null;
+    settings.LON = null;
+    weatherCache = null;
     saveSettings();
     gpsStatus.textContent = '';
   });
+
+  // Recordatorios (configuración)
+  document.getElementById('remAddBtn')?.addEventListener('click', () => {
+    const title = document.getElementById('remTitleInput')?.value;
+    const date = document.getElementById('remDateInput')?.value;
+    const time = document.getElementById('remTimeInput')?.value;
+    if (!title || !date || !time) {
+      alert('Completa tema, fecha y hora');
+      return;
+    }
+    const item = addReminder(title, date, time);
+    if (item) {
+      document.getElementById('remTitleInput').value = '';
+      document.getElementById('remDateInput').value = '';
+      document.getElementById('remTimeInput').value = '';
+      renderSettingsReminders();
+    }
+  });
+  document.getElementById('reminderAlertClose')?.addEventListener('click', (e) => {
+    e.stopPropagation();
+    dismissReminderAlert();
+  });
+  document.getElementById('restPhraseInput')?.addEventListener('change', (e) => {
+    settings.REST_PHRASE = e.target.value.trim();
+    saveSettings();
+  });
+  document.getElementById('restPhraseInput')?.addEventListener('input', (e) => {
+    settings.REST_PHRASE = e.target.value;
+    saveSettings();
+  });
+  // Prevent alert box click from bubbling incorrectly
+  document.querySelector('.reminder-alert-box')?.addEventListener('click', e => e.stopPropagation());
 
   resetSettingsButton.addEventListener('click', () => {
     if (confirm('¿Restablecer toda la configuración a los valores por defecto?')) {
@@ -3069,6 +3924,8 @@
     orbContainer.style.transform = `scale(${settings.ORB_SIZE/100})`;
     userNameInput.value = settings.USER_NAME;
     defaultCityInput.value = settings.DEFAULT_CITY;
+    const restPhraseInput = document.getElementById('restPhraseInput');
+    if (restPhraseInput) restPhraseInput.value = settings.REST_PHRASE || '';
     toggleParticles.checked = settings.SHOW_PARTICLES;
     toggleMouseFollow.checked = settings.MOUSE_FOLLOW;
     idleTimeoutSlider.value = (settings.IDLE_TIMEOUT_MS || 10000) / 1000;
@@ -3079,9 +3936,31 @@
     buildRingMenu();
     buildHiddenApps();
     updateInfoPanel();
+    renderSettingsReminders();
+    setInterval(checkRemindersDue, 15000);
+    // Preload weather in background
+    setTimeout(() => fetchWeather().catch(() => {}), 2000);
 
     // ⭐ Activar detección de actividad real
     bindActivityEvents();
+
+    // ⭐ DESPERTAR CON CLIC EN CUALQUIER PARTE DE LA PANTALLA
+    document.addEventListener('click', (e) => {
+      // Si el orbe está dormido (modo descanso), cualquier clic lo despierta
+      if (!attentionActive) {
+        // Evitar que se dispare si el clic fue en el panel de configuración o en un botón
+        if (e.target.closest('.settings-panel') ||
+            e.target.closest('.settings-button') ||
+            e.target.closest('.fullscreen-button') ||
+            e.target.closest('.reminder-alert') ||
+            e.target.closest('.side-apps-panel') ||
+            e.target.closest('.ring-seg-group')) {
+          return;
+        }
+        wakeUp();
+        speak(`Hola ${settings.USER_NAME}. ¿En qué puedo ayudarte?`);
+      }
+    }, true); // useCapture: true para que se ejecute antes que otros listeners
 
     setTimeout(() => {
       loadVoices();
@@ -3096,21 +3975,25 @@
         recognition = initRecognition();
         setTimeout(() => {
           startRecognition();
-          lastActivityAt = Date.now();
-          resetIdleTimer();
           if (!hasGreeted) {
             hasGreeted = true;
             const h = new Date().getHours();
             const saludo = h < 12 ? 'buenos días' : h < 20 ? 'buenas tardes' : 'buenas noches';
-            speak(`Hola ${settings.USER_NAME}, ${saludo}. ¿En qué puedo ayudarte?.`);
+            // speak() reiniciará el timer al terminar de hablar (ver u.onend)
+            speak(`Hola ${settings.USER_NAME}, ${saludo}. ¿En que puedo ayudarte?`);
+          } else {
+            lastActivityAt = Date.now();
+            resetIdleTimer();
           }
         }, 800);
       } else {
         micPermissionGranted = false;
         attentionActive = false;
         orbContainer.classList.add('off');
-        statusText.textContent = '';
-        statusText.classList.add('off');
+        if (statusText) {
+          statusText.textContent = '';
+          statusText.classList.add('off');
+        }
       }
     }
 

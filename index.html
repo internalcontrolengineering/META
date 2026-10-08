@@ -2378,7 +2378,7 @@
         <div class="settings-section">
           <div class="settings-label">Frases en modo descanso</div>
           <div class="reminder-form">
-            <textarea id="restPhraseInput" class="settings-input" rows="2" maxlength="200" placeholder="Escribe una frase y presiona Agregar..." style="width:100%;resize:vertical;min-height:52px;padding:8px 10px;border-radius:8px;border:1px solid rgba(255,255,255,0.12);background:rgba(0,0,0,0.3);color:#fff;font-size:0.75rem;font-family:inherit;"></textarea>
+            <textarea id="restPhraseInput" class="settings-input" rows="2" placeholder="Escribe una frase y presiona Agregar..." style="width:100%;resize:vertical;min-height:52px;padding:8px 10px;border-radius:8px;border:1px solid rgba(255,255,255,0.12);background:rgba(0,0,0,0.3);color:#fff;font-size:0.75rem;font-family:inherit;"></textarea>
             <button type="button" class="reminder-add-btn" id="restPhraseAddBtn">+ Agregar frase</button>
           </div>
           <div class="reminder-list" id="restPhraseList"></div>
@@ -3284,12 +3284,11 @@
     const idx = parseInt(el.dataset.idx, 10);
     if (isNaN(idx) || el.querySelector('input')) return;
     const current = settings.REST_PHRASES[idx] || '';
-    const input = document.createElement('input');
-    input.type = 'text';
+    const input = document.createElement('textarea');
     input.className = 'settings-input';
     input.value = current;
-    input.maxLength = 200;
-    input.style.cssText = 'width:100%;padding:6px 8px;font-size:0.72rem;margin:0;';
+    input.rows = 3;
+    input.style.cssText = 'width:100%;padding:6px 8px;font-size:0.72rem;margin:0;resize:vertical;min-height:52px;';
     el.textContent = '';
     el.appendChild(input);
     input.focus();
@@ -3306,7 +3305,7 @@
     };
     input.addEventListener('blur', commit);
     input.addEventListener('keydown', (ev) => {
-      if (ev.key === 'Enter') { ev.preventDefault(); input.blur(); }
+      if (ev.key === 'Enter' && (ev.ctrlKey || ev.metaKey)) { ev.preventDefault(); input.blur(); }
       if (ev.key === 'Escape') {
         input.removeEventListener('blur', commit);
         renderRestPhrases();

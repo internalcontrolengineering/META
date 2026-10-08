@@ -1389,15 +1389,58 @@
     background: rgba(0,0,0,0.3);
     color: #fff;
     font-size: 0.75rem;
+    color-scheme: dark;
   }
   .reminder-form input:focus {
     outline: none;
     border-color: rgba(var(--orb-glow), 0.5);
   }
+  .reminder-form input[type="date"],
+  .reminder-form input[type="time"],
+  .settings-input[type="date"],
+  .settings-input[type="time"],
+  .ri-time input[type="date"],
+  .ri-time input[type="time"] {
+    color-scheme: dark;
+    cursor: pointer;
+    min-height: 36px;
+    position: relative;
+  }
+  .reminder-form input[type="date"]::-webkit-calendar-picker-indicator,
+  .reminder-form input[type="time"]::-webkit-calendar-picker-indicator,
+  .settings-input[type="date"]::-webkit-calendar-picker-indicator,
+  .settings-input[type="time"]::-webkit-calendar-picker-indicator,
+  .ri-time input[type="date"]::-webkit-calendar-picker-indicator,
+  .ri-time input[type="time"]::-webkit-calendar-picker-indicator {
+    cursor: pointer;
+    opacity: 0.85;
+    filter: invert(1) brightness(1.2);
+    padding: 2px;
+    margin-left: 4px;
+  }
+  .reminder-form input[type="date"]::-webkit-calendar-picker-indicator:hover,
+  .reminder-form input[type="time"]::-webkit-calendar-picker-indicator:hover,
+  .settings-input[type="date"]::-webkit-calendar-picker-indicator:hover,
+  .settings-input[type="time"]::-webkit-calendar-picker-indicator:hover {
+    opacity: 1;
+    filter: invert(1) brightness(1.5) drop-shadow(0 0 4px rgba(var(--orb-glow), 0.8));
+  }
   .reminder-form-row {
     display: grid;
     grid-template-columns: 1fr 1fr;
     gap: 8px;
+  }
+  .reminder-form-row label {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    font-size: 0.58rem;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+    color: rgba(var(--orb-glow), 0.75);
+  }
+  .reminder-form-row label input {
+    width: 100%;
   }
   .reminder-add-btn {
     padding: 9px 14px;
@@ -2295,8 +2338,12 @@
           <div class="reminder-form">
             <input type="text" id="remTitleInput" placeholder="Tema del recordatorio" maxlength="80">
             <div class="reminder-form-row">
-              <input type="date" id="remDateInput">
-              <input type="time" id="remTimeInput">
+              <label>Fecha
+                <input type="date" id="remDateInput" title="Abrir calendario">
+              </label>
+              <label>Hora
+                <input type="time" id="remTimeInput" title="Elegir hora">
+              </label>
             </div>
             <button type="button" class="reminder-add-btn" id="remAddBtn">+ Agregar recordatorio</button>
           </div>
@@ -2888,6 +2935,13 @@
     });
   }
 
+  function openNativePicker(input) {
+    if (!input) return;
+    try {
+      if (typeof input.showPicker === 'function') input.showPicker();
+    } catch (e) { /* ignore if not allowed */ }
+  }
+
   function startEditReminderDateTime(el) {
     const id = el.dataset.id;
     if (!id || el.querySelector('input')) return;
@@ -2897,22 +2951,28 @@
     const timeVal = el.dataset.time || '09:00';
     el.innerHTML = '';
     el.style.display = 'flex';
-    el.style.gap = '4px';
+    el.style.gap = '6px';
     el.style.flexWrap = 'wrap';
     el.style.alignItems = 'center';
     const dateInput = document.createElement('input');
     dateInput.type = 'date';
     dateInput.className = 'settings-input';
     dateInput.value = dateVal;
-    dateInput.style.cssText = 'flex:1;min-width:110px;padding:4px 6px;font-size:0.65rem;margin:0;';
+    dateInput.title = 'Calendario';
+    dateInput.style.cssText = 'flex:1;min-width:130px;padding:6px 8px;font-size:0.7rem;margin:0;color-scheme:dark;cursor:pointer;';
     const timeInput = document.createElement('input');
     timeInput.type = 'time';
     timeInput.className = 'settings-input';
     timeInput.value = timeVal;
-    timeInput.style.cssText = 'width:90px;padding:4px 6px;font-size:0.65rem;margin:0;';
+    timeInput.title = 'Hora';
+    timeInput.style.cssText = 'width:100px;padding:6px 8px;font-size:0.7rem;margin:0;color-scheme:dark;cursor:pointer;';
     el.appendChild(dateInput);
     el.appendChild(timeInput);
     dateInput.focus();
+    // Abrir calendario desplegable al entrar en modo edición
+    setTimeout(() => openNativePicker(dateInput), 50);
+    dateInput.addEventListener('click', () => openNativePicker(dateInput));
+    timeInput.addEventListener('click', () => openNativePicker(timeInput));
     let committed = false;
     const commit = () => {
       if (committed) return;
@@ -2940,8 +3000,9 @@
     };
     dateInput.addEventListener('keydown', onKey);
     timeInput.addEventListener('keydown', onKey);
-    dateInput.addEventListener('blur', () => { setTimeout(() => { if (document.activeElement !== timeInput) commit(); }, 150); });
-    timeInput.addEventListener('blur', () => { setTimeout(() => { if (document.activeElement !== dateInput) commit(); }, 150); });
+    dateInput.addEventListener('change', () => { /* keep open for time */ });
+    dateInput.addEventListener('blur', () => { setTimeout(() => { if (document.activeElement !== timeInput) commit(); }, 180); });
+    timeInput.addEventListener('blur', () => { setTimeout(() => { if (document.activeElement !== dateInput) commit(); }, 180); });
   }
 
   function renderRestPhrases() {
@@ -4262,6 +4323,14 @@
       document.getElementById('remTimeInput').value = '';
       renderSettingsReminders();
     }
+  });
+  // Abrir calendario / selector nativo al hacer clic o enfocar fecha y hora
+  ['remDateInput', 'remTimeInput'].forEach(id => {
+    const el = document.getElementById(id);
+    if (!el) return;
+    const open = () => openNativePicker(el);
+    el.addEventListener('click', open);
+    el.addEventListener('focus', open);
   });
   document.getElementById('reminderAlertClose')?.addEventListener('click', (e) => {
     e.stopPropagation();

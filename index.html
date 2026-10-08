@@ -1991,6 +1991,12 @@
     text-overflow: ellipsis;
   }
   .hidden-app-card:hover .hidden-app-title { color: #fff; text-shadow: 0 0 8px rgba(var(--orb-glow), 0.6); }
+  /* Mic toggle: solo visible en celular */
+  .mobile-only-setting { display: none !important; }
+  @media (max-width: 800px) {
+    .mobile-only-setting { display: block !important; }
+  }
+
   @media (max-width: 480px) { .hidden-apps-grid { grid-template-columns: 1fr; } }
 
   @media (max-width: 700px) {
@@ -2341,6 +2347,17 @@
       </div>
 
       <div class="settings-tab-content" data-content="oculto">
+        <div class="settings-section mobile-only-setting" id="micMobileSection">
+          <div class="settings-label">Micrófono</div>
+          <div class="toggle-row">
+            <div>
+              <div class="toggle-label">Reconocimiento de voz</div>
+              <div class="toggle-description">En móvil puede interferir con el uso de la app. Desactívalo si el micrófono se enciende y apaga solo.</div>
+            </div>
+            <label class="toggle-switch"><input type="checkbox" id="toggleMicEnabled" checked><span class="toggle-slider"></span></label>
+          </div>
+          <div class="settings-hint" id="micStatusHint">El micrófono está activo. Di «META» para comandos de voz.</div>
+        </div>
         <div class="settings-section">
           <div class="settings-label">Recordatorios</div>
           <div class="reminder-form">
@@ -2393,7 +2410,8 @@
     MOUSE_FOLLOW: true,
     ORB_SIZE: 100,
     IDLE_TIMEOUT_MS: 10000,
-    REST_PHRASES: []
+    REST_PHRASES: [],
+    MIC_ENABLED: true
   };
   let settings = { ...DEFAULT_SETTINGS };
   try { const s = localStorage.getItem('meta-hud-settings'); if (s) Object.assign(settings, JSON.parse(s)); } catch (e) {}
@@ -2412,6 +2430,9 @@
   if (settings.REST_PHRASES.length === 1 && settings.REST_PHRASES[0] === 'El control interno es responsabilidad de todos') {
     settings.REST_PHRASES = [];
     try { localStorage.setItem('meta-hud-settings', JSON.stringify(settings)); } catch (e) {}
+  }
+  if (typeof settings.MIC_ENABLED !== 'boolean') {
+    settings.MIC_ENABLED = true;
   }
 
   function saveSettings() { try { localStorage.setItem('meta-hud-settings', JSON.stringify(settings)); } catch (e) {} }
@@ -3396,15 +3417,23 @@
     };
 
     rec.onerror = (event) => {
-      if (event.error === 'not-allowed' || event.error === 'service-not-allowed') micPermissionGranted = false;
+      if (event.error === 'not-allowed' || event.error === 'service-not-allowed') {
+        micPermissionGranted = false;
+        settings.MIC_ENABLED = false;
+        saveSettings();
+        updateMicToggleUI();
+      }
     };
     rec.onend = () => {
       recognitionActive = false;
-      if (micPermissionGranted && !isSpeaking && !speakCooldown) {
+      // Solo reiniciar si el usuario tiene el mic activado y hay permiso
+      if (settings.MIC_ENABLED && micPermissionGranted && !isSpeaking && !speakCooldown) {
         clearTimeout(restartTimeout);
         restartTimeout = setTimeout(() => {
-          if (micPermissionGranted && !recognitionActive) startRecognition();
-        }, 300);
+          if (settings.MIC_ENABLED && micPermissionGranted && !recognitionActive && !isSpeaking) {
+            startRecognition();
+          }
+        }, 600);
       }
     };
     rec.onstart = () => { recognitionActive = true; };
@@ -3412,8 +3441,18 @@
   }
 
   function startRecognition() {
+    if (!settings.MIC_ENABLED) return;
     if (!recognition || recognitionActive || isSpeaking || speakCooldown) return;
     try { recognition.start(); } catch(e) {}
+  }
+
+  function stopRecognition() {
+    clearTimeout(restartTimeout);
+    recognitionActive = false;
+    if (recognition) {
+      try { recognition.stop(); } catch (e) {}
+      try { recognition.abort(); } catch (e) {}
+    }
   }
 
   async function requestMicPermission() {
@@ -3422,6 +3461,51 @@
       s.getTracks().forEach(t => t.stop());
       return true;
     } catch (e) { return false; }
+  }
+
+  function updateMicToggleUI() {
+    const toggle = document.getElementById('toggleMicEnabled');
+    const hint = document.getElementById('micStatusHint');
+    if (toggle) toggle.checked = !!settings.MIC_ENABLED;
+    if (hint) {
+      if (settings.MIC_ENABLED && micPermissionGranted) {
+        hint.textContent = 'El micrófono está activo. Di «META» para comandos de voz.';
+      } else if (settings.MIC_ENABLED && !micPermissionGranted) {
+        hint.textContent = 'Micrófono activado pero sin permiso del sistema. Revisa los permisos del navegador.';
+      } else {
+        hint.textContent = 'Micrófono desactivado. Puedes usar la app con normalidad (menú, apps, etc.).';
+      }
+    }
+  }
+
+  async function setMicEnabled(enabled) {
+    settings.MIC_ENABLED = !!enabled;
+    saveSettings();
+    if (!enabled) {
+      stopRecognition();
+      micPermissionGranted = false;
+      updateMicToggleUI();
+      return;
+    }
+    // Activar
+    if (!SpeechRecognition) {
+      settings.MIC_ENABLED = false;
+      saveSettings();
+      updateMicToggleUI();
+      return;
+    }
+    const granted = await requestMicPermission();
+    micPermissionGranted = granted;
+    if (granted) {
+      if (!recognition) recognition = initRecognition();
+      attentionActive = true;
+      orbContainer?.classList.remove('off', 'rest-dim');
+      setTimeout(() => startRecognition(), 400);
+    } else {
+      settings.MIC_ENABLED = false;
+      saveSettings();
+    }
+    updateMicToggleUI();
   }
 
   function executeCommand(cmd) {
@@ -4249,6 +4333,10 @@
     saveSettings();
   });
 
+  document.getElementById('toggleMicEnabled')?.addEventListener('change', (e) => {
+    setMicEnabled(e.target.checked);
+  });
+
   orbSizeSlider.addEventListener('input', (e) => {
     settings.ORB_SIZE = parseInt(e.target.value);
     orbSizeValue.textContent = settings.ORB_SIZE + '%';
@@ -4447,11 +4535,12 @@
       populateVoiceSelect();
     }, 500);
 
-    if (SpeechRecognition) {
+    // Micrófono: solo iniciar reconocimiento si está habilitado en ajustes
+    attentionActive = true;
+    if (SpeechRecognition && settings.MIC_ENABLED) {
       const granted = await requestMicPermission();
       if (granted) {
         micPermissionGranted = true;
-        attentionActive = true;
         recognition = initRecognition();
         setTimeout(() => {
           startRecognition();
@@ -4467,14 +4556,16 @@
         }, 800);
       } else {
         micPermissionGranted = false;
-        attentionActive = false;
-        orbContainer.classList.add('off');
-        if (statusText) {
-          statusText.textContent = '';
-          statusText.classList.add('off');
-        }
+        // Sin permiso de mic: la app sigue usable (menú, apps, etc.)
+        lastActivityAt = Date.now();
+        resetIdleTimer();
       }
+    } else {
+      micPermissionGranted = false;
+      lastActivityAt = Date.now();
+      resetIdleTimer();
     }
+    updateMicToggleUI();
 
     console.log('⏱️ Auto-descanso configurado:', settings.IDLE_TIMEOUT_MS, 'ms');
     console.log('💡 Abre la consola y observa: verás "🛌 Auto-descanso tras X ms" cuando se active.');

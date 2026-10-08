@@ -1150,7 +1150,7 @@
     top: 50%;
     left: 50%;
     transform: translate(-50%, -50%);
-    z-index: 25;
+    z-index: 50;
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -2750,7 +2750,6 @@
   function registerActivity() {
     if (isSpeaking || speakCooldown) return;
     lastActivityAt = Date.now();
-    if (attentionActive) resetIdleTimer();
   }
 
   function isAppsPanelOpen() {
@@ -2758,37 +2757,42 @@
     return !!(panel && panel.classList.contains('visible'));
   }
 
-  function resetIdleTimer() {
-    clearTimeout(idleTimeout);
-    // Auto-rest: solo actividad real / comandos de voz. En móvil también con menú o apps abiertos.
-    if (!attentionActive || isSpeaking || speakCooldown) return;
+  // Vigilante de inactividad por intervalo (más fiable en móviles que setTimeout anidados)
+  let idleWatchInterval = null;
 
-    const timeout = Math.max(3000, settings.IDLE_TIMEOUT_MS || 10000);
-
-    idleTimeout = setTimeout(() => {
-      if (!attentionActive || isSpeaking || speakCooldown || awaitingCommand) {
-        resetIdleTimer();
-        return;
-      }
+  function startIdleWatcher() {
+    if (idleWatchInterval) return;
+    idleWatchInterval = setInterval(() => {
+      if (!attentionActive) return;
+      if (isSpeaking || speakCooldown || awaitingCommand) return;
+      const timeout = Math.max(3000, settings.IDLE_TIMEOUT_MS || 10000);
       const elapsed = Date.now() - lastActivityAt;
-      if (elapsed >= timeout - 200) {
-        console.log('🛌 Auto-descanso tras', elapsed, 'ms de inactividad real');
+      if (elapsed >= timeout) {
+        console.log('🛌 Auto-descanso tras', elapsed, 'ms (menú/apps no bloquean)');
         enterRestMode(true);
-      } else {
-        const remaining = Math.max(500, timeout - elapsed);
-        idleTimeout = setTimeout(() => {
-          if (attentionActive && !isSpeaking && !speakCooldown && !awaitingCommand &&
-              (Date.now() - lastActivityAt) >= timeout - 200) {
-            enterRestMode(true);
-          } else {
-            resetIdleTimer();
-          }
-        }, remaining);
       }
-    }, timeout);
+    }, 1000);
   }
 
-  function clearIdleTimer() { clearTimeout(idleTimeout); idleTimeout = null; }
+  function stopIdleWatcher() {
+    if (idleWatchInterval) {
+      clearInterval(idleWatchInterval);
+      idleWatchInterval = null;
+    }
+  }
+
+  // Compatibilidad con llamadas existentes
+  function resetIdleTimer() {
+    // Solo marca actividad reciente si se llama tras una acción; el watcher se encarga del resto
+    if (!isSpeaking && !speakCooldown) {
+      // no resetea lastActivityAt aquí — registerActivity lo hace
+    }
+    startIdleWatcher();
+  }
+
+  function clearIdleTimer() {
+    // No detener el watcher global; solo se usa al entrar en descanso vía stopIdleWatcher
+  }
 
   function bindActivityEvents() {
     const guarded = (fn) => (e) => { if (!isSpeaking && !speakCooldown) fn(e); };
@@ -2809,8 +2813,8 @@
 
     window.addEventListener('mousedown', guarded(registerActivity), { passive: true });
     window.addEventListener('keydown', guarded(registerActivity));
+    // En móvil: solo touchstart cuenta (no touchmove continuo al sostener el teléfono)
     window.addEventListener('touchstart', guarded(registerActivity), { passive: true });
-    window.addEventListener('touchmove', guarded(registerActivity), { passive: true });
     window.addEventListener('wheel', guarded(registerActivity), { passive: true });
     window.addEventListener('focus', guarded(registerActivity));
 
@@ -2820,18 +2824,27 @@
   }
 
   function enterRestMode(silent = false) {
+    if (!attentionActive && document.getElementById('restDashboard')?.classList.contains('visible')) {
+      return; // ya en descanso
+    }
     attentionActive = false;
     awaitingCommand = false;
     clearTimeout(awaitingCommandTimeout);
-    clearIdleTimer();
+    stopIdleWatcher();
+
     // Cerrar menú y panel de apps aunque estuvieran abiertos (PC y móvil)
     if (menuVisible) hideMenu();
     closeSideAppsPanel();
     previewModule = null;
     activeModule = null;
     if (typeof updateRingActive === 'function') updateRingActive(null);
-    document.querySelectorAll('.ring-seg-group').forEach(g => g.classList.remove('preview'));
+    document.querySelectorAll('.ring-seg-group').forEach(g => g.classList.remove('preview', 'active'));
+    document.querySelectorAll('.ring-segment').forEach(s => s.classList.remove('active'));
     hideSegTooltip();
+    orbContainer?.classList.remove('mobile-apps-open');
+    document.getElementById('ringMenu')?.classList.remove('mobile-apps-open', 'visible');
+    document.getElementById('ringMenu')?.setAttribute('aria-hidden', 'true');
+    menuVisible = false;
 
     orbContainer.classList.add('rest-dim', 'off');
     if (statusText) {
@@ -2840,8 +2853,11 @@
       statusText.classList.add('off');
     }
 
+    const restStack = document.getElementById('restStack');
+    if (restStack) restStack.style.zIndex = '40';
     const dash = document.getElementById('restDashboard');
     if (dash) dash.classList.add('visible');
+    document.getElementById('restMessage')?.classList.add('visible');
 
     updateRestDashboard();
     startRestClock();
@@ -2868,6 +2884,8 @@
       statusText.textContent = 'Te escucho...';
     }
 
+    const restStack = document.getElementById('restStack');
+    if (restStack) restStack.style.zIndex = '';
     const dash = document.getElementById('restDashboard');
     if (dash) dash.classList.remove('visible');
     document.getElementById('restMessage')?.classList.remove('visible');
@@ -2875,7 +2893,7 @@
     stopPhraseRotation();
 
     lastActivityAt = Date.now();
-    resetIdleTimer();
+    startIdleWatcher();
   }
 
   let restClockInterval = null;
@@ -3552,9 +3570,13 @@
   }
 
   function speak(text, onComplete) {
-    if (!('speechSynthesis' in window)) { if (onComplete) onComplete(); return; }
+    if (!('speechSynthesis' in window)) {
+      if (onComplete) onComplete();
+      if (attentionActive) { lastActivityAt = Date.now(); startIdleWatcher(); }
+      return;
+    }
     speakCooldown = true;
-    clearIdleTimer();
+    isSpeaking = true;
     speechSynthesis.cancel();
     const u = new SpeechSynthesisUtterance(text);
     u.lang = preferredVoice?.lang || 'es-ES';
@@ -3569,9 +3591,10 @@
       setTimeout(() => {
         speakCooldown = false;
         if (onComplete) onComplete();
-        if (attentionActive && micPermissionGranted) {
+        // Siempre rearmar el contador de inactividad tras hablar (con o sin micrófono)
+        if (attentionActive) {
           lastActivityAt = Date.now();
-          resetIdleTimer();
+          startIdleWatcher();
         }
       }, 300);
     };
@@ -3580,6 +3603,10 @@
       orbContainer.classList.remove('speaking');
       speakCooldown = false;
       if (onComplete) onComplete();
+      if (attentionActive) {
+        lastActivityAt = Date.now();
+        startIdleWatcher();
+      }
     };
     speechSynthesis.speak(u);
   }

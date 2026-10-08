@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>M.E.T.A. | Control Interno</title>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
   * { margin: 0; padding: 0; box-sizing: border-box; }
 
@@ -2435,11 +2436,211 @@
     settings.MIC_ENABLED = true;
   }
 
-  function saveSettings() { try { localStorage.setItem('meta-hud-settings', JSON.stringify(settings)); } catch (e) {} }
-
   const voiceSettings = { voiceName: null, rate: 1.05, pitch: 1.15, volume: 1.0 };
   try { const s = localStorage.getItem('meta-voice-settings'); if (s) Object.assign(voiceSettings, JSON.parse(s)); } catch (e) {}
-  function saveVoiceSettings() { try { localStorage.setItem('meta-voice-settings', JSON.stringify(voiceSettings)); } catch (e) {} }
+
+  // ============================================================
+  // SUPABASE — sincronización multi-dispositivo
+  // ============================================================
+  const SUPABASE_URL = 'https://qfynzfrrccnnylmsbxij.supabase.co';
+  const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFmeW56ZnJyY2NubnlsbXNieGlqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTE0ODI2NDksImV4cCI6MjEwNzA1ODY0OX0.LhslhrmgYiBsEPn4WW8mg-gReorTzMx0yE8wSkuRRjo';
+  const APP_STATE_ID = 'default';
+
+  let supabaseClient = null;
+  let syncReady = false;
+  let syncInFlight = false;
+  let applyingRemote = false;
+  let lastRemoteUpdatedAt = null;
+  let syncDebounceTimer = null;
+
+  function initSupabaseClient() {
+    if (typeof window.supabase === 'undefined' || !window.supabase.createClient) {
+      console.warn('Supabase JS no cargó');
+      return null;
+    }
+    try {
+      supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+      return supabaseClient;
+    } catch (e) {
+      console.warn('Error init Supabase', e);
+      return null;
+    }
+  }
+
+  function scheduleCloudSync() {
+    if (applyingRemote || !syncReady || !supabaseClient) return;
+    clearTimeout(syncDebounceTimer);
+    syncDebounceTimer = setTimeout(() => { pushCloudState(); }, 600);
+  }
+
+  async function pushCloudState() {
+    if (!supabaseClient || applyingRemote || syncInFlight) return;
+    syncInFlight = true;
+    try {
+      const payload = {
+        id: APP_STATE_ID,
+        settings: settings,
+        voice_settings: voiceSettings,
+        reminders: reminders,
+        updated_at: new Date().toISOString()
+      };
+      const { data, error } = await supabaseClient
+        .from('meta_app_state')
+        .upsert(payload, { onConflict: 'id' })
+        .select('updated_at')
+        .maybeSingle();
+      if (error) {
+        console.warn('Supabase push error', error);
+      } else if (data && data.updated_at) {
+        lastRemoteUpdatedAt = data.updated_at;
+      }
+    } catch (e) {
+      console.warn('Supabase push exception', e);
+    } finally {
+      syncInFlight = false;
+    }
+  }
+
+  function applyRemoteState(row, { skipUI = false } = {}) {
+    if (!row) return;
+    applyingRemote = true;
+    try {
+      if (row.settings && typeof row.settings === 'object') {
+        Object.assign(settings, row.settings);
+        if (!Array.isArray(settings.REST_PHRASES)) settings.REST_PHRASES = [];
+        if (typeof settings.MIC_ENABLED !== 'boolean') settings.MIC_ENABLED = true;
+        try { localStorage.setItem('meta-hud-settings', JSON.stringify(settings)); } catch (e) {}
+      }
+      if (row.voice_settings && typeof row.voice_settings === 'object') {
+        Object.assign(voiceSettings, row.voice_settings);
+        try { localStorage.setItem('meta-voice-settings', JSON.stringify(voiceSettings)); } catch (e) {}
+      }
+      if (Array.isArray(row.reminders)) {
+        reminders = row.reminders;
+        try { localStorage.setItem('meta-reminders', JSON.stringify(reminders)); } catch (e) {}
+      }
+      if (row.updated_at) lastRemoteUpdatedAt = row.updated_at;
+
+      if (!skipUI) applySyncedSettingsToUI();
+    } finally {
+      applyingRemote = false;
+    }
+  }
+
+  function applySyncedSettingsToUI() {
+    try {
+      // Tema
+      document.body.classList.remove('theme-blue','theme-pink','theme-green','theme-purple','theme-red','theme-gold','theme-teal','theme-silver','theme-steel','theme-crimson','theme-orange','theme-forest','theme-violet','theme-graphite','theme-slate','theme-champagne','theme-ivory','theme-navy','theme-corpblue','theme-sage','theme-deeptl','theme-bronze','theme-terra','theme-burgundy');
+      document.body.classList.add(settings.THEME || 'theme-gold');
+      document.querySelectorAll('.color-swatch').forEach(s => {
+        s.classList.toggle('active', s.dataset.theme === settings.THEME);
+      });
+      // Controles de settings
+      if (rateSlider) { rateSlider.value = voiceSettings.rate; rateValue.textContent = Number(voiceSettings.rate).toFixed(2); }
+      if (pitchSlider) { pitchSlider.value = voiceSettings.pitch; pitchValue.textContent = Number(voiceSettings.pitch).toFixed(2); }
+      if (volumeSlider) { volumeSlider.value = voiceSettings.volume; volumeValue.textContent = Number(voiceSettings.volume).toFixed(2); }
+      if (orbSizeSlider) {
+        orbSizeSlider.value = settings.ORB_SIZE || 100;
+        orbSizeValue.textContent = (settings.ORB_SIZE || 100) + '%';
+        if (orbContainer) orbContainer.style.transform = `scale(${(settings.ORB_SIZE || 100) / 100})`;
+      }
+      if (userNameInput) userNameInput.value = settings.USER_NAME || '';
+      if (defaultCityInput) defaultCityInput.value = settings.DEFAULT_CITY || '';
+      if (toggleParticles) toggleParticles.checked = !!settings.SHOW_PARTICLES;
+      if (toggleMouseFollow) toggleMouseFollow.checked = !!settings.MOUSE_FOLLOW;
+      if (idleTimeoutSlider) {
+        idleTimeoutSlider.value = (settings.IDLE_TIMEOUT_MS || 10000) / 1000;
+        idleTimeoutValue.textContent = ((settings.IDLE_TIMEOUT_MS || 10000) / 1000) + 's';
+      }
+      if (typeof createParticles === 'function') createParticles();
+      if (typeof updateInfoPanel === 'function') updateInfoPanel();
+      if (typeof updateMicToggleUI === 'function') updateMicToggleUI();
+      if (typeof renderSettingsReminders === 'function') renderSettingsReminders();
+      if (typeof renderRestReminders === 'function') renderRestReminders();
+      if (typeof renderRestPhrases === 'function') renderRestPhrases();
+      if (typeof loadVoices === 'function') loadVoices();
+      if (typeof populateVoiceSelect === 'function') populateVoiceSelect();
+      // Si está en descanso, refrescar frases
+      if (!attentionActive && typeof startPhraseRotation === 'function') startPhraseRotation();
+    } catch (e) {
+      console.warn('applySyncedSettingsToUI', e);
+    }
+  }
+
+  async function pullCloudState() {
+    if (!supabaseClient) return null;
+    try {
+      const { data, error } = await supabaseClient
+        .from('meta_app_state')
+        .select('*')
+        .eq('id', APP_STATE_ID)
+        .maybeSingle();
+      if (error) {
+        console.warn('Supabase pull error', error);
+        return null;
+      }
+      return data;
+    } catch (e) {
+      console.warn('Supabase pull exception', e);
+      return null;
+    }
+  }
+
+  function subscribeCloudState() {
+    if (!supabaseClient) return;
+    try {
+      supabaseClient
+        .channel('meta_app_state_sync')
+        .on(
+          'postgres_changes',
+          { event: '*', schema: 'public', table: 'meta_app_state', filter: `id=eq.${APP_STATE_ID}` },
+          (payload) => {
+            const row = payload.new;
+            if (!row) return;
+            if (row.updated_at && lastRemoteUpdatedAt && row.updated_at === lastRemoteUpdatedAt) return;
+            applyRemoteState(row, { skipUI: false });
+          }
+        )
+        .subscribe();
+    } catch (e) {
+      console.warn('Supabase realtime subscribe', e);
+    }
+  }
+
+  async function initCloudSync() {
+    if (!initSupabaseClient()) {
+      syncReady = false;
+      return;
+    }
+    const remote = await pullCloudState();
+    if (remote) {
+      // Si hay datos remotos, prevalecen (fuente de verdad multi-dispositivo)
+      const hasRemoteData =
+        (remote.settings && Object.keys(remote.settings).length > 0) ||
+        (Array.isArray(remote.reminders) && remote.reminders.length > 0) ||
+        (remote.voice_settings && Object.keys(remote.voice_settings).length > 0);
+      if (hasRemoteData) {
+        applyRemoteState(remote, { skipUI: true });
+      } else {
+        // Tabla vacía: subir estado local actual
+        await pushCloudState();
+      }
+    } else {
+      // Primera vez: crear fila con estado local
+      await pushCloudState();
+    }
+    syncReady = true;
+    subscribeCloudState();
+  }
+
+  function saveSettings() {
+    try { localStorage.setItem('meta-hud-settings', JSON.stringify(settings)); } catch (e) {}
+    scheduleCloudSync();
+  }
+  function saveVoiceSettings() {
+    try { localStorage.setItem('meta-voice-settings', JSON.stringify(voiceSettings)); } catch (e) {}
+    scheduleCloudSync();
+  }
 
   const MODULES_LEFT = ['normatividad', 'riesgos', 'administracion'];
   const MODULES_RIGHT = ['ingenieria', 'cultura'];
@@ -2684,6 +2885,7 @@
 
   function saveReminders() {
     try { localStorage.setItem('meta-reminders', JSON.stringify(reminders)); } catch (e) {}
+    scheduleCloudSync();
   }
 
   function startRestClock() {
@@ -4481,6 +4683,13 @@
   }
 
   async function boot() {
+    // Sincronizar con Supabase antes de pintar la UI (fuente de verdad multi-dispositivo)
+    try {
+      await initCloudSync();
+    } catch (e) {
+      console.warn('Cloud sync init failed, using local only', e);
+    }
+
     document.body.classList.remove('theme-blue','theme-pink','theme-green','theme-purple','theme-red','theme-gold','theme-teal','theme-silver','theme-steel','theme-crimson','theme-orange','theme-forest','theme-violet','theme-graphite','theme-slate','theme-champagne','theme-ivory','theme-navy','theme-corpblue','theme-sage','theme-deeptl','theme-bronze','theme-terra','theme-burgundy');
     document.body.classList.add(settings.THEME);
     document.querySelectorAll('.color-swatch').forEach(s => {

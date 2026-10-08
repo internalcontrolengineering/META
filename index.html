@@ -3910,20 +3910,34 @@
 
   function openAppByVoice(app) {
     if (!app || !app.url) return;
-    // Abrir de inmediato (si se retrasa, el navegador bloquea el popup)
+    // Abrir about:blank en el mismo gesto (evita bloqueo de popups).
+    // Decir el nombre primero y, al terminar de hablar, cargar la URL real.
     let win = null;
     try {
-      win = window.open(app.url, '_blank');
+      win = window.open('about:blank', '_blank');
     } catch (e) {
       console.warn('window.open falló', e);
     }
     if (!win) {
-      // Fallback: navegar en la misma pestaña si el popup está bloqueado
-      speak(`No pude abrir una pestaña nueva. Revisa el bloqueador de ventanas emergentes. Intento abrir ${app.label}.`);
-      try { window.location.href = app.url; } catch (e2) {}
+      speak(`Abro ${app.label}. No pude abrir una pestaña nueva; revisa el bloqueador de ventanas emergentes.`);
+      setTimeout(() => {
+        try { window.location.href = app.url; } catch (e2) {}
+      }, 1500);
       return;
     }
-    speak(`Abro ${app.label}.`);
+    // Mantener el foco en esta pestaña para que se oiga el nombre
+    try { window.focus(); } catch (e) {}
+    speak(`Abro ${app.label}.`, () => {
+      try {
+        if (win && !win.closed) {
+          win.location.href = app.url;
+        } else {
+          window.open(app.url, '_blank');
+        }
+      } catch (e) {
+        try { window.open(app.url, '_blank'); } catch (e2) {}
+      }
+    });
   }
 
   function executeCommand(cmd) {

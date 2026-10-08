@@ -626,13 +626,21 @@
     transform: translate(-50%, -50%) scale(0.88);
     z-index: 18;
     opacity: 0;
+    visibility: hidden;
     pointer-events: none;
-    transition: opacity 0.45s ease, transform 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+    transition: opacity 0.45s ease, transform 0.5s cubic-bezier(0.16, 1, 0.3, 1), visibility 0s linear 0.45s;
   }
   .ring-menu.visible {
     opacity: 1;
+    visibility: visible;
     transform: translate(-50%, -50%) scale(1);
     pointer-events: auto;
+    transition: opacity 0.45s ease, transform 0.5s cubic-bezier(0.16, 1, 0.3, 1), visibility 0s linear 0s;
+  }
+  /* Mientras el menú está oculto, ningún segmento ni hijo debe capturar clics/hover */
+  .ring-menu:not(.visible),
+  .ring-menu:not(.visible) * {
+    pointer-events: none !important;
   }
 
   /* ⭐ Móvil: proporciones equilibradas — header legible, footer completo, orbe + anillo centrados */
@@ -3698,16 +3706,22 @@
 
       g.addEventListener('click', (e) => {
         e.stopPropagation();
+        if (!menuVisible) return;
         hideSegTooltip();
         handleSegmentInteraction(sectionId);
       });
 
       g.addEventListener('pointerenter', (e) => {
+        if (!menuVisible) return;
         if (window.matchMedia('(hover: hover) and (pointer: fine)').matches) {
           showSegTooltip(name, e.clientX, e.clientY);
         }
       });
       g.addEventListener('pointermove', (e) => {
+        if (!menuVisible) {
+          hideSegTooltip();
+          return;
+        }
         if (window.matchMedia('(hover: hover) and (pointer: fine)').matches) {
           showSegTooltip(name, e.clientX, e.clientY);
         }
@@ -3719,6 +3733,7 @@
   }
 
   function showSegTooltip(text, x, y) {
+    if (!menuVisible) return;
     const tip = document.getElementById('segTooltip');
     if (!tip) return;
     tip.textContent = text;
@@ -3753,6 +3768,10 @@
   let previewModule = null;
 
   function handleSegmentInteraction(sectionId, fromVoice) {
+    // Solo interactuar con apartados cuando el menú está visible
+    // (excepto comandos de voz, que pueden abrir el menú antes)
+    if (!menuVisible && !fromVoice) return;
+
     if (isMobileView() && !fromVoice) {
       // First tap: highlight + show name only (no voice)
       // Second tap on same segment: open apps panel + speak name
@@ -3925,24 +3944,26 @@
   function closeMobileAppsSheet() { closeSideAppsPanel(); }
 
   function toggleModule(sectionId, fromVoice) {
+    // Cerrar siempre está permitido; abrir apps solo si el menú de apartados está visible
     if (activeModule === sectionId) {
       if (moduleBlocks[sectionId]) moduleBlocks[sectionId].el.classList.remove('active');
       activeModule = null;
       closeSideAppsPanel();
       updateRingActive(null);
-    } else {
-      if (activeModule && moduleBlocks[activeModule]) {
-        moduleBlocks[activeModule].el.classList.remove('active');
-      }
-      if (moduleBlocks[sectionId]) moduleBlocks[sectionId].el.classList.add('active');
-      activeModule = sectionId;
-      updateRingActive(sectionId);
-      openSideAppsPanel(sectionId);
-      if (!fromVoice) {
-        const meta = SECTIONS[sectionId];
-        const name = meta ? meta.title : sectionId;
-        speak(name);
-      }
+      return;
+    }
+    if (!menuVisible && !fromVoice) return;
+    if (activeModule && moduleBlocks[activeModule]) {
+      moduleBlocks[activeModule].el.classList.remove('active');
+    }
+    if (moduleBlocks[sectionId]) moduleBlocks[sectionId].el.classList.add('active');
+    activeModule = sectionId;
+    updateRingActive(sectionId);
+    openSideAppsPanel(sectionId);
+    if (!fromVoice) {
+      const meta = SECTIONS[sectionId];
+      const name = meta ? meta.title : sectionId;
+      speak(name);
     }
   }
 

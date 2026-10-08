@@ -1992,11 +1992,8 @@
     text-overflow: ellipsis;
   }
   .hidden-app-card:hover .hidden-app-title { color: #fff; text-shadow: 0 0 8px rgba(var(--orb-glow), 0.6); }
-  /* Mic toggle: solo visible en celular */
-  .mobile-only-setting { display: none !important; }
-  @media (max-width: 800px) {
-    .mobile-only-setting { display: block !important; }
-  }
+  /* Interruptor de micrófono: visible en todos los dispositivos */
+  .mobile-only-setting { display: block !important; }
 
   @media (max-width: 480px) { .hidden-apps-grid { grid-template-columns: 1fr; } }
 
@@ -2256,6 +2253,7 @@
         <div class="settings-info" style="margin-top:12px;">
           Solo se muestran voces en español.
           <div id="currentVoiceInfo" style="margin-top:5px;"></div>
+          <div style="margin-top:8px;">Comandos: di <strong>«META»</strong> y luego el comando, o todo junto: <strong>«META, abre menú»</strong>. Usa Chrome o Edge. El micrófono debe estar permitido en el navegador (candado de la barra de dirección).</div>
         </div>
       </div>
 
@@ -2477,9 +2475,12 @@
     if (!supabaseClient || applyingRemote || syncInFlight) return;
     syncInFlight = true;
     try {
+      // MIC_ENABLED es por dispositivo (no se sincroniza)
+      const settingsForCloud = { ...settings };
+      delete settingsForCloud.MIC_ENABLED;
       const payload = {
         id: APP_STATE_ID,
-        settings: settings,
+        settings: settingsForCloud,
         voice_settings: voiceSettings,
         reminders: reminders,
         updated_at: new Date().toISOString()
@@ -2506,9 +2507,11 @@
     applyingRemote = true;
     try {
       if (row.settings && typeof row.settings === 'object') {
+        const localMic = settings.MIC_ENABLED;
         Object.assign(settings, row.settings);
+        // Micrófono es local por dispositivo: no sobrescribir desde la nube
+        settings.MIC_ENABLED = typeof localMic === 'boolean' ? localMic : true;
         if (!Array.isArray(settings.REST_PHRASES)) settings.REST_PHRASES = [];
-        if (typeof settings.MIC_ENABLED !== 'boolean') settings.MIC_ENABLED = true;
         try { localStorage.setItem('meta-hud-settings', JSON.stringify(settings)); } catch (e) {}
       }
       if (row.voice_settings && typeof row.voice_settings === 'object') {
@@ -3611,75 +3614,164 @@
     speechSynthesis.speak(u);
   }
 
+  function normalizeVoiceText(t) {
+    return String(t || '')
+      .trim()
+      .toLowerCase()
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '') // quita acentos: menú → menu
+      .replace(/[.,;:!¡¿?]/g, ' ')
+      .replace(/\s+/g, ' ')
+      .trim();
+  }
+
+  function isWakeWord(clean) {
+    // meta / méta / oye meta / hola meta…
+    return /^(hola|hey|oye|eh|buenas|buenos dias|buenas tardes|buenas noches)?\s*(meta)\b/.test(clean);
+  }
+
+  function stripWakeWord(clean) {
+    return clean
+      .replace(/^(hola|hey|oye|eh|buenas|buenos dias|buenas tardes|buenas noches)?\s*/i, '')
+      .replace(/^meta\b\s*/i, '')
+      .trim();
+  }
+
+  function armAwaitingCommand(ms = 10000) {
+    awaitingCommand = true;
+    clearTimeout(awaitingCommandTimeout);
+    awaitingCommandTimeout = setTimeout(() => {
+      awaitingCommand = false;
+    }, ms);
+  }
+
   function initRecognition() {
     if (!SpeechRecognition) return null;
     const rec = new SpeechRecognition();
     rec.lang = 'es-ES';
     rec.continuous = true;
-    rec.interimResults = true;
-    rec.maxAlternatives = 1;
+    rec.interimResults = false; // solo resultados finales → más fiable en Chrome PC
+    rec.maxAlternatives = 3;
 
     rec.onresult = (event) => {
-      if (speakCooldown || isSpeaking) return;
-      let interim = '', final = '';
+      // Permitir oír el comando aunque esté en speakCooldown breve tras "META"
+      let final = '';
+      let bestAlt = '';
       for (let i = event.resultIndex; i < event.results.length; i++) {
-        const t = event.results[i][0].transcript;
-        if (event.results[i].isFinal) final += t; else interim += t;
+        if (!event.results[i].isFinal) continue;
+        final += event.results[i][0].transcript;
+        // probar alternativas por si "meta" viene mal reconocido
+        for (let a = 0; a < event.results[i].length; a++) {
+          bestAlt += ' ' + event.results[i][a].transcript;
+        }
       }
-      
-      if (final && final.trim().length > 0) {
-        const clean = final.trim().toLowerCase().replace(/[.,;!?¡¿]/g, '').replace(/\s+/g, ' ').trim();
-        if (/^(hola|hey|oye|eh)?\s*m[eé]ta\b/.test(clean)) {
-          registerActivity();
-          wakeUp();
-          const cmdAfterMeta = clean.replace(/^(hola|hey|oye|eh)?\s*m[eé]ta\b\s*/, '').trim();
-          if (cmdAfterMeta) executeCommand(cmdAfterMeta);
-          else speak(`Dime, ¿qué necesitas?`);
-          return;
-        }
-        if (reminderCapture) {
-          handleReminderCapture(clean);
-          return;
-        }
-        if (!attentionActive) {
-          if (/(despierta|activar|reactivar|levanta|meta)/.test(clean) && /(despierta|activar|reactivar|levanta)/.test(clean)) {
-            wakeUp();
-            speak(`Hola ${settings.USER_NAME}. ¿En qué puedo ayudarte?`);
+      if (!final || !final.trim()) return;
+
+      const clean = normalizeVoiceText(final);
+      const cleanAlt = normalizeVoiceText(bestAlt);
+      console.log('🎤 Voz:', clean, '| alts:', cleanAlt);
+
+      // Durante recordatorio por voz
+      if (reminderCapture && !isSpeaking) {
+        handleReminderCapture(clean);
+        return;
+      }
+
+      // 1) Palabra de activación META (sola o con comando)
+      if (isWakeWord(clean) || isWakeWord(cleanAlt)) {
+        registerActivity();
+        wakeUp();
+        const cmd = stripWakeWord(isWakeWord(clean) ? clean : cleanAlt);
+        if (cmd) {
+          awaitingCommand = false;
+          clearTimeout(awaitingCommandTimeout);
+          // Si está hablando, encolar el comando
+          if (isSpeaking || speakCooldown) {
+            setTimeout(() => executeCommand(cmd), 400);
+          } else {
+            executeCommand(cmd);
           }
-          return;
+        } else {
+          // Solo "META" → esperar el comando unos segundos (sin bloquear el idle del todo)
+          armAwaitingCommand(10000);
+          if (!isSpeaking && !speakCooldown) {
+            speak('Te escucho');
+          }
         }
+        return;
+      }
+
+      // 2) Ventana tras decir META: el siguiente enunciado es el comando
+      if (awaitingCommand && attentionActive) {
+        if (isSpeaking) return; // esperar a que termine "Te escucho"
+        awaitingCommand = false;
+        clearTimeout(awaitingCommandTimeout);
+        registerActivity();
         executeCommand(clean);
+        return;
+      }
+
+      // 3) Despertar desde descanso
+      if (!attentionActive) {
+        if (/\b(despierta|activar|reactivar|levantate|levanta)\b/.test(clean) ||
+            (/\bmeta\b/.test(clean) && /\b(despierta|activar|levanta)\b/.test(clean))) {
+          wakeUp();
+          speak(`Hola ${settings.USER_NAME}. ¿En qué puedo ayudarte?`);
+        }
+        return;
+      }
+
+      // 4) Con atención activa, también aceptar comandos directos sin META
+      //    (abre menú, clima, etc.) si no estamos en cooldown de habla
+      if (!isSpeaking && !speakCooldown) {
+        if (/\b(abre|abrir|muestra|mostrar|cierra|cerrar|clima|hora|fecha|descansa|recordatorio)\b/.test(clean)) {
+          registerActivity();
+          executeCommand(clean);
+        }
       }
     };
 
     rec.onerror = (event) => {
+      console.warn('🎤 Error reconocimiento:', event.error);
+      recognitionActive = false;
       if (event.error === 'not-allowed' || event.error === 'service-not-allowed') {
         micPermissionGranted = false;
         settings.MIC_ENABLED = false;
         saveSettings();
         updateMicToggleUI();
+        return;
+      }
+      // no-speech, aborted, network, etc. → reintentar
+      if (settings.MIC_ENABLED && micPermissionGranted) {
+        clearTimeout(restartTimeout);
+        restartTimeout = setTimeout(() => startRecognition(), 500);
       }
     };
     rec.onend = () => {
       recognitionActive = false;
-      // Solo reiniciar si el usuario tiene el mic activado y hay permiso
-      if (settings.MIC_ENABLED && micPermissionGranted && !isSpeaking && !speakCooldown) {
+      if (settings.MIC_ENABLED && micPermissionGranted) {
         clearTimeout(restartTimeout);
         restartTimeout = setTimeout(() => {
-          if (settings.MIC_ENABLED && micPermissionGranted && !recognitionActive && !isSpeaking) {
+          if (settings.MIC_ENABLED && micPermissionGranted && !recognitionActive) {
             startRecognition();
           }
-        }, 600);
+        }, 400);
       }
     };
-    rec.onstart = () => { recognitionActive = true; };
+    rec.onstart = () => { recognitionActive = true; console.log('🎤 Escuchando…'); };
     return rec;
   }
 
   function startRecognition() {
     if (!settings.MIC_ENABLED) return;
-    if (!recognition || recognitionActive || isSpeaking || speakCooldown) return;
-    try { recognition.start(); } catch(e) {}
+    if (!recognition || recognitionActive) return;
+    try { recognition.start(); } catch (e) {
+      // InvalidStateError si ya está corriendo
+      recognitionActive = false;
+      setTimeout(() => {
+        try { if (settings.MIC_ENABLED && recognition && !recognitionActive) recognition.start(); } catch (e2) {}
+      }, 500);
+    }
   }
 
   function stopRecognition() {
@@ -3745,14 +3837,19 @@
   }
 
   function executeCommand(cmd) {
-    const act = cmd.toLowerCase().trim();
-    
-    if (/(abre|abrir|muestra|mostrar)\s+(el\s+)?(men[uú]|secciones|módulos|modulos)/i.test(act)) {
+    const act = normalizeVoiceText(cmd);
+    console.log('⚡ Comando:', act);
+
+    // menú / menu / secciones / módulos
+    if (/(abre|abrir|muestra|mostrar|pon|sacar)\s+(el\s+)?(menu|secciones|modulos|anillo)/.test(act) ||
+        /^(menu|secciones|modulos)$/.test(act) ||
+        /\b(abre|abrir)\s+menu\b/.test(act)) {
       showMenu();
       speak(`Abro el menú.`);
       return;
     }
-    if (/(cerrar|cierra|oculta|esconde)\s+(el\s+)?(men[uú]|secciones|módulos|modulos|todo)/i.test(act) || /^(cerrar|cierra|atr[aá]s)$/.test(act)) {
+    if (/(cerrar|cierra|oculta|esconde)\s+(el\s+)?(menu|secciones|modulos|anillo|todo)/.test(act) ||
+        /^(cerrar|cierra|atras)$/.test(act)) {
       hideMenu();
       speak(`Cierro el menú.`);
       return;

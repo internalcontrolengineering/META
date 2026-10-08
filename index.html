@@ -3836,6 +3836,96 @@
     updateMicToggleUI();
   }
 
+  /** Alias de voz → id de app (errores frecuentes del reconocimiento) */
+  const APP_VOICE_ALIASES = {
+    visum: ['visum', 'bisum', 'vizum', 'vison', 'bison', 'vision', 'visun'],
+    matrizDocumental: ['matriz documental', 'matriz', 'documental', 'matris documental', 'matri documental', 'la matriz'],
+    normativa360: ['normativa 360', 'normativa trescientos sesenta', 'normativa tres sesenta', 'normativa'],
+    glossarium: ['glossarium', 'glosarium', 'glosario', 'glossary'],
+    marc: ['marc', 'mark', 'marco'],
+    bia: ['bia', 'via', 'b i a'],
+    novarum: ['novarum', 'novaron', 'nova rum'],
+    tempus: ['tempus', 'tempas', 'tempo', 'temps'],
+    stride: ['stride', 'straid', 'estride'],
+    hexus: ['hexus', 'jesus', 'exus', 'hexas'],
+    scriptum: ['scriptum', 'scriptan', 'escriptum', 'script'],
+    conventio: ['conventio', 'convencio', 'convencion', 'convention'],
+    genius: ['genius', 'genio', 'yenius'],
+    omnes: ['omnes', 'omnis', 'hombres'],
+    census: ['census', 'censo', 'sensus'],
+    hermes: ['hermes', 'jermes', 'ernes'],
+    csw_donatarias: ['csw donatarias', 'donatarias', 'donataria'],
+    ido: ['ido', 'ido csw', 'i do', 'ido se se doble u'],
+    APPD: ['appd', 'a p p d', 'apid', 'aped'],
+    PosTUlate: ['postulate', 'pos tulare', 'postulate csw', 'postulate'],
+    controlGastos: ['ctrl gastos', 'control de gastos', 'control gastos', 'gastos'],
+    semaforoDonataria: ['semaforo', 'semaforo donaciones', 'semaforo donataria'],
+    sdci: ['sdci', 's d c i', 'ese de ce i']
+  };
+
+  function findAppByVoice(act) {
+    const raw = normalizeVoiceText(act);
+    // Quitar verbos de apertura para quedarnos con el nombre
+    const name = raw
+      .replace(/^(meta\s+)?(abre|abrir|muestra|mostrar|abre me|abrime|abre la|abre el|abre la app|abre la aplicacion|abre aplicacion)\s+/i, '')
+      .replace(/\b(por favor|app|aplicacion|la|el|del|de la)\b/g, ' ')
+      .replace(/\s+/g, ' ')
+      .trim();
+
+    const allApps = Object.values(APPS);
+    const candidates = [];
+
+    // 1) Alias exactos / inclusiones
+    for (const [id, aliases] of Object.entries(APP_VOICE_ALIASES)) {
+      for (const alias of aliases) {
+        const a = normalizeVoiceText(alias);
+        if (!a) continue;
+        if (name === a || name.includes(a) || raw.includes(a)) {
+          const app = APPS[id] || allApps.find(x => x.id === id);
+          if (app) candidates.push({ app, score: name === a ? 100 : 80 + Math.min(a.length, 20) });
+        }
+      }
+    }
+
+    // 2) Label e id normalizados
+    for (const app of allApps) {
+      const labelN = normalizeVoiceText(app.label);
+      const idN = normalizeVoiceText(app.id);
+      if (name === labelN || name === idN) {
+        candidates.push({ app, score: 100 });
+      } else if (name.includes(labelN) || raw.includes(labelN)) {
+        candidates.push({ app, score: 70 + Math.min(labelN.length, 20) });
+      } else if (labelN && labelN.length >= 4 && name.includes(labelN.split(' ')[0])) {
+        // primera palabra del label (ej. "matriz")
+        candidates.push({ app, score: 50 });
+      } else if (idN && name.includes(idN)) {
+        candidates.push({ app, score: 60 });
+      }
+    }
+
+    if (!candidates.length) return null;
+    candidates.sort((a, b) => b.score - a.score);
+    return candidates[0].app;
+  }
+
+  function openAppByVoice(app) {
+    if (!app || !app.url) return;
+    // Abrir de inmediato (si se retrasa, el navegador bloquea el popup)
+    let win = null;
+    try {
+      win = window.open(app.url, '_blank');
+    } catch (e) {
+      console.warn('window.open falló', e);
+    }
+    if (!win) {
+      // Fallback: navegar en la misma pestaña si el popup está bloqueado
+      speak(`No pude abrir una pestaña nueva. Revisa el bloqueador de ventanas emergentes. Intento abrir ${app.label}.`);
+      try { window.location.href = app.url; } catch (e2) {}
+      return;
+    }
+    speak(`Abro ${app.label}.`);
+  }
+
   function executeCommand(cmd) {
     const act = normalizeVoiceText(cmd);
     console.log('⚡ Comando:', act);
@@ -3876,10 +3966,9 @@
         }
       }
     }
-    const appMatch = Object.values(APPS).find(a => act.includes(a.label.toLowerCase()) || act.includes(a.id.toLowerCase()));
+    const appMatch = findAppByVoice(act);
     if (appMatch) {
-      speak(`Abro ${appMatch.label}.`);
-      setTimeout(() => window.open(appMatch.url, '_blank'), 500);
+      openAppByVoice(appMatch);
       return;
     }
     if (/(hora)/.test(act)) {

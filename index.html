@@ -2753,16 +2753,20 @@
     if (attentionActive) resetIdleTimer();
   }
 
+  function isAppsPanelOpen() {
+    const panel = document.getElementById('sideAppsPanel');
+    return !!(panel && panel.classList.contains('visible'));
+  }
+
   function resetIdleTimer() {
     clearTimeout(idleTimeout);
-    // Auto-rest depends only on real UI activity / explicit voice commands — not on mic being granted
+    // Auto-rest: solo actividad real / comandos de voz. En móvil también con menú o apps abiertos.
     if (!attentionActive || isSpeaking || speakCooldown) return;
 
     const timeout = Math.max(3000, settings.IDLE_TIMEOUT_MS || 10000);
 
     idleTimeout = setTimeout(() => {
       if (!attentionActive || isSpeaking || speakCooldown || awaitingCommand) {
-        // Conditions not met — re-arm without touching lastActivityAt
         resetIdleTimer();
         return;
       }
@@ -2771,7 +2775,6 @@
         console.log('🛌 Auto-descanso tras', elapsed, 'ms de inactividad real');
         enterRestMode(true);
       } else {
-        // Not enough idle time yet (activity happened while timer was pending) — re-arm with remaining time
         const remaining = Math.max(500, timeout - elapsed);
         idleTimeout = setTimeout(() => {
           if (attentionActive && !isSpeaking && !speakCooldown && !awaitingCommand &&
@@ -2821,8 +2824,13 @@
     awaitingCommand = false;
     clearTimeout(awaitingCommandTimeout);
     clearIdleTimer();
+    // Cerrar menú y panel de apps aunque estuvieran abiertos (PC y móvil)
     if (menuVisible) hideMenu();
     closeSideAppsPanel();
+    previewModule = null;
+    activeModule = null;
+    if (typeof updateRingActive === 'function') updateRingActive(null);
+    document.querySelectorAll('.ring-seg-group').forEach(g => g.classList.remove('preview'));
     hideSegTooltip();
 
     orbContainer.classList.add('rest-dim', 'off');

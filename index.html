@@ -635,29 +635,87 @@
     pointer-events: auto;
   }
 
-  /* ⭐ En móvil el anillo es más pequeño para dejar espacio arriba/abajo para el panel de apps */
+  /* ⭐ Móvil: proporciones equilibradas — header legible, footer completo, orbe + anillo centrados */
   @media (max-width: 800px) {
-    .stage { overflow: hidden; }
+    html, body { height: 100%; height: 100dvh; overflow: hidden; }
 
-    #header { padding: 4px 10px 3px; }
-    .logo { max-width: min(60px, 14vw); }
-    .header-depto { font-size: clamp(0.68rem, 2.8vw, 1rem); margin-bottom: 1px; }
-    .header-subtitle { font-size: clamp(0.54rem, 2vw, 0.78rem); }
-
-    .ring-menu {
-      width: min(230px, 60vw);
-      height: min(230px, 60vw);
+    #main {
+      height: 100%;
+      height: 100dvh;
+      display: flex;
+      flex-direction: column;
+      min-height: 0;
     }
 
-    .orb-container { width: 80px; height: 80px; }
-    .orb-core { width: 38px; height: 38px; }
-    .orb-layer-1 { width: 56px; height: 56px; }
-    .orb-layer-2 { width: 68px; height: 68px; }
-    .orb-layer-3 { width: 78px; height: 78px; }
-    .orb-ring-1 { width: 46px; height: 46px; }
-    .orb-ring-2 { width: 56px; height: 56px; }
-    .orb-ring-3 { width: 66px; height: 66px; }
-    .status-text { bottom: -24px; font-size: 10px; }
+    .stage {
+      overflow: hidden;
+      flex: 1 1 auto;
+      min-height: 0;
+      position: relative;
+    }
+
+    #header {
+      padding: clamp(6px, 1.2vh, 10px) 12px clamp(4px, 0.8vh, 8px);
+      flex-shrink: 0;
+    }
+    .logo { max-width: min(72px, 18vw); }
+    .header-depto {
+      font-size: clamp(0.78rem, 3.2vw, 1.15rem);
+      margin-bottom: 2px;
+      letter-spacing: 1px;
+    }
+    .header-subtitle {
+      font-size: clamp(0.62rem, 2.2vw, 0.88rem);
+      line-height: 1.3;
+      padding: 0 8px;
+    }
+
+    #footer {
+      flex-shrink: 0;
+      min-height: auto;
+      padding: 8px 10px 10px;
+      padding-bottom: max(10px, env(safe-area-inset-bottom, 10px));
+    }
+    .footer-content { gap: 6px; padding: 0 40px; }
+    .footer-names { gap: 8px; }
+    .footer-name { font-size: clamp(0.68rem, 2.4vw, 0.82rem); white-space: normal; }
+    .footer-title { font-size: clamp(0.48rem, 1.6vw, 0.56rem); white-space: normal; }
+    .footer-bottom { padding-top: 4px; gap: 8px; }
+    .footer-logo { height: 16px; }
+    .footer-label { font-size: 0.68rem; }
+    .footer-sub { font-size: 0.52rem; }
+    .footer-marquee-wrap { padding-top: 2px; }
+    .marquee-bar { height: 20px; width: 100%; max-width: 100%; }
+    .marquee-item { font-size: 0.5rem; letter-spacing: 0.6px; padding: 0 10px; }
+
+    .ring-menu {
+      width: min(260px, 72vw);
+      height: min(260px, 72vw);
+    }
+
+    .orb-container { width: 96px; height: 96px; }
+    .orb-core { width: 46px; height: 46px; }
+    .orb-layer-1 { width: 68px; height: 68px; }
+    .orb-layer-2 { width: 82px; height: 82px; }
+    .orb-layer-3 { width: 94px; height: 94px; }
+    .orb-ring-1 { width: 56px; height: 56px; }
+    .orb-ring-2 { width: 68px; height: 68px; }
+    .orb-ring-3 { width: 80px; height: 80px; }
+    .status-text { bottom: -28px; font-size: 11px; }
+
+    /* Blur when apps panel is open on mobile */
+    .orb-container.mobile-apps-open {
+      filter: blur(10px) brightness(0.45);
+      opacity: 0.55;
+      pointer-events: none;
+      transition: filter 0.35s ease, opacity 0.35s ease;
+    }
+    .ring-menu.mobile-apps-open {
+      filter: blur(6px) brightness(0.5);
+      opacity: 0.4;
+      pointer-events: none;
+      transition: filter 0.35s ease, opacity 0.35s ease;
+    }
   }
 
   .ring-svg {
@@ -904,119 +962,111 @@
   }
 
   /* ============================================================
-     MOBILE: panel de apps arriba/abajo, ANCLADO al stage
+     MOBILE: panel de apps centrado (overlay), 3 columnas, sin desborde
      ============================================================ */
   @media (max-width: 800px) {
     .side-apps-panel {
-      top: auto;
-      left: 12px !important;
-      right: 12px !important;
-      width: auto;
-      max-width: none;
-      max-height: none;
+      top: 50% !important;
+      left: 50% !important;
+      right: auto !important;
+      bottom: auto !important;
+      width: min(340px, calc(100vw - 24px)) !important;
+      max-width: calc(100vw - 24px);
+      max-height: min(52vh, 380px);
+      transform: translate(-50%, -50%) scale(0.94);
+      transform-origin: center center;
+      border-radius: 14px;
       overflow: hidden;
-      border-radius: 12px;
+      z-index: 30;
     }
-
-    /* Arriba del orbe: pegado al borde SUPERIOR del stage */
-    .side-apps-panel.mobile-top {
-      top: 6px;
-      bottom: auto;
-      transform: translateY(-12px) scale(0.96);
-      transform-origin: top center;
+    .side-apps-panel.visible {
+      transform: translate(-50%, -50%) scale(1);
     }
-    .side-apps-panel.mobile-top.visible {
-      transform: translateY(0) scale(1);
-    }
-
-    /* Abajo del orbe: pegado al borde INFERIOR del stage */
+    .side-apps-panel.mobile-top,
     .side-apps-panel.mobile-bottom {
-      top: auto;
-      bottom: 6px;
-      transform: translateY(12px) scale(0.96);
-      transform-origin: bottom center;
+      top: 50% !important;
+      left: 50% !important;
+      right: auto !important;
+      bottom: auto !important;
+      transform: translate(-50%, -50%) scale(0.94);
     }
+    .side-apps-panel.mobile-top.visible,
     .side-apps-panel.mobile-bottom.visible {
-      transform: translateY(0) scale(1);
+      transform: translate(-50%, -50%) scale(1);
     }
 
-    /* Lista en 3 columnas */
-    .side-apps-panel.mobile-top .side-apps-list,
-    .side-apps-panel.mobile-bottom .side-apps-list {
+    .side-apps-panel .side-apps-list {
       grid-template-columns: repeat(3, 1fr);
-      gap: 6px;
-      padding: 10px;
-      max-height: 34vh;
+      gap: 7px;
+      padding: 10px 12px 14px;
+      max-height: min(38vh, 280px);
       overflow-y: auto;
+      -webkit-overflow-scrolling: touch;
     }
 
-    .side-apps-panel.mobile-top .side-app-item,
-    .side-apps-panel.mobile-bottom .side-app-item {
-      min-height: 62px;
+    .side-apps-panel .side-app-item {
+      min-height: 64px;
       padding: 8px 5px;
-      gap: 5px;
+      gap: 6px;
     }
 
-    .side-apps-panel.mobile-top .side-app-item-label,
-    .side-apps-panel.mobile-bottom .side-app-item-label {
-      font-size: 0.55rem;
-      line-height: 1.15;
+    .side-apps-panel .side-app-item-label {
+      font-size: 0.58rem;
+      line-height: 1.2;
     }
 
-    .side-apps-panel.mobile-top .side-app-item-icon,
-    .side-apps-panel.mobile-bottom .side-app-item-icon {
+    .side-apps-panel .side-app-item-icon {
+      width: 30px;
+      height: 30px;
+      font-size: 0.85rem;
+    }
+
+    .side-apps-panel .side-apps-title {
+      font-size: 0.68rem;
+    }
+
+    .side-apps-panel .side-apps-header {
+      padding: 10px 12px 8px;
+      gap: 8px;
+    }
+
+    .side-apps-panel .side-apps-icon {
       width: 28px;
       height: 28px;
       font-size: 0.8rem;
     }
 
-    .side-apps-panel.mobile-top .side-apps-title,
-    .side-apps-panel.mobile-bottom .side-apps-title {
-      font-size: 0.6rem;
+    .side-apps-panel .side-apps-close {
+      width: 26px;
+      height: 26px;
+      font-size: 0.7rem;
     }
 
-    .side-apps-panel.mobile-top .side-apps-header,
-    .side-apps-panel.mobile-bottom .side-apps-header {
-      padding: 8px 10px 7px;
-      gap: 7px;
-    }
-
-    .side-apps-panel.mobile-top .side-apps-icon,
-    .side-apps-panel.mobile-bottom .side-apps-icon {
-      width: 24px;
-      height: 24px;
-      font-size: 0.72rem;
-    }
-
-    .side-apps-panel.mobile-top .side-apps-close,
-    .side-apps-panel.mobile-bottom .side-apps-close {
-      width: 22px;
-      height: 22px;
-      font-size: 0.62rem;
-    }
+    /* Hide connector line on mobile — panel is centered overlay */
+    .side-connector-svg { display: none !important; }
   }
 
   @media (max-width: 500px) {
-    .side-apps-panel.mobile-top .side-apps-list,
-    .side-apps-panel.mobile-bottom .side-apps-list {
-      max-height: 32vh;
-      padding: 8px;
+    .side-apps-panel {
+      width: calc(100vw - 20px) !important;
+      max-height: min(50vh, 340px);
+    }
+    .side-apps-panel .side-apps-list {
+      max-height: min(36vh, 240px);
+      padding: 8px 10px 12px;
       gap: 5px;
     }
-    .side-apps-panel.mobile-top .side-app-item,
-    .side-apps-panel.mobile-bottom .side-app-item {
-      min-height: 56px;
+    .side-apps-panel .side-app-item {
+      min-height: 58px;
       padding: 6px 4px;
     }
-    .side-apps-panel.mobile-top .side-app-item-label,
-    .side-apps-panel.mobile-bottom .side-app-item-label {
-      font-size: 0.48rem;
+    .side-apps-panel .side-app-item-label {
+      font-size: 0.52rem;
     }
-    .side-apps-panel.mobile-top .side-app-item-icon,
-    .side-apps-panel.mobile-bottom .side-app-item-icon {
-      width: 24px;
-      height: 24px;
-      font-size: 0.68rem;
+    .side-apps-panel .side-app-item-icon {
+      width: 26px;
+      height: 26px;
+      font-size: 0.75rem;
     }
   }
 
@@ -1894,41 +1944,69 @@
 
   @media (max-width: 700px) {
     .settings-panel { 
-      bottom: 60px; right: 10px; left: 10px;
+      bottom: max(56px, env(safe-area-inset-bottom, 8px) + 48px);
+      right: 8px; left: 8px;
       width: auto; max-width: none;
-      max-height: calc(100vh - 80px);
+      max-height: min(calc(100vh - 90px), calc(100dvh - 90px));
+      border-radius: 14px;
+    }
+    .settings-header { padding: 12px 14px 10px; flex-shrink: 0; }
+    .settings-tabs {
+      flex-shrink: 0;
+      padding: 4px 8px 0;
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
+      scrollbar-width: none;
+    }
+    .settings-tab { padding: 8px 9px; font-size: 8.5px; letter-spacing: 0.6px; }
+    .settings-body {
+      padding: 12px 14px 16px;
+      overflow-y: auto;
+      -webkit-overflow-scrolling: touch;
+      flex: 1 1 auto;
+      min-height: 0;
+      max-height: none;
     }
     .settings-button { bottom: 12px; right: 12px; width: 36px; height: 36px; }
     .settings-button svg { width: 14px; height: 14px; }
     .fullscreen-button { bottom: 12px; left: 12px; width: 36px; height: 36px; }
     .fullscreen-button i { font-size: 13px; }
-    .color-grid { grid-template-columns: repeat(4, 1fr); }
-  }
-
-  @media (max-width: 600px) {
-    .footer-names { flex-direction: column; gap: 10px; }
-    .names-divider { display: none; }
-    .footer-content { gap: 8px; padding: 0 48px; }
-    .footer-bottom { padding-top: 4px; gap: 8px; }
-    .footer-logo { height: 16px; }
-    .footer-label { font-size: 0.68rem; }
-    .footer-sub { font-size: 0.55rem; }
-    .footer-name { font-size: 0.72rem; }
-    .footer-title { font-size: 0.48rem; }
-    .marquee-bar { height: 22px; width: 100%; }
-    .marquee-item {
-      font-size: 0.52rem;
-      letter-spacing: 0.8px;
-      padding: 0 12px;
-      gap: 6px;
-    }
-    .marquee-item .mq-cta { padding: 1px 6px; font-size: 0.5rem; }
+    .color-grid { grid-template-columns: repeat(4, 1fr); gap: 5px; }
+    .settings-section { margin-bottom: 14px; }
   }
 
   @media (max-width: 400px) {
-    .footer-content { padding: 0 44px; }
-    .footer-names { gap: 6px; }
-    .marquee-item { font-size: 0.48rem; letter-spacing: 0.5px; }
+    .settings-panel {
+      bottom: max(52px, env(safe-area-inset-bottom, 6px) + 44px);
+      max-height: min(calc(100vh - 80px), calc(100dvh - 80px));
+    }
+    .settings-tab { padding: 7px 7px; font-size: 8px; }
+  }
+
+  @media (max-width: 600px) {
+    .footer-names { flex-direction: column; gap: 6px; }
+    .names-divider { display: none; }
+    .footer-content { gap: 5px; padding: 0 36px; }
+    .footer-bottom { padding-top: 3px; gap: 6px; }
+    .footer-logo { height: 14px; }
+    .footer-label { font-size: 0.64rem; }
+    .footer-sub { font-size: 0.5rem; }
+    .footer-name { font-size: 0.68rem; }
+    .footer-title { font-size: 0.46rem; }
+    .marquee-bar { height: 18px; width: 100%; }
+    .marquee-item {
+      font-size: 0.48rem;
+      letter-spacing: 0.6px;
+      padding: 0 10px;
+      gap: 5px;
+    }
+    .marquee-item .mq-cta { padding: 1px 5px; font-size: 0.46rem; }
+  }
+
+  @media (max-width: 400px) {
+    .footer-content { padding: 0 32px; }
+    .footer-names { gap: 4px; }
+    .marquee-item { font-size: 0.44rem; letter-spacing: 0.4px; }
   }
 </style>
 </head>
@@ -2260,7 +2338,7 @@
     MOUSE_FOLLOW: true,
     ORB_SIZE: 100,
     IDLE_TIMEOUT_MS: 10000,
-    REST_PHRASES: ['El control interno es responsabilidad de todos']
+    REST_PHRASES: []
   };
   let settings = { ...DEFAULT_SETTINGS };
   try { const s = localStorage.getItem('meta-hud-settings'); if (s) Object.assign(settings, JSON.parse(s)); } catch (e) {}
@@ -2272,8 +2350,13 @@
     }
     delete settings.REST_PHRASE;
   }
-  if (!Array.isArray(settings.REST_PHRASES) || settings.REST_PHRASES.length === 0) {
-    settings.REST_PHRASES = [...DEFAULT_SETTINGS.REST_PHRASES];
+  if (!Array.isArray(settings.REST_PHRASES)) {
+    settings.REST_PHRASES = [];
+  }
+  // Strip the old default phrase if it was the only one stored from previous versions
+  if (settings.REST_PHRASES.length === 1 && settings.REST_PHRASES[0] === 'El control interno es responsabilidad de todos') {
+    settings.REST_PHRASES = [];
+    try { localStorage.setItem('meta-hud-settings', JSON.stringify(settings)); } catch (e) {}
   }
 
   function saveSettings() { try { localStorage.setItem('meta-hud-settings', JSON.stringify(settings)); } catch (e) {} }
@@ -2390,28 +2473,42 @@
   function registerActivity() {
     if (isSpeaking || speakCooldown) return;
     lastActivityAt = Date.now();
-    resetIdleTimer();
+    if (attentionActive) resetIdleTimer();
   }
 
   function resetIdleTimer() {
     clearTimeout(idleTimeout);
-    if (!attentionActive || !micPermissionGranted || isSpeaking || speakCooldown) return;
-    
-    const timeout = settings.IDLE_TIMEOUT_MS || 10000;
-    lastActivityAt = Date.now();
-    
+    // Auto-rest depends only on real UI activity / explicit voice commands — not on mic being granted
+    if (!attentionActive || isSpeaking || speakCooldown) return;
+
+    const timeout = Math.max(3000, settings.IDLE_TIMEOUT_MS || 10000);
+
     idleTimeout = setTimeout(() => {
+      if (!attentionActive || isSpeaking || speakCooldown || awaitingCommand) {
+        // Conditions not met — re-arm without touching lastActivityAt
+        resetIdleTimer();
+        return;
+      }
       const elapsed = Date.now() - lastActivityAt;
-      if (elapsed >= timeout - 300 && attentionActive && !awaitingCommand && !isSpeaking && !speakCooldown) {
+      if (elapsed >= timeout - 200) {
         console.log('🛌 Auto-descanso tras', elapsed, 'ms de inactividad real');
         enterRestMode(true);
       } else {
-        resetIdleTimer();
+        // Not enough idle time yet (activity happened while timer was pending) — re-arm with remaining time
+        const remaining = Math.max(500, timeout - elapsed);
+        idleTimeout = setTimeout(() => {
+          if (attentionActive && !isSpeaking && !speakCooldown && !awaitingCommand &&
+              (Date.now() - lastActivityAt) >= timeout - 200) {
+            enterRestMode(true);
+          } else {
+            resetIdleTimer();
+          }
+        }, remaining);
       }
     }, timeout);
   }
 
-  function clearIdleTimer() { clearTimeout(idleTimeout); }
+  function clearIdleTimer() { clearTimeout(idleTimeout); idleTimeout = null; }
 
   function bindActivityEvents() {
     const guarded = (fn) => (e) => { if (!isSpeaking && !speakCooldown) fn(e); };
@@ -2703,8 +2800,13 @@
     list.innerHTML = pending.map(r => {
       const d = new Date(r.at);
       const when = d.toLocaleString('es-ES', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+      const dateVal = d.toISOString().slice(0, 10);
+      const timeVal = String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0');
       return `<div class="reminder-list-item" data-id="${r.id}">
-        <div class="ri-text"><div>${r.title}</div><div class="ri-time">${when}</div></div>
+        <div class="ri-text">
+          <div class="ri-title" data-id="${r.id}" title="Doble clic para editar">${escapeHtml(r.title)}</div>
+          <div class="ri-time" data-id="${r.id}" data-date="${dateVal}" data-time="${timeVal}" title="Doble clic para editar fecha/hora">${when}</div>
+        </div>
         <button type="button" class="ri-del" data-id="${r.id}" title="Eliminar"><i class="fas fa-times"></i></button>
       </div>`;
     }).join('');
@@ -2714,6 +2816,132 @@
         deleteReminder(btn.dataset.id);
       });
     });
+    list.querySelectorAll('.ri-title').forEach(el => {
+      el.addEventListener('dblclick', (e) => {
+        e.stopPropagation();
+        startEditReminderTitle(el);
+      });
+      let lastTap = 0;
+      el.addEventListener('touchend', (e) => {
+        const now = Date.now();
+        if (now - lastTap < 350) {
+          e.preventDefault();
+          e.stopPropagation();
+          startEditReminderTitle(el);
+          lastTap = 0;
+        } else {
+          lastTap = now;
+        }
+      }, { passive: false });
+    });
+    list.querySelectorAll('.ri-time').forEach(el => {
+      el.addEventListener('dblclick', (e) => {
+        e.stopPropagation();
+        startEditReminderDateTime(el);
+      });
+      let lastTap = 0;
+      el.addEventListener('touchend', (e) => {
+        const now = Date.now();
+        if (now - lastTap < 350) {
+          e.preventDefault();
+          e.stopPropagation();
+          startEditReminderDateTime(el);
+          lastTap = 0;
+        } else {
+          lastTap = now;
+        }
+      }, { passive: false });
+    });
+  }
+
+  function startEditReminderTitle(el) {
+    const id = el.dataset.id;
+    if (!id || el.querySelector('input')) return;
+    const rem = reminders.find(r => r.id === id);
+    if (!rem) return;
+    const input = document.createElement('input');
+    input.type = 'text';
+    input.className = 'settings-input';
+    input.value = rem.title;
+    input.maxLength = 80;
+    input.style.cssText = 'width:100%;padding:4px 6px;font-size:0.7rem;margin:0;';
+    el.textContent = '';
+    el.appendChild(input);
+    input.focus();
+    input.select();
+    const commit = () => {
+      const val = (input.value || '').trim();
+      if (val) {
+        rem.title = val;
+        saveReminders();
+      }
+      renderSettingsReminders();
+      renderRestReminders();
+    };
+    input.addEventListener('blur', commit);
+    input.addEventListener('keydown', (ev) => {
+      if (ev.key === 'Enter') { ev.preventDefault(); input.blur(); }
+      if (ev.key === 'Escape') {
+        input.removeEventListener('blur', commit);
+        renderSettingsReminders();
+      }
+    });
+  }
+
+  function startEditReminderDateTime(el) {
+    const id = el.dataset.id;
+    if (!id || el.querySelector('input')) return;
+    const rem = reminders.find(r => r.id === id);
+    if (!rem) return;
+    const dateVal = el.dataset.date || new Date(rem.at).toISOString().slice(0, 10);
+    const timeVal = el.dataset.time || '09:00';
+    el.innerHTML = '';
+    el.style.display = 'flex';
+    el.style.gap = '4px';
+    el.style.flexWrap = 'wrap';
+    el.style.alignItems = 'center';
+    const dateInput = document.createElement('input');
+    dateInput.type = 'date';
+    dateInput.className = 'settings-input';
+    dateInput.value = dateVal;
+    dateInput.style.cssText = 'flex:1;min-width:110px;padding:4px 6px;font-size:0.65rem;margin:0;';
+    const timeInput = document.createElement('input');
+    timeInput.type = 'time';
+    timeInput.className = 'settings-input';
+    timeInput.value = timeVal;
+    timeInput.style.cssText = 'width:90px;padding:4px 6px;font-size:0.65rem;margin:0;';
+    el.appendChild(dateInput);
+    el.appendChild(timeInput);
+    dateInput.focus();
+    let committed = false;
+    const commit = () => {
+      if (committed) return;
+      committed = true;
+      const d = dateInput.value;
+      const t = timeInput.value || '09:00';
+      if (d) {
+        const at = new Date(`${d}T${t}`);
+        if (!isNaN(at.getTime())) {
+          rem.at = at.getTime();
+          rem.done = false;
+          rem.dismissed = false;
+          saveReminders();
+        }
+      }
+      renderSettingsReminders();
+      renderRestReminders();
+    };
+    const onKey = (ev) => {
+      if (ev.key === 'Enter') { ev.preventDefault(); commit(); }
+      if (ev.key === 'Escape') {
+        committed = true;
+        renderSettingsReminders();
+      }
+    };
+    dateInput.addEventListener('keydown', onKey);
+    timeInput.addEventListener('keydown', onKey);
+    dateInput.addEventListener('blur', () => { setTimeout(() => { if (document.activeElement !== timeInput) commit(); }, 150); });
+    timeInput.addEventListener('blur', () => { setTimeout(() => { if (document.activeElement !== dateInput) commit(); }, 150); });
   }
 
   function renderRestPhrases() {
@@ -2726,7 +2954,7 @@
     }
     list.innerHTML = phrases.map((p, i) => `
       <div class="rest-phrase-item">
-        <div class="rp-text">${escapeHtml(p)}</div>
+        <div class="rp-text" data-idx="${i}" title="Doble clic para editar">${escapeHtml(p)}</div>
         <button type="button" class="rp-del" data-idx="${i}" title="Eliminar"><i class="fas fa-times"></i></button>
       </div>
     `).join('');
@@ -2735,12 +2963,62 @@
         e.stopPropagation();
         const idx = parseInt(btn.dataset.idx, 10);
         settings.REST_PHRASES.splice(idx, 1);
-        if (settings.REST_PHRASES.length === 0) {
-          settings.REST_PHRASES = [...DEFAULT_SETTINGS.REST_PHRASES];
-        }
         saveSettings();
         renderRestPhrases();
       });
+    });
+    list.querySelectorAll('.rp-text').forEach(el => {
+      el.addEventListener('dblclick', (e) => {
+        e.stopPropagation();
+        startEditPhrase(el);
+      });
+      // Touch: double-tap detection
+      let lastTap = 0;
+      el.addEventListener('touchend', (e) => {
+        const now = Date.now();
+        if (now - lastTap < 350) {
+          e.preventDefault();
+          e.stopPropagation();
+          startEditPhrase(el);
+          lastTap = 0;
+        } else {
+          lastTap = now;
+        }
+      }, { passive: false });
+    });
+  }
+
+  function startEditPhrase(el) {
+    const idx = parseInt(el.dataset.idx, 10);
+    if (isNaN(idx) || el.querySelector('input')) return;
+    const current = settings.REST_PHRASES[idx] || '';
+    const input = document.createElement('input');
+    input.type = 'text';
+    input.className = 'settings-input';
+    input.value = current;
+    input.maxLength = 200;
+    input.style.cssText = 'width:100%;padding:6px 8px;font-size:0.72rem;margin:0;';
+    el.textContent = '';
+    el.appendChild(input);
+    input.focus();
+    input.select();
+    const commit = () => {
+      const val = (input.value || '').trim();
+      if (val) {
+        settings.REST_PHRASES[idx] = val;
+      } else {
+        settings.REST_PHRASES.splice(idx, 1);
+      }
+      saveSettings();
+      renderRestPhrases();
+    };
+    input.addEventListener('blur', commit);
+    input.addEventListener('keydown', (ev) => {
+      if (ev.key === 'Enter') { ev.preventDefault(); input.blur(); }
+      if (ev.key === 'Escape') {
+        input.removeEventListener('blur', commit);
+        renderRestPhrases();
+      }
     });
   }
 
@@ -3415,9 +3693,11 @@
 
   function handleSegmentInteraction(sectionId, fromVoice) {
     if (isMobileView() && !fromVoice) {
+      // First tap: highlight + show name only (no voice)
+      // Second tap on same segment: open apps panel + speak name
       if (previewModule === sectionId && activeModule !== sectionId) {
         previewModule = null;
-        toggleModule(sectionId, false);
+        toggleModule(sectionId, false); // speaks inside toggleModule
       } else if (activeModule === sectionId) {
         toggleModule(sectionId, false);
         previewModule = null;
@@ -3432,8 +3712,7 @@
           g.classList.remove('active');
         });
         previewModule = sectionId;
-        const meta = SECTIONS[sectionId];
-        speak(meta ? meta.title : sectionId);
+        // Show label via CSS .preview — do NOT speak on first tap
       }
       return;
     }
@@ -3480,8 +3759,10 @@
     panel.classList.remove('side-left', 'side-right', 'mobile-top', 'mobile-bottom');
 
     if (isMobileView()) {
-      const isTop = midAngle >= 270 || midAngle < 90;
-      panel.classList.add(isTop ? 'mobile-top' : 'mobile-bottom');
+      // Centered overlay on mobile (CSS handles position); keep class for compatibility
+      panel.classList.add('mobile-top');
+      orbContainer?.classList.add('mobile-apps-open');
+      document.getElementById('ringMenu')?.classList.add('mobile-apps-open');
     } else {
       const goLeft = midAngle >= 216 && midAngle < 360;
       panel.classList.add(goLeft ? 'side-left' : 'side-right');
@@ -3492,11 +3773,13 @@
 
     panel.classList.add('visible');
 
-    requestAnimationFrame(() => {
-      requestAnimationFrame(() => drawSideConnector(sectionId));
-    });
-    setTimeout(() => drawSideConnector(sectionId), 80);
-    setTimeout(() => drawSideConnector(sectionId), 320);
+    if (!isMobileView()) {
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => drawSideConnector(sectionId));
+      });
+      setTimeout(() => drawSideConnector(sectionId), 80);
+      setTimeout(() => drawSideConnector(sectionId), 320);
+    }
   }
 
   function closeSideAppsPanel() {
@@ -3507,6 +3790,8 @@
       conn.classList.remove('visible');
       conn.innerHTML = '';
     }
+    orbContainer?.classList.remove('mobile-apps-open');
+    document.getElementById('ringMenu')?.classList.remove('mobile-apps-open');
   }
 
   function drawSideConnector(sectionId) {

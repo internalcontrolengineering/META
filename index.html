@@ -2063,8 +2063,54 @@
     .footer-names { gap: 4px; }
     .marquee-item { font-size: 0.44rem; letter-spacing: 0.4px; }
   }
+
+  /* ========== AIR GESTURE ========== */
+  #airVideo {
+    position: fixed; top: -9999px; left: -9999px;
+    width: 1px; height: 1px; opacity: 0; pointer-events: none;
+  }
+  #airCanvas {
+    position: fixed; inset: 0; width: 100vw; height: 100vh;
+    z-index: 250; pointer-events: none;
+    transform: scaleX(-1);
+  }
+  .air-hud-status {
+    position: fixed; bottom: 62px; left: 50%;
+    transform: translateX(-50%);
+    z-index: 260;
+    font-size: 0.62rem; letter-spacing: 1.5px; text-transform: uppercase;
+    color: rgba(var(--orb-glow), 0.8);
+    text-shadow: 0 0 12px rgba(var(--orb-glow), 0.5);
+    pointer-events: none; opacity: 0;
+    transition: opacity 0.35s ease;
+    background: rgba(8, 12, 18, 0.55);
+    border: 1px solid rgba(var(--orb-glow), 0.25);
+    border-radius: 999px; padding: 5px 14px;
+    backdrop-filter: blur(8px); white-space: nowrap;
+  }
+  .air-hud-status.visible { opacity: 1; }
+  .air-hud-status.pinching {
+    color: #fff; border-color: rgba(var(--orb-glow), 0.7);
+    box-shadow: 0 0 18px rgba(var(--orb-glow), 0.35);
+  }
+  #airCrosshair {
+    position: fixed;
+    width: 28px; height: 28px;
+    margin-left: -14px; margin-top: -14px;
+    z-index: 255;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.12s ease;
+  }
+  #airCrosshair.visible { opacity: 1; }
+  #airCrosshair.ready {
+    filter: drop-shadow(0 0 8px rgba(var(--orb-glow), 1));
+  }
+  #airCrosshair svg { width: 100%; height: 100%; display: block; }
 </style>
 </head>
+
+
 <body class="theme-gold">
 
   <div id="bg"></div>
@@ -2199,9 +2245,24 @@
     <div class="action-toast-text" id="actionToastText"></div>
   </div>
 
+  <video id="airVideo" autoplay playsinline muted></video>
+  <canvas id="airCanvas" aria-hidden="true"></canvas>
+  <div id="airCrosshair" aria-hidden="true">
+    <svg viewBox="0 0 28 28" xmlns="http://www.w3.org/2000/svg">
+      <circle cx="14" cy="14" r="3" fill="none" stroke="rgb(var(--orb-glow))" stroke-width="1.5" opacity="0.9"/>
+      <line x1="14" y1="2" x2="14" y2="10" stroke="rgb(var(--orb-glow))" stroke-width="1.5" stroke-linecap="round"/>
+      <line x1="14" y1="18" x2="14" y2="26" stroke="rgb(var(--orb-glow))" stroke-width="1.5" stroke-linecap="round"/>
+      <line x1="2" y1="14" x2="10" y2="14" stroke="rgb(var(--orb-glow))" stroke-width="1.5" stroke-linecap="round"/>
+      <line x1="18" y1="14" x2="26" y2="14" stroke="rgb(var(--orb-glow))" stroke-width="1.5" stroke-linecap="round"/>
+    </svg>
+  </div>
+  <div class="air-hud-status" id="airHudStatus" aria-live="polite"></div>
+
+
   <button class="fullscreen-button" id="fsBtn" title="Pantalla completa" aria-label="Pantalla completa">
     <i class="fas fa-expand"></i>
   </button>
+
 
   <button class="settings-button" id="settingsButton" title="Configuración">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -2357,8 +2418,23 @@
           </div>
           <div class="settings-hint" id="micStatusHint">El micrófono está activo. Di «META» para comandos de voz.</div>
         </div>
+        <div class="settings-section" id="handGestureSection">
+          <div class="settings-label">Cámara</div>
+          <div class="toggle-row">
+            <div>
+              <div class="toggle-label">Gestos de mano (sin contacto)</div>
+              <div class="toggle-description">Solo el índice: 1 mano = apuntar (dorado). 2 manos (índice izquierdo activa) = cuenta 3 s en el índice derecho → clic. Cámara oculta.</div>
+
+
+            </div>
+            <label class="toggle-switch"><input type="checkbox" id="toggleHandGesture"><span class="toggle-slider"></span></label>
+          </div>
+          <div class="settings-hint" id="handGestureHint">La cámara está desactivada. Actívala para usar gestos sin contacto.</div>
+        </div>
+
         <div class="settings-section">
           <div class="settings-label">Recordatorios</div>
+
           <div class="reminder-form">
             <input type="text" id="remTitleInput" placeholder="Tema del recordatorio" maxlength="80">
             <div class="reminder-form-row">
@@ -2410,7 +2486,8 @@
     ORB_SIZE: 100,
     IDLE_TIMEOUT_MS: 10000,
     REST_PHRASES: [],
-    MIC_ENABLED: true
+    MIC_ENABLED: true,
+    HAND_GESTURE_ENABLED: false
   };
   let settings = { ...DEFAULT_SETTINGS };
   try { const s = localStorage.getItem('meta-hud-settings'); if (s) Object.assign(settings, JSON.parse(s)); } catch (e) {}
@@ -2433,6 +2510,10 @@
   if (typeof settings.MIC_ENABLED !== 'boolean') {
     settings.MIC_ENABLED = true;
   }
+  if (typeof settings.HAND_GESTURE_ENABLED !== 'boolean') {
+    settings.HAND_GESTURE_ENABLED = false;
+  }
+
 
   const voiceSettings = { voiceName: null, rate: 1.05, pitch: 1.15, volume: 1.0 };
   try { const s = localStorage.getItem('meta-voice-settings'); if (s) Object.assign(voiceSettings, JSON.parse(s)); } catch (e) {}
@@ -2475,9 +2556,11 @@
     if (!supabaseClient || applyingRemote || syncInFlight) return;
     syncInFlight = true;
     try {
-      // MIC_ENABLED es por dispositivo (no se sincroniza)
+      // MIC_ENABLED y HAND_GESTURE_ENABLED son por dispositivo (no se sincronizan)
       const settingsForCloud = { ...settings };
       delete settingsForCloud.MIC_ENABLED;
+      delete settingsForCloud.HAND_GESTURE_ENABLED;
+
       const payload = {
         id: APP_STATE_ID,
         settings: settingsForCloud,
@@ -2508,9 +2591,12 @@
     try {
       if (row.settings && typeof row.settings === 'object') {
         const localMic = settings.MIC_ENABLED;
+        const localHand = settings.HAND_GESTURE_ENABLED;
         Object.assign(settings, row.settings);
-        // Micrófono es local por dispositivo: no sobrescribir desde la nube
+        // Micrófono y gestos son locales por dispositivo
         settings.MIC_ENABLED = typeof localMic === 'boolean' ? localMic : true;
+        settings.HAND_GESTURE_ENABLED = typeof localHand === 'boolean' ? localHand : false;
+
         if (!Array.isArray(settings.REST_PHRASES)) settings.REST_PHRASES = [];
         try { localStorage.setItem('meta-hud-settings', JSON.stringify(settings)); } catch (e) {}
       }
@@ -3908,37 +3994,82 @@
     return candidates[0].app;
   }
 
+  /** Abre siempre en pestaña nueva. Nunca navega fuera de META (no location.href). */
+  function openAppUrl(url, label, { speakName = true } = {}) {
+    if (!url) return;
+    const name = (label || '').trim();
+    if (speakName && name && typeof speak === 'function') {
+      try { speak(`Abro ${name}.`); } catch (e) {}
+    }
+    // Evitar que el clic del <a> cierre el panel de apps (listener de document)
+    const prevLock = typeof airGestureClickLock !== 'undefined' ? airGestureClickLock : false;
+    try { airGestureClickLock = true; } catch (e) {}
+
+    // 1) <a target=_blank> — apertura en nueva pestaña sin salir de META
+    try {
+      const a = document.createElement('a');
+      a.href = url;
+      a.target = '_blank';
+      a.rel = 'noopener noreferrer';
+      a.style.cssText = 'position:fixed;left:-9999px;top:-9999px;opacity:0;pointer-events:none;';
+      // No dejar que el click burbujee al document (cerraría sideAppsPanel)
+      a.addEventListener('click', (ev) => { ev.stopPropagation(); }, true);
+      document.body.appendChild(a);
+      a.click();
+      setTimeout(() => { try { a.remove(); } catch (e) {} }, 200);
+    } catch (e) {}
+    // 2) window.open de respaldo
+    let win = null;
+    try { win = window.open(url, '_blank', 'noopener,noreferrer'); } catch (e) { win = null; }
+
+    setTimeout(() => {
+      try { airGestureClickLock = prevLock; } catch (e) {}
+    }, 150);
+
+    if (!win || win.closed) {
+      // NO usar location.href: sacaría al usuario de META sin poder volver
+      try {
+        if (typeof airSetStatus === 'function') {
+          airSetStatus('Permite ventanas emergentes para abrir apps', false);
+        }
+        const toast = document.getElementById('actionToast');
+        const toastText = document.getElementById('actionToastText');
+        const toastIcon = document.getElementById('actionToastIcon');
+        if (toast && toastText) {
+          toastText.textContent = 'Permite ventanas emergentes para abrir apps';
+          if (toastIcon) toastIcon.textContent = '⚠️';
+          toast.classList.add('show');
+          setTimeout(() => toast.classList.remove('show'), 3200);
+        }
+      } catch (e) {}
+    }
+  }
+
+
+
   function openAppByVoice(app) {
     if (!app || !app.url) return;
-    // Abrir about:blank en el mismo gesto (evita bloqueo de popups).
-    // Decir el nombre primero y, al terminar de hablar, cargar la URL real.
     let win = null;
-    try {
-      win = window.open('about:blank', '_blank');
-    } catch (e) {
+    try { win = window.open('about:blank', '_blank'); } catch (e) {
       console.warn('window.open falló', e);
     }
     if (!win) {
-      speak(`Abro ${app.label}. No pude abrir una pestaña nueva; revisa el bloqueador de ventanas emergentes.`);
-      setTimeout(() => {
-        try { window.location.href = app.url; } catch (e2) {}
-      }, 1500);
+      speak(`Abro ${app.label}. Activa las ventanas emergentes para abrir apps sin salir de META.`);
+      openAppUrl(app.url, app.label, { speakName: false });
       return;
     }
-    // Mantener el foco en esta pestaña para que se oiga el nombre
     try { window.focus(); } catch (e) {}
     speak(`Abro ${app.label}.`, () => {
       try {
-        if (win && !win.closed) {
-          win.location.href = app.url;
-        } else {
-          window.open(app.url, '_blank');
-        }
+        if (win && !win.closed) win.location.href = app.url;
+        else openAppUrl(app.url, app.label, { speakName: false });
       } catch (e) {
-        try { window.open(app.url, '_blank'); } catch (e2) {}
+        openAppUrl(app.url, app.label, { speakName: false });
       }
     });
   }
+
+
 
   function executeCommand(cmd) {
     const act = normalizeVoiceText(cmd);
@@ -4114,16 +4245,19 @@
     apps.forEach(app => {
       const appEl = document.createElement('div');
       appEl.className = 'module-app';
+      appEl.dataset.airUrl = app.url || '';
+      appEl.dataset.airLabel = app.label || '';
       appEl.innerHTML = `
         <div class="module-app-icon"><i class="fas ${app.icon}"></i></div>
         <div class="module-app-label">${app.label}</div>
       `;
       appEl.addEventListener('click', (e) => {
         e.stopPropagation();
-        window.open(app.url, '_blank');
+        openAppUrl(app.url, app.label, { speakName: false });
       });
       appsContainer.appendChild(appEl);
     });
+
     block.appendChild(appsContainer);
     container.appendChild(block);
     moduleBlocks[sectionId] = { el: block, appsEl: appsContainer, headerEl: header };
@@ -4338,17 +4472,19 @@
     apps.forEach(app => {
       const item = document.createElement('div');
       item.className = 'side-app-item';
+      item.dataset.airUrl = app.url || '';
+      item.dataset.airLabel = app.label || '';
       item.innerHTML = `
         <div class="side-app-item-icon"><i class="fas ${app.icon}"></i></div>
         <div class="side-app-item-label">${app.label}</div>
       `;
       item.addEventListener('click', (e) => {
         e.stopPropagation();
-        speak(app.label);
-        setTimeout(() => window.open(app.url, '_blank'), 400);
+        openAppUrl(app.url, app.label);
       });
       list.appendChild(item);
     });
+
 
     const idx = RING_ORDER.indexOf(sectionId);
     const sweep = 360 / RING_ORDER.length;
@@ -4493,6 +4629,8 @@
     HIDDEN_APPS.forEach(app => {
       const card = document.createElement('div');
       card.className = 'hidden-app-card';
+      card.dataset.airUrl = app.url || '';
+      card.dataset.airLabel = app.label || '';
       card.innerHTML = `
         <div class="hidden-app-icon"><i class="fas ${app.icon}"></i></div>
         <div class="hidden-app-info">
@@ -4500,9 +4638,10 @@
           <div class="hidden-app-desc">${app.desc}</div>
         </div>
       `;
-      card.addEventListener('click', () => window.open(app.url, '_blank'));
+      card.addEventListener('click', () => openAppUrl(app.url, app.label, { speakName: false }));
       hiddenAppsGrid.appendChild(card);
     });
+
   }
 
   function showMenu() {
@@ -4637,8 +4776,14 @@
   settingsButton.addEventListener('click', () => {
     const o = settingsPanel.classList.toggle('visible');
     settingsButton.classList.toggle('open', o);
-    if (o) { populateVoiceSelect(); updateInfoPanel(); renderRestPhrases(); }
+    if (o) {
+      populateVoiceSelect();
+      updateInfoPanel();
+      renderRestPhrases();
+      if (typeof updateHandGestureUI === 'function') updateHandGestureUI();
+    }
   });
+
   document.addEventListener('click', (e) => {
     if (!settingsPanel.contains(e.target) && !settingsButton.contains(e.target)) {
       settingsPanel.classList.remove('visible');
@@ -4662,10 +4807,13 @@
   });
 
   document.addEventListener('click', (e) => {
+    // Clic por gesto de mano: no cerrar el panel de apps
+    if (typeof airGestureClickLock !== 'undefined' && airGestureClickLock) return;
     const panel = document.getElementById('sideAppsPanel');
     if (!panel || !panel.classList.contains('visible')) return;
     if (panel.contains(e.target)) return;
     if (e.target.closest && e.target.closest('.ring-seg-group')) return;
+    if (e.target.closest && e.target.closest('[data-air-url]')) return;
     closeSideAppsPanel();
     if (activeModule && moduleBlocks[activeModule]) {
       moduleBlocks[activeModule].el.classList.remove('active');
@@ -4675,6 +4823,7 @@
     previewModule = null;
     document.querySelectorAll('.ring-seg-group').forEach(g => g.classList.remove('preview'));
   });
+
   window.addEventListener('resize', () => {
     if (activeModule && document.getElementById('sideAppsPanel')?.classList.contains('visible')) {
       drawSideConnector(activeModule);
@@ -4916,6 +5065,640 @@
     }
   }
 
+  // ============================================================
+  // AIR GESTURE — yemas pulgar/índice · clic por movimiento del pulgar
+  // Zoom: 2 manos · separar = zoom+ · juntar = zoom−
+  // Cámara oculta; no rompe voz/menú/táctil
+  // ============================================================
+  const AIR_MP_VISION = 'https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.18';
+  const AIR_MP_WASM = 'https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.18/wasm';
+  const AIR_MODEL = 'https://storage.googleapis.com/mediapipe-models/hand_landmarker/hand_landmarker/float16/1/hand_landmarker.task';
+
+  let airHandLandmarker = null;
+  let airStream = null;
+  let airRunning = false;
+  let airRaf = null;
+  let airLastVideoTime = -1;
+  let airSmoothedHands = [];
+  let airFingerprintPhase = 0;
+  let airStatusHideTimer = null;
+  let airLastClickAt = 0;
+  let airThumbHist = [];
+  let airIndexAnchor = null;
+  /** Evita que clics sintéticos de gestos cierren el panel de apps */
+  let airGestureClickLock = false;
+
+
+
+  const airVideo = document.getElementById('airVideo');
+  const airCanvas = document.getElementById('airCanvas');
+  const airCtx = airCanvas ? airCanvas.getContext('2d') : null;
+  const airHudStatus = document.getElementById('airHudStatus');
+  const airCrosshair = document.getElementById('airCrosshair');
+
+
+  function airResizeCanvas() {
+    if (!airCanvas) return;
+    airCanvas.width = window.innerWidth;
+    airCanvas.height = window.innerHeight;
+  }
+
+  function airSetStatus(text, highlight) {
+    if (!airHudStatus) return;
+    if (!text) {
+      airHudStatus.classList.remove('visible', 'pinching');
+      airHudStatus.textContent = '';
+      return;
+    }
+    airHudStatus.textContent = text;
+    airHudStatus.classList.add('visible');
+    airHudStatus.classList.toggle('pinching', !!highlight);
+    clearTimeout(airStatusHideTimer);
+    if (!highlight) {
+      airStatusHideTimer = setTimeout(() => {
+        airHudStatus.classList.remove('visible', 'pinching');
+      }, 2200);
+    }
+  }
+
+  function updateHandGestureUI() {
+    const toggle = document.getElementById('toggleHandGesture');
+    const hint = document.getElementById('handGestureHint');
+    if (toggle) toggle.checked = !!settings.HAND_GESTURE_ENABLED;
+    if (!hint) return;
+    if (settings.HAND_GESTURE_ENABLED && airRunning) {
+      hint.textContent = 'Activa. 1 índice = apuntar · 2 índices (izq. activa) = 3 s en el derecho → clic.';
+
+
+    } else if (settings.HAND_GESTURE_ENABLED) {
+      hint.textContent = 'Cámara activada, iniciando o esperando permiso del navegador…';
+    } else {
+      hint.textContent = 'La cámara está desactivada. Actívala para usar gestos sin contacto.';
+    }
+
+  }
+
+  async function setHandGestureEnabled(enabled) {
+    settings.HAND_GESTURE_ENABLED = !!enabled;
+    saveSettings();
+    if (!enabled) { stopAirGesture(); updateHandGestureUI(); return; }
+    await startAirGesture();
+    updateHandGestureUI();
+  }
+
+  async function startAirGesture() {
+    if (airRunning) return;
+    if (!airVideo || !airCanvas || !airCtx) return;
+    airSetStatus('Cargando gestos…', false);
+    try {
+      if (!airHandLandmarker) {
+        const { HandLandmarker, FilesetResolver } = await import(AIR_MP_VISION);
+        const vision = await FilesetResolver.forVisionTasks(AIR_MP_WASM);
+        airHandLandmarker = await HandLandmarker.createFromOptions(vision, {
+          baseOptions: { modelAssetPath: AIR_MODEL, delegate: 'GPU' },
+          runningMode: 'VIDEO',
+          numHands: 2,
+          minHandDetectionConfidence: 0.55,
+          minHandPresenceConfidence: 0.5,
+          minTrackingConfidence: 0.5
+        });
+      }
+      airStream = await navigator.mediaDevices.getUserMedia({
+        video: { width: { ideal: 640 }, height: { ideal: 480 }, facingMode: 'user' },
+        audio: false
+      });
+      airVideo.srcObject = airStream;
+      await new Promise((res) => {
+        if (airVideo.readyState >= 2) return res();
+        airVideo.onloadedmetadata = () => res();
+      });
+      await airVideo.play();
+      airResizeCanvas();
+      airRunning = true;
+      airLastVideoTime = -1;
+      airSmoothedHands = [];
+      airThumbHist = [];
+      airIndexAnchor = null;
+      airDwellStart = 0;
+      airDwellProgress = 0;
+      airDwellFired = false;
+      airSetStatus('Índice apunta · 2 manos = clic en 3 s', false);
+      airLoop();
+
+
+    } catch (e) {
+      console.warn('Air gesture start failed:', e);
+      settings.HAND_GESTURE_ENABLED = false;
+      saveSettings();
+      airSetStatus('Sin permiso de cámara o modelo no disponible', false);
+      stopAirGesture();
+      updateHandGestureUI();
+    }
+  }
+
+  function stopAirGesture() {
+    airRunning = false;
+    if (airRaf) { cancelAnimationFrame(airRaf); airRaf = null; }
+    if (airStream) {
+      try { airStream.getTracks().forEach(t => t.stop()); } catch (e) {}
+      airStream = null;
+    }
+    if (airVideo) { try { airVideo.srcObject = null; } catch (e) {} }
+    if (airCtx && airCanvas) airCtx.clearRect(0, 0, airCanvas.width, airCanvas.height);
+    airThumbHist = [];
+    airIndexAnchor = null;
+    airDwellStart = 0;
+    airDwellProgress = 0;
+    airDwellFired = false;
+    airSmoothedHands = [];
+    airUpdateCrosshair(0, 0, false, false);
+    airSetStatus('', false);
+  }
+
+
+
+
+
+  function airSmoothHands(rawHands) {
+    airSmoothedHands = rawHands.map((hand, i) => {
+      const prev = airSmoothedHands[i];
+      return hand.map((p, j) => {
+        const np = { x: p.x, y: p.y, z: p.z };
+        if (prev && prev[j]) {
+          np.x = prev[j].x * 0.55 + p.x * 0.45;
+          np.y = prev[j].y * 0.55 + p.y * 0.45;
+          np.z = prev[j].z * 0.65 + p.z * 0.35;
+        }
+        return np;
+      });
+    });
+    return airSmoothedHands;
+  }
+
+  /**
+   * Orbe solo del índice.
+   * mode: 'pointer' (dorado tema) | 'charging' (rojo + progreso) | 'activator' (índice izq. sutil)
+   * progress: 0..1 cuando charging
+   */
+  function airDrawIndexOrb(ctx, x, y, mode, progress) {
+    const theme = getComputedStyle(document.body).getPropertyValue('--orb-glow').trim() || '198, 168, 91';
+    const red = '255, 70, 70';
+    const color = mode === 'charging' ? red : theme;
+    const radius = mode === 'activator' ? 9 : 14;
+    const alphaCore = mode === 'activator' ? 0.18 : (mode === 'charging' ? 0.45 : 0.28);
+    ctx.save();
+
+    // Halo difuminado
+    const g = ctx.createRadialGradient(x, y, radius * 0.15, x, y, radius * 2.2);
+    g.addColorStop(0, `rgba(${color}, ${alphaCore + 0.12})`);
+    g.addColorStop(0.45, `rgba(${color}, ${alphaCore * 0.5})`);
+    g.addColorStop(1, `rgba(${color}, 0)`);
+    ctx.fillStyle = g;
+    ctx.beginPath();
+    ctx.arc(x, y, radius * 2.2, 0, Math.PI * 2);
+    ctx.fill();
+
+    // Núcleo semitransparente
+    const core = ctx.createRadialGradient(x - radius * 0.2, y - radius * 0.2, 1, x, y, radius);
+    core.addColorStop(0, `rgba(255,255,255,${mode === 'charging' ? 0.4 : 0.25})`);
+    core.addColorStop(0.5, `rgba(${color}, ${alphaCore})`);
+    core.addColorStop(1, `rgba(${color}, 0.06)`);
+    ctx.fillStyle = core;
+    ctx.beginPath();
+    ctx.arc(x, y, radius, 0, Math.PI * 2);
+    ctx.fill();
+
+    // Anillo suave
+    ctx.strokeStyle = `rgba(${color}, ${mode === 'charging' ? 0.85 : 0.45})`;
+    ctx.lineWidth = mode === 'charging' ? 2 : 1.2;
+    ctx.beginPath();
+    ctx.arc(x, y, radius + 1, 0, Math.PI * 2);
+    ctx.stroke();
+
+    // Progreso de clic (anillo animado 0→360°)
+    if (mode === 'charging' && progress > 0) {
+      const p = Math.max(0, Math.min(1, progress));
+      const pulse = 0.7 + 0.3 * Math.sin(airFingerprintPhase * 2.5);
+      ctx.strokeStyle = `rgba(255, 90, 90, ${0.55 + 0.35 * pulse})`;
+      ctx.lineWidth = 3.5;
+      ctx.lineCap = 'round';
+      ctx.beginPath();
+      ctx.arc(x, y, radius + 7, -Math.PI / 2, -Math.PI / 2 + p * Math.PI * 2);
+      ctx.stroke();
+      // segundo anillo exterior parpadeante
+      ctx.strokeStyle = `rgba(255, 120, 80, ${0.25 * pulse})`;
+      ctx.lineWidth = 6;
+      ctx.beginPath();
+      ctx.arc(x, y, radius + 11, -Math.PI / 2, -Math.PI / 2 + p * Math.PI * 2);
+      ctx.stroke();
+    }
+    ctx.restore();
+  }
+
+  function airUpdateCrosshair(screenX, screenY, visible, charging) {
+    if (!airCrosshair) return;
+    if (!visible) {
+      airCrosshair.classList.remove('visible', 'ready');
+      return;
+    }
+    airCrosshair.style.left = screenX + 'px';
+    airCrosshair.style.top = screenY + 'px';
+    airCrosshair.classList.add('visible');
+    airCrosshair.classList.toggle('ready', !!charging);
+  }
+
+  function airDrawHands(hands, handednessList, dwellProgress, hasLeft, hasRight) {
+    if (!airCtx || !airCanvas) return;
+    const W = airCanvas.width, H = airCanvas.height;
+    airCtx.clearRect(0, 0, W, H);
+    hands.forEach((hand, i) => {
+      if (!hand[8]) return;
+      const x = hand[8].x * W, y = hand[8].y * H;
+      const label = (handednessList[i] || '').toLowerCase();
+      const isRight = label.includes('right');
+      const isLeft = label.includes('left');
+      // Solo índice (landmark 8)
+      if (isRight || (!isLeft && !hasRight && i === 0)) {
+        // Índice derecho (o único sin etiqueta) = apuntador / clic
+        const mode = (hasLeft && hasRight) ? 'charging' : 'pointer';
+        airDrawIndexOrb(airCtx, x, y, mode, dwellProgress);
+      } else if (isLeft) {
+        // Índice izquierdo solo como activador sutil
+        airDrawIndexOrb(airCtx, x, y, 'activator', 0);
+      }
+    });
+  }
+
+
+
+  function airCanvasToScreen(cx, cy) {
+    return { x: airCanvas.width - cx, y: cy };
+  }
+
+  function airFlashClick(sx, sy) {
+
+    if (!airCtx || !airCanvas) return;
+    const cx = airCanvas.width - sx, cy = sy;
+    const glow = getComputedStyle(document.body).getPropertyValue('--orb-glow').trim() || '198, 168, 91';
+    let frame = 0;
+    const maxF = 12;
+    const draw = () => {
+      airCtx.save();
+      airCtx.strokeStyle = `rgba(${glow}, ${1 - frame / maxF})`;
+      airCtx.lineWidth = 2;
+      airCtx.beginPath();
+      airCtx.arc(cx, cy, 8 + frame * 3, 0, Math.PI * 2);
+      airCtx.stroke();
+      airCtx.restore();
+      frame++;
+      if (frame < maxF) requestAnimationFrame(draw);
+    };
+    requestAnimationFrame(draw);
+  }
+
+  /** closest compatible con SVG (path → g.ring-seg-group) */
+  function airClosest(el, selector) {
+    if (!el) return null;
+    try {
+      if (typeof el.closest === 'function') {
+        const c = el.closest(selector);
+        if (c) return c;
+      }
+    } catch (e) {}
+    let p = el;
+    while (p && p !== document.documentElement) {
+      if (p.matches && p.matches(selector)) return p;
+      if (p.classList) {
+        const sel = selector.replace(/^\./, '');
+        if (selector.startsWith('.') && p.classList.contains(sel)) return p;
+        if (selector.startsWith('[') && selector.includes('data-air-url') && p.dataset && p.dataset.airUrl) return p;
+      }
+      p = p.parentElement || p.parentNode;
+    }
+    return null;
+  }
+
+  /** Busca elemento bajo el punto (radio amplio para anillo y apps) */
+  function airElementAt(screenX, screenY) {
+    if (airCanvas) airCanvas.style.pointerEvents = 'none';
+    if (airCrosshair) airCrosshair.style.pointerEvents = 'none';
+    const hud = document.getElementById('airHudStatus');
+    const prevHud = hud ? hud.style.pointerEvents : '';
+    if (hud) hud.style.pointerEvents = 'none';
+
+    const offsets = [
+      [0, 0], [0, -12], [0, 12], [-12, 0], [12, 0],
+      [-10, -10], [10, -10], [-10, 10], [10, 10],
+      [0, -24], [0, 24], [-24, 0], [24, 0],
+      [-20, -20], [20, -20], [-20, 20], [20, 20],
+      [0, -36], [0, 36], [-36, 0], [36, 0]
+    ];
+    const prefer = (el) =>
+      airClosest(el, '.ring-seg-group') ||
+      airClosest(el, '[data-air-url]') ||
+      airClosest(el, '.module-header') ||
+      airClosest(el, '.module-app') ||
+      airClosest(el, '.side-app-item') ||
+      airClosest(el, '.orb-container') ||
+      airClosest(el, 'button') ||
+      airClosest(el, 'a') ||
+      airClosest(el, '.color-swatch') ||
+      airClosest(el, '.toggle-switch') ||
+      airClosest(el, '.marquee-bar') ||
+      airClosest(el, '.settings-tab') ||
+      airClosest(el, '.settings-button') ||
+      airClosest(el, '.fullscreen-button') ||
+      airClosest(el, '.hidden-app-card');
+
+    let found = null;
+    let preferred = null;
+    for (const [dx, dy] of offsets) {
+      const el = document.elementFromPoint(screenX + dx, screenY + dy);
+      if (!el) continue;
+      if (el === document.body || el === document.documentElement) continue;
+      if (el.id === 'airCanvas' || el.id === 'airVideo' || el.id === 'airHudStatus' || el.id === 'airCrosshair') continue;
+      if (!found) found = el;
+      const p = prefer(el);
+      if (p) { preferred = p; break; }
+    }
+    if (hud) hud.style.pointerEvents = prevHud;
+    return preferred || found;
+  }
+
+  function airDispatchClick(screenX, screenY) {
+    const now = performance.now();
+    if (now - airLastClickAt < 550) return;
+    airLastClickAt = now;
+
+    const el = airElementAt(screenX, screenY);
+    if (!el) {
+      airSetStatus('Sin objetivo bajo el índice', false);
+      return;
+    }
+
+    registerActivity();
+    airFlashClick(screenX, screenY);
+
+    airGestureClickLock = true;
+    const unlock = () => { setTimeout(() => { airGestureClickLock = false; }, 250); };
+
+    // --- Apps (panel lateral, HUD, ocultas) ---
+    const appEl = airClosest(el, '[data-air-url]');
+    if (appEl && appEl.dataset && appEl.dataset.airUrl) {
+      airSetStatus(`Abriendo ${appEl.dataset.airLabel || 'app'}…`, false);
+      openAppUrl(appEl.dataset.airUrl, appEl.dataset.airLabel || '', { speakName: true });
+      unlock();
+      return;
+    }
+
+    // --- Segmentos del anillo (apartados) ---
+    let seg = airClosest(el, '.ring-seg-group');
+    if (!seg && (el.classList?.contains('ring-segment') || el.getAttribute?.('class')?.includes('ring-segment'))) {
+      seg = el.parentElement || el.parentNode;
+    }
+    if (seg && seg.dataset && seg.dataset.section) {
+      const sectionId = seg.dataset.section;
+      if (!menuVisible) showMenu();
+      handleSegmentInteraction(sectionId);
+      airSetStatus(SECTIONS[sectionId]?.title || sectionId, false);
+      unlock();
+      return;
+    }
+
+    // --- Cabecera de módulo HUD ---
+    const modHeader = airClosest(el, '.module-header');
+    if (modHeader) {
+      const block = airClosest(modHeader, '.module-block');
+      const sectionId = block?.dataset?.section;
+      if (sectionId) {
+        toggleModule(sectionId);
+        airSetStatus(SECTIONS[sectionId]?.title || sectionId, false);
+        unlock();
+        return;
+      }
+    }
+
+    // --- Orbe central ---
+    if (airClosest(el, '.orb-container') || airClosest(el, '#orbContainer')) {
+      if (!attentionActive) wakeUp();
+      if (menuVisible) hideMenu();
+      else showMenu();
+      airSetStatus(menuVisible ? 'Menú abierto' : 'Menú cerrado', false);
+      unlock();
+      return;
+    }
+
+    // --- Resto ---
+    const target =
+      airClosest(el, 'button, a, .settings-tab, .color-swatch, .toggle-switch, .marquee-bar, .side-apps-close, .settings-button, .fullscreen-button, .hidden-app-card, .module-app, .side-app-item') ||
+      el;
+
+    const opts = {
+      bubbles: true, cancelable: true, view: window,
+      clientX: screenX, clientY: screenY, button: 0, buttons: 1
+    };
+    try {
+      target.dispatchEvent(new PointerEvent('pointerdown', { ...opts, pointerType: 'touch', isPrimary: true }));
+      target.dispatchEvent(new PointerEvent('pointerup', { ...opts, pointerType: 'touch', isPrimary: true }));
+    } catch (e) {}
+    target.dispatchEvent(new MouseEvent('mousedown', opts));
+    target.dispatchEvent(new MouseEvent('mouseup', opts));
+    target.dispatchEvent(new MouseEvent('click', opts));
+    airSetStatus('Clic', false);
+    unlock();
+  }
+
+
+
+
+  function airTipDist(hand, a, b, W, H) {
+    if (!hand[a] || !hand[b]) return null;
+    return Math.hypot((hand[a].x - hand[b].x) * W, (hand[a].y - hand[b].y) * H);
+  }
+
+  function airHandCenter(hand, W, H) {
+    // Centro aproximado: muñeca + nudillo medio
+    if (!hand[0] || !hand[9]) return null;
+    return {
+      x: ((hand[0].x + hand[9].x) / 2) * W,
+      y: ((hand[0].y + hand[9].y) / 2) * H
+    };
+  }
+
+  /**
+   * Clic por permanencia (dwell):
+   * - Solo se dibuja el índice (orbe).
+   * - 1 mano: solo apunta (orbe dorado del tema).
+   * - 2 manos: el índice IZQUIERDO activa el temporizador;
+   *   el índice DERECHO es el cursor; 3 s quieto → clic.
+   */
+  const AIR_DWELL_MS = 3000;
+  const AIR_DWELL_MOVE_MAX = 42; // px pantalla; si el derecho se mueve más, reinicia
+  let airDwellStart = 0;
+  let airDwellProgress = 0;
+  let airDwellFired = false;
+  let airDwellOrigin = null;
+  let airLastHandedness = [];
+
+
+  function airParseHandedness(results) {
+    const list = results.handednesses || results.handedness || [];
+    return list.map((h) => {
+      if (!h) return '';
+      const cat = Array.isArray(h) ? h[0] : h;
+      return (cat && (cat.categoryName || cat.displayName || cat)) || '';
+    });
+  }
+
+  function airFindHandsBySide(hands, handednessList) {
+    let right = null, left = null, rightIdx = -1, leftIdx = -1;
+    hands.forEach((hand, i) => {
+      const label = (handednessList[i] || '').toLowerCase();
+      if (label.includes('right') && hand[8]) { right = hand; rightIdx = i; }
+      else if (label.includes('left') && hand[8]) { left = hand; leftIdx = i; }
+    });
+    // Fallback: si MediaPipe no etiqueta y hay 2 manos, la de mayor X en imagen
+    // (con espejo la derecha del usuario suele tener menor x en coords de cámara)
+    if (!right && !left && hands.length === 1 && hands[0][8]) {
+      right = hands[0]; rightIdx = 0;
+    } else if (hands.length >= 2 && (!right || !left)) {
+      let minX = 2, maxX = -1, iMin = 0, iMax = 0;
+      hands.forEach((h, i) => {
+        if (!h[8]) return;
+        if (h[8].x < minX) { minX = h[8].x; iMin = i; }
+        if (h[8].x > maxX) { maxX = h[8].x; iMax = i; }
+      });
+      // Imagen sin espejo: mano derecha del usuario suele estar a la izquierda de la imagen (menor x) en selfie
+      if (!right) { right = hands[iMin]; rightIdx = iMin; }
+      if (!left) { left = hands[iMax]; leftIdx = iMax; }
+    }
+    return { right, left, rightIdx, leftIdx };
+  }
+
+  function airUpdateDwellClick(hands, handednessList) {
+    if (!airCanvas) {
+      airDwellStart = 0;
+      airDwellProgress = 0;
+      airUpdateCrosshair(0, 0, false, false);
+      return { dwellProgress: 0, hasLeft: false, hasRight: false };
+    }
+    const W = airCanvas.width, H = airCanvas.height;
+    const { right, left } = airFindHandsBySide(hands, handednessList);
+    const hasRight = !!right;
+    const hasLeft = !!left;
+    const now = performance.now();
+
+    if (!hasRight) {
+      airDwellStart = 0;
+      airDwellProgress = 0;
+      airDwellFired = false;
+      airIndexAnchor = null;
+      airUpdateCrosshair(0, 0, false, false);
+      return { dwellProgress: 0, hasLeft, hasRight };
+    }
+
+    const ix = right[8].x * W, iy = right[8].y * H;
+    const screen = airCanvasToScreen(ix, iy);
+    // Posición suave solo para dibujar / clic (no para medir movimiento)
+    if (!airIndexAnchor) {
+      airIndexAnchor = { x: screen.x, y: screen.y };
+    } else {
+      airIndexAnchor.x = airIndexAnchor.x * 0.35 + screen.x * 0.65;
+      airIndexAnchor.y = airIndexAnchor.y * 0.35 + screen.y * 0.65;
+    }
+
+    // Solo apunta: un índice (sin izquierdo activador) — al quitar el izq. se puede volver a cargar
+    if (!hasLeft) {
+      airDwellStart = 0;
+      airDwellProgress = 0;
+      airDwellFired = false;
+      airDwellOrigin = null;
+      airUpdateCrosshair(airIndexAnchor.x, airIndexAnchor.y, true, false);
+      return { dwellProgress: 0, hasLeft, hasRight };
+    }
+
+    // Ya se hizo clic en esta “sesión” del índice izquierdo: esperar a que desaparezca
+    if (airDwellFired) {
+      airDwellProgress = 0;
+      airUpdateCrosshair(airIndexAnchor.x, airIndexAnchor.y, true, false);
+      return { dwellProgress: 0, hasLeft, hasRight };
+    }
+
+    // Ambos índices: 3 s con el derecho quieto respecto al origen del dwell
+    if (!airDwellStart || !airDwellOrigin) {
+      airDwellStart = now;
+      airDwellOrigin = { x: screen.x, y: screen.y };
+    } else {
+      const drift = Math.hypot(screen.x - airDwellOrigin.x, screen.y - airDwellOrigin.y);
+      if (drift > AIR_DWELL_MOVE_MAX) {
+        airDwellStart = now;
+        airDwellOrigin = { x: screen.x, y: screen.y };
+      }
+    }
+
+    const elapsed = now - airDwellStart;
+    airDwellProgress = Math.min(1, elapsed / AIR_DWELL_MS);
+    airUpdateCrosshair(airIndexAnchor.x, airIndexAnchor.y, true, true);
+
+    if (airDwellProgress >= 1) {
+      airDwellFired = true;
+      airDispatchClick(airIndexAnchor.x, airIndexAnchor.y);
+      airSetStatus('Clic', false);
+      airDwellStart = 0;
+      airDwellProgress = 0;
+      airDwellOrigin = null;
+    }
+
+    return { dwellProgress: airDwellProgress, hasLeft, hasRight };
+  }
+
+
+
+  function airLoop() {
+    if (!airRunning) return;
+    airRaf = requestAnimationFrame(airLoop);
+    airFingerprintPhase += 0.08;
+
+    if (!airHandLandmarker || !airVideo || airVideo.readyState < 2) return;
+    const now = performance.now();
+    if (airVideo.currentTime === airLastVideoTime) return;
+    airLastVideoTime = airVideo.currentTime;
+
+    let results;
+    try { results = airHandLandmarker.detectForVideo(airVideo, now); }
+    catch (e) { return; }
+
+    const raw = results.landmarks || [];
+    if (!raw.length) {
+      if (airCtx && airCanvas) airCtx.clearRect(0, 0, airCanvas.width, airCanvas.height);
+      airIndexAnchor = null;
+      airDwellStart = 0;
+      airDwellProgress = 0;
+      airDwellFired = false;
+      airDwellOrigin = null;
+      airSmoothedHands = [];
+      airLastHandedness = [];
+      airUpdateCrosshair(0, 0, false, false);
+      return;
+    }
+
+
+    const handednessList = airParseHandedness(results);
+    airLastHandedness = handednessList;
+    const hands = airSmoothHands(raw);
+    const { dwellProgress, hasLeft, hasRight } = airUpdateDwellClick(hands, handednessList);
+    airDrawHands(hands, handednessList, dwellProgress, hasLeft, hasRight);
+  }
+
+
+
+
+  window.addEventListener('resize', () => { if (airRunning) airResizeCanvas(); });
+
+  document.getElementById('toggleHandGesture')?.addEventListener('change', (e) => {
+    setHandGestureEnabled(e.target.checked);
+  });
+
   async function boot() {
     // Sincronizar con Supabase antes de pintar la UI (fuente de verdad multi-dispositivo)
     try {
@@ -4923,6 +5706,7 @@
     } catch (e) {
       console.warn('Cloud sync init failed, using local only', e);
     }
+
 
     document.body.classList.remove('theme-blue','theme-pink','theme-green','theme-purple','theme-red','theme-gold','theme-teal','theme-silver','theme-steel','theme-crimson','theme-orange','theme-forest','theme-violet','theme-graphite','theme-slate','theme-champagne','theme-ivory','theme-navy','theme-corpblue','theme-sage','theme-deeptl','theme-bronze','theme-terra','theme-burgundy');
     document.body.classList.add(settings.THEME);
@@ -5009,12 +5793,18 @@
       resetIdleTimer();
     }
     updateMicToggleUI();
+    updateHandGestureUI();
+
+    if (settings.HAND_GESTURE_ENABLED) {
+      setTimeout(() => { startAirGesture().then(updateHandGestureUI); }, 1200);
+    }
 
     console.log('⏱️ Auto-descanso configurado:', settings.IDLE_TIMEOUT_MS, 'ms');
     console.log('💡 Abre la consola y observa: verás "🛌 Auto-descanso tras X ms" cuando se active.');
   }
 
   boot();
+
 
 </script>
 </body>

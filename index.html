@@ -2099,13 +2099,15 @@
   }
   #airCanvas {
     position: fixed; inset: 0; width: 100vw; height: 100vh;
-    z-index: 250; pointer-events: none;
+    /* Por encima del modal de recordatorios (z 500) para ver el orbe al apuntar */
+    z-index: 560; pointer-events: none;
     transform: scaleX(-1);
   }
   .air-hud-status {
     position: fixed; bottom: 62px; left: 50%;
     transform: translateX(-50%);
-    z-index: 260;
+    z-index: 570;
+
     font-size: 0.62rem; letter-spacing: 1.5px; text-transform: uppercase;
     color: rgba(var(--orb-glow), 0.8);
     text-shadow: 0 0 12px rgba(var(--orb-glow), 0.5);
@@ -2125,11 +2127,12 @@
     position: fixed;
     width: 28px; height: 28px;
     margin-left: -14px; margin-top: -14px;
-    z-index: 255;
+    z-index: 565;
     pointer-events: none;
     opacity: 0;
     transition: opacity 0.12s ease;
   }
+
   #airCrosshair.visible { opacity: 1; }
   #airCrosshair.ready {
     filter: drop-shadow(0 0 8px rgba(var(--orb-glow), 1));
@@ -3549,7 +3552,12 @@
     if (!alert) return;
     alert.classList.remove('visible');
     alert.dataset.remId = '';
+    document.querySelectorAll('.reminder-alert-close, .reminder-alert-snooze').forEach(b => {
+      b.style.outline = '';
+      b.style.outlineOffset = '';
+    });
   }
+
 
   function showReminderAlert(rem, queueRemaining = 0) {
     const alert = document.getElementById('reminderAlert');
@@ -5619,28 +5627,47 @@
     return preferred || found;
   }
 
-  /** Hit-test por rectángulo (más fiable que elementFromPoint sobre el modal) */
-  function airHitReminderButton(screenX, screenY) {
-    const alert = document.getElementById('reminderAlert');
-    if (!alert || !alert.classList.contains('visible')) return null;
-    const pad = 28;
-    const test = (el) => {
-      if (!el) return false;
-      const r = el.getBoundingClientRect();
-      return screenX >= r.left - pad && screenX <= r.right + pad &&
-             screenY >= r.top - pad && screenY <= r.bottom + pad;
-    };
-    const ack = document.getElementById('reminderAlertClose');
-    const snooze = document.getElementById('reminderAlertSnooze');
-    if (test(ack)) return { el: ack, action: 'reminder-ack' };
-    if (test(snooze)) return { el: snooze, action: 'reminder-snooze' };
-    return null;
-  }
-
   function airIsReminderAlertOpen() {
     const alert = document.getElementById('reminderAlert');
     return !!(alert && alert.classList.contains('visible'));
   }
+
+  /** Hit-test recordatorio: rect ampliado + botón más cercano (tolerante cámara/móvil) */
+  function airHitReminderButton(screenX, screenY) {
+    if (!airIsReminderAlertOpen()) return null;
+    const ack = document.getElementById('reminderAlertClose');
+    const snooze = document.getElementById('reminderAlertSnooze');
+    const candidates = [];
+    if (ack) candidates.push({ el: ack, action: 'reminder-ack' });
+    if (snooze) candidates.push({ el: snooze, action: 'reminder-snooze' });
+    if (!candidates.length) return null;
+
+    const pad = 56;
+    let bestInside = null, bestInsideDist = Infinity;
+    let bestNear = null, bestNearDist = Infinity;
+
+    for (const c of candidates) {
+      const r = c.el.getBoundingClientRect();
+      const cx = r.left + r.width / 2;
+      const cy = r.top + r.height / 2;
+      const dist = Math.hypot(screenX - cx, screenY - cy);
+      const inside =
+        screenX >= r.left - pad && screenX <= r.right + pad &&
+        screenY >= r.top - pad && screenY <= r.bottom + pad;
+      if (inside && dist < bestInsideDist) {
+        bestInsideDist = dist;
+        bestInside = c;
+      }
+      if (dist < bestNearDist) {
+        bestNearDist = dist;
+        bestNear = c;
+      }
+    }
+    if (bestInside) return bestInside;
+    if (bestNear && bestNearDist <= 140) return bestNear;
+    return null;
+  }
+
 
   function airDispatchClick(screenX, screenY) {
     const now = performance.now();
@@ -5871,12 +5898,13 @@
       airIndexAnchor.y = airIndexAnchor.y * 0.35 + screen.y * 0.65;
     }
 
-    // Con el aviso de recordatorio abierto: basta 1 índice (derecho) sobre Confirmar/Posponer
+    // Aviso de recordatorio abierto: 1 índice basta (no hace falta la mano izquierda)
     const remOpen = airIsReminderAlertOpen();
-    const overRemBtn = remOpen && airHitReminderButton(airIndexAnchor.x, airIndexAnchor.y);
-    const canCharge = hasLeft || !!overRemBtn;
+    const overRemBtn = remOpen ? airHitReminderButton(airIndexAnchor.x, airIndexAnchor.y) : null;
+    // Con modal abierto siempre se puede cargar si hay índice derecho
+    const canCharge = hasLeft || remOpen;
+    const dwellMs = remOpen ? 2000 : AIR_DWELL_MS; // 2 s en recordatorios (más ágil)
 
-    // Solo apunta (dorado): un índice y no está sobre botones del recordatorio
     if (!canCharge) {
       airDwellStart = 0;
       airDwellProgress = 0;
@@ -5886,23 +5914,22 @@
       return { dwellProgress: 0, hasLeft, hasRight };
     }
 
-    // Ya se hizo clic en esta sesión: con 2 manos espera a quitar el izq.;
-    // con solo recordatorio, reinicia al salir del botón
     if (airDwellFired) {
-      if (hasLeft) {
+      if (hasLeft && !remOpen) {
         airDwellProgress = 0;
         airUpdateCrosshair(airIndexAnchor.x, airIndexAnchor.y, true, false);
         return { dwellProgress: 0, hasLeft, hasRight };
       }
-      if (overRemBtn) {
+      // Tras un clic en recordatorio, exigir salir del botón o esperar un momento
+      if (remOpen && overRemBtn) {
         airDwellProgress = 0;
-        airUpdateCrosshair(airIndexAnchor.x, airIndexAnchor.y, true, false);
+        airUpdateCrosshair(airIndexAnchor.x, airIndexAnchor.y, true, !!overRemBtn);
         return { dwellProgress: 0, hasLeft: true, hasRight };
       }
       airDwellFired = false;
     }
 
-    // Carga de 3 s (anillo rojo)
+    // Carga (anillo rojo)
     if (!airDwellStart || !airDwellOrigin) {
       airDwellStart = now;
       airDwellOrigin = { x: screen.x, y: screen.y };
@@ -5912,32 +5939,58 @@
         airDwellStart = now;
         airDwellOrigin = { x: screen.x, y: screen.y };
       }
-      // Si salió del botón de recordatorio y no hay mano izq., cancelar carga
-      if (remOpen && !hasLeft && !overRemBtn) {
-        airDwellStart = 0;
-        airDwellProgress = 0;
-        airDwellOrigin = null;
-        airUpdateCrosshair(airIndexAnchor.x, airIndexAnchor.y, true, false);
-        return { dwellProgress: 0, hasLeft, hasRight };
-      }
+    }
+
+    // Feedback: si está sobre un botón, resaltarlo
+    if (remOpen && overRemBtn && overRemBtn.el) {
+      document.querySelectorAll('.reminder-alert-close, .reminder-alert-snooze').forEach(b => {
+        b.style.outline = '';
+        b.style.outlineOffset = '';
+      });
+      overRemBtn.el.style.outline = '2px solid rgba(255,90,90,0.9)';
+      overRemBtn.el.style.outlineOffset = '3px';
+    } else if (remOpen) {
+      document.querySelectorAll('.reminder-alert-close, .reminder-alert-snooze').forEach(b => {
+        b.style.outline = '';
+        b.style.outlineOffset = '';
+      });
     }
 
     const elapsed = now - airDwellStart;
-    airDwellProgress = Math.min(1, elapsed / AIR_DWELL_MS);
+    airDwellProgress = Math.min(1, elapsed / dwellMs);
     airUpdateCrosshair(airIndexAnchor.x, airIndexAnchor.y, true, true);
 
     if (airDwellProgress >= 1) {
       airDwellFired = true;
-      airDispatchClick(airIndexAnchor.x, airIndexAnchor.y);
-      airSetStatus('Clic', false);
+      // Forzar acción de recordatorio si el modal está abierto
+      if (remOpen) {
+        const hit = overRemBtn || airHitReminderButton(airIndexAnchor.x, airIndexAnchor.y);
+        if (hit && hit.action === 'reminder-ack') {
+          acknowledgeReminderAlert();
+          airSetStatus('Recordatorio confirmado', false);
+        } else if (hit && hit.action === 'reminder-snooze') {
+          snoozeReminderAlert();
+          airSetStatus('Pospuesto 10 min', false);
+        } else {
+          airSetStatus('Apunta a Confirmar o Posponer', false);
+          airDwellFired = false; // permitir reintentar
+        }
+        document.querySelectorAll('.reminder-alert-close, .reminder-alert-snooze').forEach(b => {
+          b.style.outline = '';
+          b.style.outlineOffset = '';
+        });
+      } else {
+        airDispatchClick(airIndexAnchor.x, airIndexAnchor.y);
+        airSetStatus('Clic', false);
+      }
       airDwellStart = 0;
       airDwellProgress = 0;
       airDwellOrigin = null;
     }
 
-    // Para el dibujo: si carga por recordatorio, mostrar modo charging
     return { dwellProgress: airDwellProgress, hasLeft: canCharge, hasRight };
   }
+
 
 
 

@@ -2260,9 +2260,10 @@
       <div class="reminder-alert-time" id="reminderAlertTime"></div>
       <div class="reminder-alert-queue" id="reminderAlertQueue" hidden></div>
       <div class="reminder-alert-actions">
-        <button type="button" class="reminder-alert-snooze" id="reminderAlertSnooze">Posponer 10 min</button>
-        <button type="button" class="reminder-alert-close" id="reminderAlertClose">Confirmar lectura</button>
+        <button type="button" class="reminder-alert-snooze" id="reminderAlertSnooze" data-air-action="reminder-snooze">Posponer 10 min</button>
+        <button type="button" class="reminder-alert-close" id="reminderAlertClose" data-air-action="reminder-ack">Confirmar lectura</button>
       </div>
+
     </div>
   </div>
 
@@ -3191,11 +3192,24 @@
   const REMINDER_SNOOZE_MS = 10 * 60 * 1000; // 10 minutos
   let reminderAlertQueue = []; // ids pendientes de mostrar en secuencia
 
+  /** Pendientes = no confirmados de lectura (incluye pospuestos y vencidos) */
   function getPendingReminders() {
     return reminders
       .filter(r => !r.done && !r.dismissed)
-      .sort((a, b) => a.at - b.at);
+      .sort((a, b) => {
+        // Primero vencidos sin posponer, luego pospuestos, luego futuros
+        const now = Date.now();
+        const rank = (r) => {
+          if (r.at <= now && !(r.snoozeUntil && r.snoozeUntil > now)) return 0;
+          if (r.snoozeUntil && r.snoozeUntil > now) return 1;
+          return 2;
+        };
+        const ra = rank(a), rb = rank(b);
+        if (ra !== rb) return ra - rb;
+        return a.at - b.at;
+      });
   }
+
 
   /** Vencidos que deben mostrarse ahora (no confirmados; respetan posponer / reaviso 10 min) */
   function getRemindersNeedingAlert(now = Date.now()) {
@@ -3581,7 +3595,7 @@
     setTimeout(() => processReminderAlertQueue(), 320);
   }
 
-  /** Posponer: vuelve a avisar en 10 minutos */
+  /** Posponer: NO elimina el recordatorio; solo retrasa el aviso 10 min */
   function snoozeReminderAlert() {
     const alert = document.getElementById('reminderAlert');
     if (!alert) return;
@@ -3592,10 +3606,12 @@
         const now = Date.now();
         rem.snoozeUntil = now + REMINDER_SNOOZE_MS;
         rem.lastNotifiedAt = now;
+        // Explicitamente NO archivar: sigue en Oculto y en descanso
         rem.done = false;
         rem.dismissed = false;
         saveReminders();
       }
+      // Solo sale de la cola de alertas actuales; permanece en listas
       reminderAlertQueue = reminderAlertQueue.filter(qid => qid !== id);
     }
     hideReminderAlertUI();
@@ -3603,6 +3619,7 @@
     renderRestReminders();
     setTimeout(() => processReminderAlertQueue(), 320);
   }
+
 
   /** Compat: nombre antiguo usado por listeners */
   function dismissReminderAlert() {
@@ -5531,14 +5548,19 @@
     while (p && p !== document.documentElement) {
       if (p.matches && p.matches(selector)) return p;
       if (p.classList) {
-        const sel = selector.replace(/^\./, '');
-        if (selector.startsWith('.') && p.classList.contains(sel)) return p;
+        if (selector.startsWith('.')) {
+          const sel = selector.slice(1);
+          if (p.classList.contains(sel)) return p;
+        }
         if (selector.startsWith('[') && selector.includes('data-air-url') && p.dataset && p.dataset.airUrl) return p;
+        if (selector.startsWith('[') && selector.includes('data-air-action') && p.getAttribute && p.getAttribute('data-air-action')) return p;
       }
+      if (selector.startsWith('#') && p.id === selector.slice(1)) return p;
       p = p.parentElement || p.parentNode;
     }
     return null;
   }
+
 
   /** Busca elemento bajo el punto (radio amplio para anillo y apps) */
   function airElementAt(screenX, screenY) {
@@ -5556,6 +5578,9 @@
       [0, -36], [0, 36], [-36, 0], [36, 0]
     ];
     const prefer = (el) =>
+      airClosest(el, '[data-air-action]') ||
+      airClosest(el, '.reminder-alert-close') ||
+      airClosest(el, '.reminder-alert-snooze') ||
       airClosest(el, '.ring-seg-group') ||
       airClosest(el, '[data-air-url]') ||
       airClosest(el, '.module-header') ||
@@ -5571,6 +5596,7 @@
       airClosest(el, '.settings-button') ||
       airClosest(el, '.fullscreen-button') ||
       airClosest(el, '.hidden-app-card');
+
 
     let found = null;
     let preferred = null;
@@ -5604,8 +5630,36 @@
     airGestureClickLock = true;
     const unlock = () => { setTimeout(() => { airGestureClickLock = false; }, 250); };
 
+    // --- Recordatorios: Confirmar / Posponer (prioridad alta) ---
+    const remActionEl =
+      airClosest(el, '[data-air-action]') ||
+      airClosest(el, '.reminder-alert-close') ||
+      airClosest(el, '.reminder-alert-snooze') ||
+      (el.id === 'reminderAlertClose' || el.id === 'reminderAlertSnooze' ? el : null);
+    if (remActionEl) {
+      const action = remActionEl.getAttribute?.('data-air-action') ||
+        (remActionEl.id === 'reminderAlertClose' || remActionEl.classList?.contains('reminder-alert-close')
+          ? 'reminder-ack'
+          : remActionEl.id === 'reminderAlertSnooze' || remActionEl.classList?.contains('reminder-alert-snooze')
+            ? 'reminder-snooze'
+            : '');
+      if (action === 'reminder-ack') {
+        acknowledgeReminderAlert();
+        airSetStatus('Recordatorio confirmado', false);
+        unlock();
+        return;
+      }
+      if (action === 'reminder-snooze') {
+        snoozeReminderAlert();
+        airSetStatus('Pospuesto 10 min', false);
+        unlock();
+        return;
+      }
+    }
+
     // --- Apps (panel lateral, HUD, ocultas) ---
     const appEl = airClosest(el, '[data-air-url]');
+
     if (appEl && appEl.dataset && appEl.dataset.airUrl) {
       airSetStatus(`Abriendo ${appEl.dataset.airLabel || 'app'}…`, false);
       openAppUrl(appEl.dataset.airUrl, appEl.dataset.airLabel || '', { speakName: true });
@@ -5694,7 +5748,7 @@
    * - 2 manos: el índice IZQUIERDO activa el temporizador;
    *   el índice DERECHO es el cursor; 3 s quieto → clic.
    */
-  const AIR_DWELL_MS = 3000;
+  const AIR_DWELL_MS = 1500;
   const AIR_DWELL_MOVE_MAX = 42; // px pantalla; si el derecho se mueve más, reinicia
   let airDwellStart = 0;
   let airDwellProgress = 0;

@@ -1368,21 +1368,43 @@
     color: rgba(255,255,255,0.5);
     margin-bottom: 20px;
   }
-  .reminder-alert-close {
-    padding: 10px 28px;
+  .reminder-alert-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    justify-content: center;
+  }
+  .reminder-alert-close,
+  .reminder-alert-snooze {
+    padding: 10px 20px;
     border-radius: 10px;
     border: 1px solid rgba(var(--orb-glow), 0.5);
     background: linear-gradient(135deg, rgba(var(--orb-glow), 0.35), rgba(var(--orb-glow), 0.15));
     color: #fff;
     font-weight: 700;
-    font-size: 0.8rem;
-    letter-spacing: 1px;
+    font-size: 0.75rem;
+    letter-spacing: 0.8px;
     cursor: pointer;
     text-transform: uppercase;
   }
   .reminder-alert-close:hover {
     background: linear-gradient(135deg, rgba(var(--orb-glow), 0.55), rgba(var(--orb-glow), 0.25));
   }
+  .reminder-alert-snooze {
+    border-color: rgba(255,255,255,0.25);
+    background: rgba(255,255,255,0.08);
+  }
+  .reminder-alert-snooze:hover {
+    background: rgba(255,255,255,0.14);
+    border-color: rgba(var(--orb-glow), 0.45);
+  }
+  .reminder-alert-queue {
+    font-size: 0.65rem;
+    color: rgba(255,255,255,0.45);
+    margin-bottom: 14px;
+    letter-spacing: 0.5px;
+  }
+
 
   .reminder-form {
     display: flex;
@@ -2236,9 +2258,14 @@
       <div class="reminder-alert-title">Recordatorio</div>
       <div class="reminder-alert-msg" id="reminderAlertMsg">—</div>
       <div class="reminder-alert-time" id="reminderAlertTime"></div>
-      <button type="button" class="reminder-alert-close" id="reminderAlertClose">Cerrar</button>
+      <div class="reminder-alert-queue" id="reminderAlertQueue" hidden></div>
+      <div class="reminder-alert-actions">
+        <button type="button" class="reminder-alert-snooze" id="reminderAlertSnooze">Posponer 10 min</button>
+        <button type="button" class="reminder-alert-close" id="reminderAlertClose">Confirmar lectura</button>
+      </div>
     </div>
   </div>
+
 
   <div class="action-toast" id="actionToast">
     <div class="action-toast-icon" id="actionToastIcon">✨</div>
@@ -3161,26 +3188,49 @@
     }, 620);
   }
 
+  const REMINDER_SNOOZE_MS = 10 * 60 * 1000; // 10 minutos
+  let reminderAlertQueue = []; // ids pendientes de mostrar en secuencia
+
   function getPendingReminders() {
     return reminders
       .filter(r => !r.done && !r.dismissed)
       .sort((a, b) => a.at - b.at);
   }
 
+  /** Vencidos que deben mostrarse ahora (no confirmados; respetan posponer / reaviso 10 min) */
+  function getRemindersNeedingAlert(now = Date.now()) {
+    return reminders
+      .filter(r => {
+        if (r.done || r.dismissed) return false;
+        if (r.at > now) return false; // aún no toca
+        if (r.snoozeUntil && r.snoozeUntil > now) return false;
+        // Si ya se mostró, reavisar solo tras 10 min sin confirmar
+        if (r.lastNotifiedAt && (now - r.lastNotifiedAt) < REMINDER_SNOOZE_MS) return false;
+        return true;
+      })
+      .sort((a, b) => a.at - b.at);
+  }
+
+
   function renderRestReminders() {
     const list = document.getElementById('restRemindersList');
     if (!list) return;
-    const pending = getPendingReminders().filter(r => r.at > Date.now() - 60000);
+    const pending = getPendingReminders();
     if (!pending.length) {
       list.innerHTML = '<div class="rest-empty">Sin recordatorios pendientes</div>';
       return;
     }
+    const now = Date.now();
     list.innerHTML = pending.slice(0, 8).map(r => {
       const d = new Date(r.at);
       const when = d.toLocaleString('es-ES', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
-      return `<div class="rest-reminder-item"><i class="fas fa-bell"></i><div><div>${r.title}</div><div class="rest-reminder-time">${when}</div></div></div>`;
+      let extra = '';
+      if (r.snoozeUntil && r.snoozeUntil > now) extra = ' · pospuesto';
+      else if (r.at <= now) extra = ' · pendiente de confirmar';
+      return `<div class="rest-reminder-item"><i class="fas fa-bell"></i><div><div>${escapeHtml(r.title)}</div><div class="rest-reminder-time">${when}${extra}</div></div></div>`;
     }).join('');
   }
+
 
   function renderSettingsReminders() {
     const list = document.getElementById('reminderList');
@@ -3190,19 +3240,27 @@
       list.innerHTML = '<div class="rest-empty" style="padding:8px">No hay recordatorios</div>';
       return;
     }
+    const now = Date.now();
     list.innerHTML = pending.map(r => {
       const d = new Date(r.at);
       const when = d.toLocaleString('es-ES', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' });
       const dateVal = d.toISOString().slice(0, 10);
       const timeVal = String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0');
+      let status = '';
+      if (r.snoozeUntil && r.snoozeUntil > now) {
+        status = ' · pospuesto hasta ' + new Date(r.snoozeUntil).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' });
+      } else if (r.at <= now) {
+        status = ' · por confirmar';
+      }
       return `<div class="reminder-list-item" data-id="${r.id}">
         <div class="ri-text">
           <div class="ri-title" data-id="${r.id}" title="Doble clic para editar">${escapeHtml(r.title)}</div>
-          <div class="ri-time" data-id="${r.id}" data-date="${dateVal}" data-time="${timeVal}" title="Doble clic para editar fecha/hora">${when}</div>
+          <div class="ri-time" data-id="${r.id}" data-date="${dateVal}" data-time="${timeVal}" title="Doble clic para editar fecha/hora">${when}${status}</div>
         </div>
         <button type="button" class="ri-del" data-id="${r.id}" title="Eliminar"><i class="fas fa-times"></i></button>
       </div>`;
     }).join('');
+
     list.querySelectorAll('.ri-del').forEach(btn => {
       btn.addEventListener('click', (e) => {
         e.stopPropagation();
@@ -3447,7 +3505,9 @@
       title: titleClean,
       at: at.getTime(),
       done: false,
-      dismissed: false
+      dismissed: false,
+      lastNotifiedAt: null,
+      snoozeUntil: null
     };
     reminders.push(item);
     saveReminders();
@@ -3458,48 +3518,134 @@
 
   function deleteReminder(id) {
     reminders = reminders.filter(r => r.id !== id);
+    reminderAlertQueue = reminderAlertQueue.filter(qid => qid !== id);
     saveReminders();
     renderSettingsReminders();
     renderRestReminders();
   }
 
-  function showReminderAlert(rem) {
+  function hideReminderAlertUI() {
+    const alert = document.getElementById('reminderAlert');
+    if (!alert) return;
+    alert.classList.remove('visible');
+    alert.dataset.remId = '';
+  }
+
+  function showReminderAlert(rem, queueRemaining = 0) {
     const alert = document.getElementById('reminderAlert');
     const msg = document.getElementById('reminderAlertMsg');
     const time = document.getElementById('reminderAlertTime');
-    if (!alert) return;
+    const queueEl = document.getElementById('reminderAlertQueue');
+    if (!alert || !rem) return;
+    // Persistencia: marcar aviso, NO marcar como leído
+    rem.lastNotifiedAt = Date.now();
+    rem.snoozeUntil = null;
+    saveReminders();
+
     msg.textContent = rem.title;
     const d = new Date(rem.at);
     time.textContent = d.toLocaleString('es-ES', { weekday: 'long', day: 'numeric', month: 'long', hour: '2-digit', minute: '2-digit' });
     alert.dataset.remId = rem.id;
+    if (queueEl) {
+      if (queueRemaining > 0) {
+        queueEl.hidden = false;
+        queueEl.textContent = `Pendientes después de este: ${queueRemaining}`;
+      } else {
+        queueEl.hidden = true;
+        queueEl.textContent = '';
+      }
+    }
     alert.classList.add('visible');
-    speak(`Recordatorio: ${rem.title}`);
+    try { speak(`Recordatorio: ${rem.title}`); } catch (e) {}
   }
 
-  function dismissReminderAlert() {
+  /** Confirmar lectura: solo así se archiva y no vuelve a salir */
+  function acknowledgeReminderAlert() {
     const alert = document.getElementById('reminderAlert');
     if (!alert) return;
     const id = alert.dataset.remId;
     if (id) {
       const rem = reminders.find(r => r.id === id);
-      if (rem) { rem.dismissed = true; rem.done = true; saveReminders(); }
+      if (rem) {
+        rem.done = true;
+        rem.dismissed = true;
+        rem.snoozeUntil = null;
+        saveReminders();
+      }
+      reminderAlertQueue = reminderAlertQueue.filter(qid => qid !== id);
     }
-    alert.classList.remove('visible');
+    hideReminderAlertUI();
     renderSettingsReminders();
     renderRestReminders();
+    // Siguiente de la cola
+    setTimeout(() => processReminderAlertQueue(), 320);
   }
 
-  function checkRemindersDue() {
-    const now = Date.now();
+  /** Posponer: vuelve a avisar en 10 minutos */
+  function snoozeReminderAlert() {
+    const alert = document.getElementById('reminderAlert');
+    if (!alert) return;
+    const id = alert.dataset.remId;
+    if (id) {
+      const rem = reminders.find(r => r.id === id);
+      if (rem) {
+        const now = Date.now();
+        rem.snoozeUntil = now + REMINDER_SNOOZE_MS;
+        rem.lastNotifiedAt = now;
+        rem.done = false;
+        rem.dismissed = false;
+        saveReminders();
+      }
+      reminderAlertQueue = reminderAlertQueue.filter(qid => qid !== id);
+    }
+    hideReminderAlertUI();
+    renderSettingsReminders();
+    renderRestReminders();
+    setTimeout(() => processReminderAlertQueue(), 320);
+  }
+
+  /** Compat: nombre antiguo usado por listeners */
+  function dismissReminderAlert() {
+    acknowledgeReminderAlert();
+  }
+
+  function processReminderAlertQueue() {
     const alert = document.getElementById('reminderAlert');
     if (alert && alert.classList.contains('visible')) return;
-    const due = reminders.find(r => !r.done && !r.dismissed && r.at <= now && r.at > now - 5 * 60 * 1000);
-    if (due) {
-      due.done = true;
-      saveReminders();
-      showReminderAlert(due);
+
+    // Limpiar ids inválidos de la cola
+    reminderAlertQueue = reminderAlertQueue.filter(id => {
+      const r = reminders.find(x => x.id === id);
+      return r && !r.done && !r.dismissed;
+    });
+
+    // Si la cola está vacía, cargar todos los que tocan ahora
+    if (!reminderAlertQueue.length) {
+      reminderAlertQueue = getRemindersNeedingAlert().map(r => r.id);
     }
+    if (!reminderAlertQueue.length) return;
+
+    const id = reminderAlertQueue.shift();
+    const rem = reminders.find(r => r.id === id);
+    if (!rem || rem.done || rem.dismissed) {
+      processReminderAlertQueue();
+      return;
+    }
+    const now = Date.now();
+    if (rem.snoozeUntil && rem.snoozeUntil > now) {
+      processReminderAlertQueue();
+      return;
+    }
+    showReminderAlert(rem, reminderAlertQueue.length);
   }
+
+
+  function checkRemindersDue() {
+    const alert = document.getElementById('reminderAlert');
+    if (alert && alert.classList.contains('visible')) return;
+    processReminderAlertQueue();
+  }
+
 
   let reminderCapture = null;
 
@@ -5033,8 +5179,19 @@
   });
   document.getElementById('reminderAlertClose')?.addEventListener('click', (e) => {
     e.stopPropagation();
-    dismissReminderAlert();
+    acknowledgeReminderAlert();
   });
+  document.getElementById('reminderAlertSnooze')?.addEventListener('click', (e) => {
+    e.stopPropagation();
+    snoozeReminderAlert();
+  });
+  // No cerrar al tocar el fondo: exige confirmar o posponer
+  document.getElementById('reminderAlert')?.addEventListener('click', (e) => {
+    if (e.target && e.target.id === 'reminderAlert') {
+      e.stopPropagation();
+    }
+  });
+
 
   document.getElementById('restPhraseAddBtn')?.addEventListener('click', () => {
     const input = document.getElementById('restPhraseInput');
@@ -5537,7 +5694,7 @@
    * - 2 manos: el índice IZQUIERDO activa el temporizador;
    *   el índice DERECHO es el cursor; 3 s quieto → clic.
    */
-  const AIR_DWELL_MS = 1500;
+  const AIR_DWELL_MS = 3000;
   const AIR_DWELL_MOVE_MAX = 42; // px pantalla; si el derecho se mueve más, reinicia
   let airDwellStart = 0;
   let airDwellProgress = 0;

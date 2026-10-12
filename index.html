@@ -3994,9 +3994,17 @@
     return candidates[0].app;
   }
 
-  /** Abre en UNA sola pestaña nueva. Nunca navega fuera de META (no location.href). */
+  /** Evita abrir la misma URL dos veces en < 2 s (AirTouch / doble disparo) */
+  const _openAppRecent = new Map();
+
+  /** Abre en UNA sola pestaña nueva. Nunca navega fuera de META. */
   function openAppUrl(url, label, { speakName = true } = {}) {
     if (!url) return;
+    const now = Date.now();
+    const last = _openAppRecent.get(url) || 0;
+    if (now - last < 2000) return;
+    _openAppRecent.set(url, now);
+
     const name = (label || '').trim();
     if (speakName && name && typeof speak === 'function') {
       try { speak(`Abro ${name}.`); } catch (e) {}
@@ -4007,33 +4015,22 @@
       setTimeout(() => { try { airGestureClickLock = prevLock; } catch (e) {} }, 200);
     };
 
-    // Solo UN método: window.open primero (1 pestaña)
+    // UN solo window.open. No usar 'noopener' en el 3er argumento:
+    // en Chrome/Edge suele devolver null aunque la pestaña SÍ se abrió,
+    // y el fallback (<a>) generaba la segunda pestaña.
     let win = null;
-    try { win = window.open(url, '_blank', 'noopener,noreferrer'); } catch (e) { win = null; }
-
-    if (win && !win.closed) {
-      unlock();
-      return;
-    }
-
-    // Respaldo SOLO si window.open fue bloqueado (no se combina con el de arriba)
-    let openedFallback = false;
     try {
-      const a = document.createElement('a');
-      a.href = url;
-      a.target = '_blank';
-      a.rel = 'noopener noreferrer';
-      a.style.cssText = 'position:fixed;left:-9999px;top:-9999px;opacity:0;pointer-events:none;';
-      a.addEventListener('click', (ev) => { ev.stopPropagation(); }, true);
-      document.body.appendChild(a);
-      a.click();
-      openedFallback = true;
-      setTimeout(() => { try { a.remove(); } catch (e) {} }, 200);
-    } catch (e) {}
+      win = window.open(url, '_blank');
+      if (win) {
+        try { win.opener = null; } catch (e) {}
+      }
+    } catch (e) {
+      win = null;
+    }
 
     unlock();
 
-    if (!openedFallback) {
+    if (!win) {
       try {
         if (typeof airSetStatus === 'function') {
           airSetStatus('Permite ventanas emergentes para abrir apps', false);
@@ -4050,6 +4047,7 @@
       } catch (e) {}
     }
   }
+
 
 
 

@@ -1376,17 +1376,23 @@
   }
   .reminder-alert-close,
   .reminder-alert-snooze {
-    padding: 10px 20px;
-    border-radius: 10px;
+    padding: 14px 22px;
+    min-width: 140px;
+    min-height: 48px;
+    border-radius: 12px;
     border: 1px solid rgba(var(--orb-glow), 0.5);
     background: linear-gradient(135deg, rgba(var(--orb-glow), 0.35), rgba(var(--orb-glow), 0.15));
     color: #fff;
     font-weight: 700;
-    font-size: 0.75rem;
+    font-size: 0.78rem;
     letter-spacing: 0.8px;
     cursor: pointer;
     text-transform: uppercase;
+    pointer-events: auto;
+    position: relative;
+    z-index: 2;
   }
+
   .reminder-alert-close:hover {
     background: linear-gradient(135deg, rgba(var(--orb-glow), 0.55), rgba(var(--orb-glow), 0.25));
   }
@@ -5613,16 +5619,33 @@
     return preferred || found;
   }
 
+  /** Hit-test por rectángulo (más fiable que elementFromPoint sobre el modal) */
+  function airHitReminderButton(screenX, screenY) {
+    const alert = document.getElementById('reminderAlert');
+    if (!alert || !alert.classList.contains('visible')) return null;
+    const pad = 28;
+    const test = (el) => {
+      if (!el) return false;
+      const r = el.getBoundingClientRect();
+      return screenX >= r.left - pad && screenX <= r.right + pad &&
+             screenY >= r.top - pad && screenY <= r.bottom + pad;
+    };
+    const ack = document.getElementById('reminderAlertClose');
+    const snooze = document.getElementById('reminderAlertSnooze');
+    if (test(ack)) return { el: ack, action: 'reminder-ack' };
+    if (test(snooze)) return { el: snooze, action: 'reminder-snooze' };
+    return null;
+  }
+
+  function airIsReminderAlertOpen() {
+    const alert = document.getElementById('reminderAlert');
+    return !!(alert && alert.classList.contains('visible'));
+  }
+
   function airDispatchClick(screenX, screenY) {
     const now = performance.now();
     if (now - airLastClickAt < 550) return;
     airLastClickAt = now;
-
-    const el = airElementAt(screenX, screenY);
-    if (!el) {
-      airSetStatus('Sin objetivo bajo el índice', false);
-      return;
-    }
 
     registerActivity();
     airFlashClick(screenX, screenY);
@@ -5630,7 +5653,31 @@
     airGestureClickLock = true;
     const unlock = () => { setTimeout(() => { airGestureClickLock = false; }, 250); };
 
-    // --- Recordatorios: Confirmar / Posponer (prioridad alta) ---
+    // --- Recordatorios PRIMERO: hit por coordenadas del botón ---
+    const remHit = airHitReminderButton(screenX, screenY);
+    if (remHit) {
+      if (remHit.action === 'reminder-ack') {
+        acknowledgeReminderAlert();
+        airSetStatus('Recordatorio confirmado', false);
+        unlock();
+        return;
+      }
+      if (remHit.action === 'reminder-snooze') {
+        snoozeReminderAlert();
+        airSetStatus('Pospuesto 10 min', false);
+        unlock();
+        return;
+      }
+    }
+
+    const el = airElementAt(screenX, screenY);
+    if (!el) {
+      airSetStatus('Sin objetivo bajo el índice', false);
+      unlock();
+      return;
+    }
+
+    // Fallback por elementFromPoint / data-air-action
     const remActionEl =
       airClosest(el, '[data-air-action]') ||
       airClosest(el, '.reminder-alert-close') ||
@@ -5656,6 +5703,7 @@
         return;
       }
     }
+
 
     // --- Apps (panel lateral, HUD, ocultas) ---
     const appEl = airClosest(el, '[data-air-url]');
@@ -5748,7 +5796,7 @@
    * - 2 manos: el índice IZQUIERDO activa el temporizador;
    *   el índice DERECHO es el cursor; 3 s quieto → clic.
    */
-  const AIR_DWELL_MS = 1500;
+  const AIR_DWELL_MS = 3000;
   const AIR_DWELL_MOVE_MAX = 42; // px pantalla; si el derecho se mueve más, reinicia
   let airDwellStart = 0;
   let airDwellProgress = 0;
@@ -5823,8 +5871,13 @@
       airIndexAnchor.y = airIndexAnchor.y * 0.35 + screen.y * 0.65;
     }
 
-    // Solo apunta: un índice (sin izquierdo activador) — al quitar el izq. se puede volver a cargar
-    if (!hasLeft) {
+    // Con el aviso de recordatorio abierto: basta 1 índice (derecho) sobre Confirmar/Posponer
+    const remOpen = airIsReminderAlertOpen();
+    const overRemBtn = remOpen && airHitReminderButton(airIndexAnchor.x, airIndexAnchor.y);
+    const canCharge = hasLeft || !!overRemBtn;
+
+    // Solo apunta (dorado): un índice y no está sobre botones del recordatorio
+    if (!canCharge) {
       airDwellStart = 0;
       airDwellProgress = 0;
       airDwellFired = false;
@@ -5833,14 +5886,23 @@
       return { dwellProgress: 0, hasLeft, hasRight };
     }
 
-    // Ya se hizo clic en esta “sesión” del índice izquierdo: esperar a que desaparezca
+    // Ya se hizo clic en esta sesión: con 2 manos espera a quitar el izq.;
+    // con solo recordatorio, reinicia al salir del botón
     if (airDwellFired) {
-      airDwellProgress = 0;
-      airUpdateCrosshair(airIndexAnchor.x, airIndexAnchor.y, true, false);
-      return { dwellProgress: 0, hasLeft, hasRight };
+      if (hasLeft) {
+        airDwellProgress = 0;
+        airUpdateCrosshair(airIndexAnchor.x, airIndexAnchor.y, true, false);
+        return { dwellProgress: 0, hasLeft, hasRight };
+      }
+      if (overRemBtn) {
+        airDwellProgress = 0;
+        airUpdateCrosshair(airIndexAnchor.x, airIndexAnchor.y, true, false);
+        return { dwellProgress: 0, hasLeft: true, hasRight };
+      }
+      airDwellFired = false;
     }
 
-    // Ambos índices: 3 s con el derecho quieto respecto al origen del dwell
+    // Carga de 3 s (anillo rojo)
     if (!airDwellStart || !airDwellOrigin) {
       airDwellStart = now;
       airDwellOrigin = { x: screen.x, y: screen.y };
@@ -5849,6 +5911,14 @@
       if (drift > AIR_DWELL_MOVE_MAX) {
         airDwellStart = now;
         airDwellOrigin = { x: screen.x, y: screen.y };
+      }
+      // Si salió del botón de recordatorio y no hay mano izq., cancelar carga
+      if (remOpen && !hasLeft && !overRemBtn) {
+        airDwellStart = 0;
+        airDwellProgress = 0;
+        airDwellOrigin = null;
+        airUpdateCrosshair(airIndexAnchor.x, airIndexAnchor.y, true, false);
+        return { dwellProgress: 0, hasLeft, hasRight };
       }
     }
 
@@ -5865,8 +5935,10 @@
       airDwellOrigin = null;
     }
 
-    return { dwellProgress: airDwellProgress, hasLeft, hasRight };
+    // Para el dibujo: si carga por recordatorio, mostrar modo charging
+    return { dwellProgress: airDwellProgress, hasLeft: canCharge, hasRight };
   }
+
 
 
 

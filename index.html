@@ -3994,40 +3994,46 @@
     return candidates[0].app;
   }
 
-  /** Abre siempre en pestaña nueva. Nunca navega fuera de META (no location.href). */
+  /** Abre en UNA sola pestaña nueva. Nunca navega fuera de META (no location.href). */
   function openAppUrl(url, label, { speakName = true } = {}) {
     if (!url) return;
     const name = (label || '').trim();
     if (speakName && name && typeof speak === 'function') {
       try { speak(`Abro ${name}.`); } catch (e) {}
     }
-    // Evitar que el clic del <a> cierre el panel de apps (listener de document)
     const prevLock = typeof airGestureClickLock !== 'undefined' ? airGestureClickLock : false;
     try { airGestureClickLock = true; } catch (e) {}
+    const unlock = () => {
+      setTimeout(() => { try { airGestureClickLock = prevLock; } catch (e) {} }, 200);
+    };
 
-    // 1) <a target=_blank> — apertura en nueva pestaña sin salir de META
+    // Solo UN método: window.open primero (1 pestaña)
+    let win = null;
+    try { win = window.open(url, '_blank', 'noopener,noreferrer'); } catch (e) { win = null; }
+
+    if (win && !win.closed) {
+      unlock();
+      return;
+    }
+
+    // Respaldo SOLO si window.open fue bloqueado (no se combina con el de arriba)
+    let openedFallback = false;
     try {
       const a = document.createElement('a');
       a.href = url;
       a.target = '_blank';
       a.rel = 'noopener noreferrer';
       a.style.cssText = 'position:fixed;left:-9999px;top:-9999px;opacity:0;pointer-events:none;';
-      // No dejar que el click burbujee al document (cerraría sideAppsPanel)
       a.addEventListener('click', (ev) => { ev.stopPropagation(); }, true);
       document.body.appendChild(a);
       a.click();
+      openedFallback = true;
       setTimeout(() => { try { a.remove(); } catch (e) {} }, 200);
     } catch (e) {}
-    // 2) window.open de respaldo
-    let win = null;
-    try { win = window.open(url, '_blank', 'noopener,noreferrer'); } catch (e) { win = null; }
 
-    setTimeout(() => {
-      try { airGestureClickLock = prevLock; } catch (e) {}
-    }, 150);
+    unlock();
 
-    if (!win || win.closed) {
-      // NO usar location.href: sacaría al usuario de META sin poder volver
+    if (!openedFallback) {
       try {
         if (typeof airSetStatus === 'function') {
           airSetStatus('Permite ventanas emergentes para abrir apps', false);
@@ -4036,7 +4042,7 @@
         const toastText = document.getElementById('actionToastText');
         const toastIcon = document.getElementById('actionToastIcon');
         if (toast && toastText) {
-          toastText.textContent = 'Permite ventanas emergentes para abrir apps';
+          toastText.textContent = 'Permite ventanas emergentes una vez en este sitio (HTTPS)';
           if (toastIcon) toastIcon.textContent = '⚠️';
           toast.classList.add('show');
           setTimeout(() => toast.classList.remove('show'), 3200);
@@ -4044,6 +4050,7 @@
       } catch (e) {}
     }
   }
+
 
 
 

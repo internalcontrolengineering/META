@@ -2465,17 +2465,30 @@
           <div class="toggle-row">
             <div>
               <div class="toggle-label">Gestos de mano (sin contacto)</div>
-              <div class="toggle-description">Solo el índice: 1 mano = apuntar (dorado). 2 manos (índice izquierdo activa) = cuenta 3 s en el índice derecho → clic. Cámara oculta.</div>
+              <div class="toggle-description">Solo el índice: 1 mano = apuntar (dorado). En PC, 2 manos (índice izquierdo activa) cargan el clic en el derecho. En móvil basta 1 índice. Tiempo configurable abajo. Cámara oculta.</div>
+
 
 
             </div>
             <label class="toggle-switch"><input type="checkbox" id="toggleHandGesture"><span class="toggle-slider"></span></label>
           </div>
           <div class="settings-hint" id="handGestureHint">La cámara está desactivada. Actívala para usar gestos sin contacto.</div>
+          <div class="settings-label" style="margin-top:14px">Tiempo del clic digital</div>
+          <div class="toggle-description" style="margin-bottom:8px">Segundos que el índice debe permanecer quieto para hacer clic. Acepta decimales (ej. 0.1). En PC hace falta el índice izquierdo para activar la cuenta; en móvil basta un índice.</div>
+          <div class="reminder-form-row" style="margin-bottom:6px">
+            <label>PC (s)
+              <input type="number" id="airDwellSecPc" class="settings-input" min="0.1" step="0.1" inputmode="decimal" title="Segundos en PC">
+            </label>
+            <label>Móvil (s)
+              <input type="number" id="airDwellSecMobile" class="settings-input" min="0.1" step="0.1" inputmode="decimal" title="Segundos en móvil">
+            </label>
+          </div>
+          <div class="settings-hint">Mínimo 0.1 s. Sin límite máximo (puedes poner valores altos). Recordatorios usan el mismo tiempo (o 2 s si es menor).</div>
         </div>
 
         <div class="settings-section">
           <div class="settings-label">Recordatorios</div>
+
 
           <div class="reminder-form">
             <input type="text" id="remTitleInput" placeholder="Tema del recordatorio" maxlength="80">
@@ -2529,7 +2542,9 @@
     IDLE_TIMEOUT_MS: 10000,
     REST_PHRASES: [],
     MIC_ENABLED: true,
-    HAND_GESTURE_ENABLED: false
+    HAND_GESTURE_ENABLED: false,
+    AIR_DWELL_SEC_PC: 1.5,
+    AIR_DWELL_SEC_MOBILE: 2.5
   };
   let settings = { ...DEFAULT_SETTINGS };
   try { const s = localStorage.getItem('meta-hud-settings'); if (s) Object.assign(settings, JSON.parse(s)); } catch (e) {}
@@ -2555,6 +2570,14 @@
   if (typeof settings.HAND_GESTURE_ENABLED !== 'boolean') {
     settings.HAND_GESTURE_ENABLED = false;
   }
+  function normalizeAirDwellSec(v, fallback) {
+    const n = parseFloat(v);
+    if (!Number.isFinite(n) || n < 0.1) return fallback;
+    return n; // sin tope máximo (valores muy altos ≈ “casi infinito”)
+  }
+  settings.AIR_DWELL_SEC_PC = normalizeAirDwellSec(settings.AIR_DWELL_SEC_PC, 1.5);
+  settings.AIR_DWELL_SEC_MOBILE = normalizeAirDwellSec(settings.AIR_DWELL_SEC_MOBILE, 2.5);
+
 
 
   const voiceSettings = { voiceName: null, rate: 1.05, pitch: 1.15, volume: 1.0 };
@@ -2598,10 +2621,13 @@
     if (!supabaseClient || applyingRemote || syncInFlight) return;
     syncInFlight = true;
     try {
-      // MIC_ENABLED y HAND_GESTURE_ENABLED son por dispositivo (no se sincronizan)
+      // MIC / gestos / tiempos de clic digital son por dispositivo (no se sincronizan)
       const settingsForCloud = { ...settings };
       delete settingsForCloud.MIC_ENABLED;
       delete settingsForCloud.HAND_GESTURE_ENABLED;
+      delete settingsForCloud.AIR_DWELL_SEC_PC;
+      delete settingsForCloud.AIR_DWELL_SEC_MOBILE;
+
 
       const payload = {
         id: APP_STATE_ID,
@@ -2634,10 +2660,15 @@
       if (row.settings && typeof row.settings === 'object') {
         const localMic = settings.MIC_ENABLED;
         const localHand = settings.HAND_GESTURE_ENABLED;
+        const localDwellPc = settings.AIR_DWELL_SEC_PC;
+        const localDwellMob = settings.AIR_DWELL_SEC_MOBILE;
         Object.assign(settings, row.settings);
-        // Micrófono y gestos son locales por dispositivo
+        // Micrófono, gestos y tiempos de clic son locales por dispositivo
         settings.MIC_ENABLED = typeof localMic === 'boolean' ? localMic : true;
         settings.HAND_GESTURE_ENABLED = typeof localHand === 'boolean' ? localHand : false;
+        settings.AIR_DWELL_SEC_PC = normalizeAirDwellSec(localDwellPc, 1.5);
+        settings.AIR_DWELL_SEC_MOBILE = normalizeAirDwellSec(localDwellMob, 2.5);
+
 
         if (!Array.isArray(settings.REST_PHRASES)) settings.REST_PHRASES = [];
         try { localStorage.setItem('meta-hud-settings', JSON.stringify(settings)); } catch (e) {}
@@ -5339,18 +5370,19 @@
     if (toggle) toggle.checked = !!settings.HAND_GESTURE_ENABLED;
     if (!hint) return;
     if (settings.HAND_GESTURE_ENABLED && airRunning) {
+      const sec = airIsMobileLike()
+        ? normalizeAirDwellSec(settings.AIR_DWELL_SEC_MOBILE, 2.5)
+        : normalizeAirDwellSec(settings.AIR_DWELL_SEC_PC, 1.5);
       hint.textContent = airIsMobileLike()
-        ? 'Móvil: 1 índice quieto ~2,5 s = clic. Puedes hacer varios clics seguidos (menú → app).'
-        : 'PC: 1 índice = apuntar · 2 índices (izq. activa) = 1,5 s en el derecho → clic.';
-
+        ? `Móvil: 1 índice quieto ~${sec} s = clic. Clics seguidos permitidos (menú → app).`
+        : `PC: 1 índice = apuntar · 2 índices (izq. activa) = ${sec} s en el derecho → clic.`;
     } else if (settings.HAND_GESTURE_ENABLED) {
-
       hint.textContent = 'Cámara activada, iniciando o esperando permiso del navegador…';
     } else {
       hint.textContent = 'La cámara está desactivada. Actívala para usar gestos sin contacto.';
     }
-
   }
+
 
   async function setHandGestureEnabled(enabled) {
     settings.HAND_GESTURE_ENABLED = !!enabled;
@@ -5883,18 +5915,32 @@
    * Clic por permanencia (dwell):
    * - Solo se dibuja el índice (orbe).
    * - 1 mano: solo apunta (orbe dorado del tema).
-   * - 2 manos: el índice IZQUIERDO activa el temporizador;
-   *   el índice DERECHO es el cursor; 1,5 s quieto → clic (PC).
+   * - 2 manos (PC): índice izquierdo activa; derecho = cursor.
+   * - Tiempos en Oculto: AIR_DWELL_SEC_PC / AIR_DWELL_SEC_MOBILE.
    */
-  const AIR_DWELL_MS = 1500; // PC: 1,5 s para clic digital
-
-  const AIR_DWELL_MOVE_MAX = 42; // px pantalla; si el derecho se mueve más, reinicia
+  const AIR_DWELL_MOVE_MAX = 42;
   let airDwellStart = 0;
   let airDwellProgress = 0;
   let airDwellFired = false;
-  let airDwellFiredAt = 0; // para reiniciar clics seguidos en móvil
+  let airDwellFiredAt = 0;
   let airDwellOrigin = null;
   let airLastHandedness = [];
+
+  function getAirDwellMs() {
+    const mobile = typeof airIsMobileLike === 'function' && airIsMobileLike();
+    const sec = mobile
+      ? normalizeAirDwellSec(settings.AIR_DWELL_SEC_MOBILE, 2.5)
+      : normalizeAirDwellSec(settings.AIR_DWELL_SEC_PC, 1.5);
+    return Math.max(100, sec * 1000);
+  }
+
+  function updateAirDwellInputsUI() {
+    const pc = document.getElementById('airDwellSecPc');
+    const mob = document.getElementById('airDwellSecMobile');
+    if (pc) pc.value = String(normalizeAirDwellSec(settings.AIR_DWELL_SEC_PC, 1.5));
+    if (mob) mob.value = String(normalizeAirDwellSec(settings.AIR_DWELL_SEC_MOBILE, 2.5));
+  }
+
 
 
 
@@ -5984,7 +6030,10 @@
     const overRemBtn = remOpen ? airHitReminderButton(airIndexAnchor.x, airIndexAnchor.y) : null;
     // PC: 2 índices (izq. activa). Móvil / recordatorio: 1 índice basta
     const canCharge = hasLeft || remOpen || mobile;
-    const dwellMs = remOpen ? 2000 : (mobile ? 2500 : AIR_DWELL_MS);
+    const configuredMs = getAirDwellMs();
+    // Recordatorios: al menos el tiempo configurado (mín. práctico 0.5 s si el usuario puso muy bajo)
+    const dwellMs = remOpen ? Math.max(configuredMs, 500) : configuredMs;
+
 
     if (!canCharge) {
       airDwellStart = 0;
@@ -6135,6 +6184,26 @@
     setHandGestureEnabled(e.target.checked);
   });
 
+  function commitAirDwellInput(which) {
+    const pcEl = document.getElementById('airDwellSecPc');
+    const mobEl = document.getElementById('airDwellSecMobile');
+    if (which === 'pc' && pcEl) {
+      settings.AIR_DWELL_SEC_PC = normalizeAirDwellSec(pcEl.value, 1.5);
+      pcEl.value = String(settings.AIR_DWELL_SEC_PC);
+    }
+    if (which === 'mobile' && mobEl) {
+      settings.AIR_DWELL_SEC_MOBILE = normalizeAirDwellSec(mobEl.value, 2.5);
+      mobEl.value = String(settings.AIR_DWELL_SEC_MOBILE);
+    }
+    saveSettings();
+    updateHandGestureUI();
+  }
+  document.getElementById('airDwellSecPc')?.addEventListener('change', () => commitAirDwellInput('pc'));
+  document.getElementById('airDwellSecPc')?.addEventListener('blur', () => commitAirDwellInput('pc'));
+  document.getElementById('airDwellSecMobile')?.addEventListener('change', () => commitAirDwellInput('mobile'));
+  document.getElementById('airDwellSecMobile')?.addEventListener('blur', () => commitAirDwellInput('mobile'));
+
+
   async function boot() {
     // Sincronizar con Supabase antes de pintar la UI (fuente de verdad multi-dispositivo)
     try {
@@ -6230,8 +6299,10 @@
     }
     updateMicToggleUI();
     updateHandGestureUI();
+    if (typeof updateAirDwellInputsUI === 'function') updateAirDwellInputsUI();
 
     if (settings.HAND_GESTURE_ENABLED) {
+
       setTimeout(() => { startAirGesture().then(updateHandGestureUI); }, 1200);
     }
 

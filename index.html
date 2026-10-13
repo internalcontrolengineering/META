@@ -2149,33 +2149,28 @@
   }
   #airCrosshair svg { width: 100%; height: 100%; display: block; }
 
-  /* Orbe DOM (solo sobre modal recordatorio): punto dorado limpio, sin burbuja */
+  /* Orbe DOM sobre modal: solo punto, sin halo */
   #airPointerOrb {
     position: fixed;
-    width: 22px; height: 22px;
-    margin-left: -11px; margin-top: -11px;
+    width: 20px; height: 20px;
+    margin-left: -10px; margin-top: -10px;
     border-radius: 50%;
     pointer-events: none;
     z-index: 100011;
     opacity: 0;
-    transition: opacity 0.12s ease, background 0.15s ease;
-    background: radial-gradient(circle at 35% 30%,
-      rgba(255, 245, 200, 0.95) 0%,
-      rgba(212, 175, 55, 0.95) 45%,
-      rgba(212, 175, 55, 0.7) 100%);
-    border: 1.5px solid rgba(255, 230, 150, 0.9);
+    transition: opacity 0.1s ease, background 0.12s ease;
+    background: rgba(212, 175, 55, 0.95);
+    border: none;
     box-shadow: none;
   }
   #airPointerOrb.visible { opacity: 1; }
   #airPointerOrb.charging {
-    background: radial-gradient(circle at 35% 30%,
-      rgba(255, 230, 230, 0.95) 0%,
-      rgba(255, 55, 55, 0.95) 45%,
-      rgba(255, 55, 55, 0.75) 100%);
-    border-color: rgba(255, 120, 120, 0.95);
+    background: rgba(255, 50, 50, 0.95);
+    border: none;
     box-shadow: none;
     animation: none;
   }
+
 
 </style>
 
@@ -5579,58 +5574,34 @@
    * progress: 0..1 cuando charging
    */
   function airDrawIndexOrb(ctx, x, y, mode, progress) {
-    // Dorado fijo del puntero (no cambia con el tema)
-    const gold = '212, 175, 55';
-    const red = '255, 55, 55';
+    // Solo el punto: dorado o rojo. Sin halo, sin burbuja.
     const isCharge = mode === 'charging';
     const isAct = mode === 'activator';
-    const color = isCharge ? red : gold;
-    const radius = isAct ? 7 : 11;
+    const radius = isAct ? 6 : 10;
     ctx.save();
-
-    // Puntero limpio: solo núcleo (sin burbuja/halo grande)
-    const core = ctx.createRadialGradient(
-      x - radius * 0.25, y - radius * 0.25, 0.5,
-      x, y, radius
-    );
+    ctx.beginPath();
+    ctx.arc(x, y, radius, 0, Math.PI * 2);
     if (isAct) {
-      core.addColorStop(0, `rgba(${gold}, 0.35)`);
-      core.addColorStop(1, `rgba(${gold}, 0.05)`);
+      ctx.fillStyle = 'rgba(212, 175, 55, 0.4)';
     } else if (isCharge) {
-      core.addColorStop(0, 'rgba(255, 230, 230, 0.95)');
-      core.addColorStop(0.45, `rgba(${red}, 0.9)`);
-      core.addColorStop(1, `rgba(${red}, 0.55)`);
+      ctx.fillStyle = 'rgba(255, 50, 50, 0.95)';
     } else {
-      core.addColorStop(0, 'rgba(255, 245, 200, 0.95)');
-      core.addColorStop(0.4, `rgba(${gold}, 0.92)`);
-      core.addColorStop(1, `rgba(${gold}, 0.55)`);
+      ctx.fillStyle = 'rgba(212, 175, 55, 0.95)';
     }
-    ctx.fillStyle = core;
-    ctx.beginPath();
-    ctx.arc(x, y, radius, 0, Math.PI * 2);
     ctx.fill();
-
-    // Borde fino del punto
-    ctx.strokeStyle = isCharge
-      ? 'rgba(255, 120, 120, 0.95)'
-      : 'rgba(255, 230, 150, 0.9)';
-    ctx.lineWidth = 1.5;
-    ctx.beginPath();
-    ctx.arc(x, y, radius, 0, Math.PI * 2);
-    ctx.stroke();
-
-    // Al cargar: anillo de progreso rojo (sin segunda burbuja)
+    // Progreso: arco fino pegado al punto (no halo)
     if (isCharge && progress > 0) {
       const p = Math.max(0, Math.min(1, progress));
-      ctx.strokeStyle = 'rgba(255, 80, 80, 0.95)';
-      ctx.lineWidth = 2.5;
+      ctx.strokeStyle = 'rgba(255, 80, 80, 1)';
+      ctx.lineWidth = 2;
       ctx.lineCap = 'round';
       ctx.beginPath();
-      ctx.arc(x, y, radius + 5, -Math.PI / 2, -Math.PI / 2 + p * Math.PI * 2);
+      ctx.arc(x, y, radius + 3, -Math.PI / 2, -Math.PI / 2 + p * Math.PI * 2);
       ctx.stroke();
     }
     ctx.restore();
   }
+
 
   function airUpdateCrosshair(screenX, screenY, visible, charging) {
     // Sin cruz/burbuja SVG: solo el orbe del canvas (y DOM si hay recordatorio)
@@ -5702,7 +5673,8 @@
 
 
   function airFlashClick(sx, sy) {
-
+    // Sin anillos de halo: el clic se confirma por estado HUD
+    return;
     if (!airCtx || !airCanvas) return;
     const cx = airCanvas.width - sx, cy = sy;
     const glow = getComputedStyle(document.body).getPropertyValue('--orb-glow').trim() || '198, 168, 91';
@@ -5718,6 +5690,7 @@
       airCtx.restore();
       frame++;
       if (frame < maxF) requestAnimationFrame(draw);
+
     };
     requestAnimationFrame(draw);
   }
@@ -5862,7 +5835,7 @@
     }
   }
 
-  /** Hit-test Confirmar / Posponer: rect ampliado + más cercano (PC y móvil) */
+  /** Hit-test Confirmar / Posponer: solo sobre los botones (no cierra el modal al azar) */
   function airHitReminderButton(screenX, screenY) {
     if (!airIsReminderAlertOpen()) return null;
     const ack = document.getElementById('reminderAlertClose');
@@ -5872,10 +5845,10 @@
     if (snooze) candidates.push({ el: snooze, action: 'reminder-snooze' });
     if (!candidates.length) return null;
 
-    const pad = 72;
-    const nearMax = 280;
-    let bestInside = null, bestInsideDist = Infinity;
-    let bestNear = null, bestNearDist = Infinity;
+    // Móvil: margen estrecho (debe estar sobre el botón). PC: un poco más amplio.
+    const mobile = typeof airIsMobileLike === 'function' && airIsMobileLike();
+    const pad = mobile ? 18 : 36;
+    let best = null, bestDist = Infinity;
 
     for (const c of candidates) {
       if (!c.el) continue;
@@ -5887,28 +5860,14 @@
       const inside =
         screenX >= r.left - pad && screenX <= r.right + pad &&
         screenY >= r.top - pad && screenY <= r.bottom + pad;
-      if (inside && dist < bestInsideDist) {
-        bestInsideDist = dist;
-        bestInside = c;
-      }
-      if (dist < bestNearDist) {
-        bestNearDist = dist;
-        bestNear = c;
+      if (inside && dist < bestDist) {
+        bestDist = dist;
+        best = c;
       }
     }
-    if (bestInside) return bestInside;
-    if (bestNear && bestNearDist <= nearMax) return bestNear;
-    // Si el puntero está sobre el cuadro del aviso, elegir el botón más cercano
-    const box = document.querySelector('.reminder-alert-box');
-    if (box && bestNear) {
-      const br = box.getBoundingClientRect();
-      const overBox =
-        screenX >= br.left - 24 && screenX <= br.right + 24 &&
-        screenY >= br.top - 24 && screenY <= br.bottom + 24;
-      if (overBox) return bestNear;
-    }
-    return null;
+    return best;
   }
+
 
 
 
@@ -6180,15 +6139,24 @@
 
     const remOpen = airIsReminderAlertOpen();
     const overRemBtn = remOpen ? airHitReminderButton(airIndexAnchor.x, airIndexAnchor.y) : null;
-    // PC: 2 índices. Móvil / recordatorio abierto: 1 índice basta
-    const canCharge = hasLeft || remOpen || mobile;
+    // Recordatorio: cargar SOLO si el puntero está sobre Confirmar o Posponer
+    // Resto: PC = 2 índices; móvil = 1 índice
+    const canCharge = remOpen ? !!overRemBtn : (hasLeft || mobile);
     const configuredMs = getAirDwellMs();
-    // Recordatorio: un poco más ágil y tolerante al movimiento
     const dwellMs = remOpen ? Math.max(Math.min(configuredMs, 2000), 400) : configuredMs;
-    if (remOpen && mobile) {
-      // ya incluido en moveMax alto; reforzar ancla estable
-    }
 
+    if (remOpen && !overRemBtn) {
+      airDwellStart = 0;
+      airDwellProgress = 0;
+      airDwellFired = false;
+      airDwellOrigin = null;
+      airUpdateCrosshair(airIndexAnchor.x, airIndexAnchor.y, true, false);
+      document.querySelectorAll('.reminder-alert-close, .reminder-alert-snooze').forEach(b => {
+        b.style.outline = '';
+        b.style.outlineOffset = '';
+      });
+      return { dwellProgress: 0, hasLeft: true, hasRight };
+    }
 
     if (!canCharge) {
       airDwellStart = 0;
@@ -6198,6 +6166,7 @@
       airUpdateCrosshair(airIndexAnchor.x, airIndexAnchor.y, true, false);
       return { dwellProgress: 0, hasLeft, hasRight };
     }
+
 
     // Tras un clic: en móvil reinicio automático (menú → app)
     if (airDwellFired) {
@@ -6255,23 +6224,8 @@
       airDwellFired = true;
       airDwellFiredAt = now;
       if (remOpen) {
-        let hit = overRemBtn || airHitReminderButton(airIndexAnchor.x, airIndexAnchor.y);
-        // Último recurso: el más cercano de los dos botones
-        if (!hit) {
-          const ack = document.getElementById('reminderAlertClose');
-          const sn = document.getElementById('reminderAlertSnooze');
-          let best = null, bd = Infinity;
-          [[ack, 'reminder-ack'], [sn, 'reminder-snooze']].forEach(([el, action]) => {
-            if (!el) return;
-            const r = el.getBoundingClientRect();
-            const d = Math.hypot(
-              airIndexAnchor.x - (r.left + r.width / 2),
-              airIndexAnchor.y - (r.top + r.height / 2)
-            );
-            if (d < bd) { bd = d; best = { el, action }; }
-          });
-          if (best && bd < 320) hit = best;
-        }
+        // Solo actúa si el puntero sigue sobre Confirmar o Posponer
+        const hit = overRemBtn || airHitReminderButton(airIndexAnchor.x, airIndexAnchor.y);
         if (hit && hit.action === 'reminder-ack') {
           acknowledgeReminderAlert();
           airSetStatus('Confirmado', false);
@@ -6295,6 +6249,7 @@
       airDwellProgress = 0;
       airDwellOrigin = null;
     }
+
 
 
     return { dwellProgress: airDwellProgress, hasLeft: canCharge, hasRight };

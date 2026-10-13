@@ -1322,17 +1322,19 @@
     display: none;
     position: fixed;
     inset: 0;
-    /* Modal visible; orbe/mira van a 6100+ (pointer-events:none) para apuntar encima */
-    z-index: 6000;
-    background: rgba(0,0,0,0.65);
+    /* Por encima de menú, ajustes y resto de la UI (despierta o en descanso) */
+    z-index: 100000;
+    background: rgba(0,0,0,0.72);
     backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
     align-items: center;
     justify-content: center;
   }
 
   .reminder-alert.visible {
-    display: flex;
+    display: flex !important;
   }
+
 
   .reminder-alert-box {
     width: min(400px, 90vw);
@@ -2112,7 +2114,9 @@
   .air-hud-status {
     position: fixed; bottom: 62px; left: 50%;
     transform: translateX(-50%);
-    z-index: 6120;
+    z-index: 100009;
+
+
 
 
     font-size: 0.62rem; letter-spacing: 1.5px; text-transform: uppercase;
@@ -2134,19 +2138,51 @@
     position: fixed;
     width: 28px; height: 28px;
     margin-left: -14px; margin-top: -14px;
-    z-index: 6110;
+    z-index: 100010;
     pointer-events: none;
     opacity: 0;
     transition: opacity 0.12s ease;
   }
-
-
   #airCrosshair.visible { opacity: 1; }
   #airCrosshair.ready {
     filter: drop-shadow(0 0 8px rgba(var(--orb-glow), 1));
   }
   #airCrosshair svg { width: 100%; height: 100%; display: block; }
+
+  /* Orbe DOM encima del modal de recordatorios (100000) */
+  #airPointerOrb {
+    position: fixed;
+    width: 34px; height: 34px;
+    margin-left: -17px; margin-top: -17px;
+    border-radius: 50%;
+    pointer-events: none;
+    z-index: 100011;
+
+    opacity: 0;
+    transition: opacity 0.12s ease, background 0.2s ease, box-shadow 0.2s ease;
+    background: radial-gradient(circle at 38% 32%,
+      rgba(255,255,255,0.9) 0%,
+      rgba(var(--orb-glow), 0.8) 32%,
+      rgba(var(--orb-glow), 0.35) 62%,
+      transparent 100%);
+    box-shadow: 0 0 14px rgba(var(--orb-glow), 0.75), 0 0 4px rgba(255,255,255,0.55);
+  }
+  #airPointerOrb.visible { opacity: 0.95; }
+  #airPointerOrb.charging {
+    background: radial-gradient(circle at 38% 32%,
+      rgba(255,220,220,0.95) 0%,
+      rgba(255,70,90,0.85) 38%,
+      rgba(255,70,90,0.3) 68%,
+      transparent 100%);
+    box-shadow: 0 0 18px rgba(255,70,90,0.85), 0 0 6px rgba(255,255,255,0.4);
+    animation: airPointerPulse 0.75s ease-in-out infinite;
+  }
+  @keyframes airPointerPulse {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.12); }
+  }
 </style>
+
 </head>
 
 
@@ -2301,7 +2337,9 @@
       <line x1="18" y1="14" x2="26" y2="14" stroke="rgb(var(--orb-glow))" stroke-width="1.5" stroke-linecap="round"/>
     </svg>
   </div>
+  <div id="airPointerOrb" aria-hidden="true"></div>
   <div class="air-hud-status" id="airHudStatus" aria-live="polite"></div>
+
 
 
   <button class="fullscreen-button" id="fsBtn" title="Pantalla completa" aria-label="Pantalla completa">
@@ -3059,7 +3097,10 @@
 
     lastActivityAt = Date.now();
     startIdleWatcher();
+    // Al despertar, revisar recordatorios vencidos (el aviso debe verse también despierta)
+    setTimeout(() => { try { checkRemindersDue(); } catch (e) {} }, 400);
   }
+
 
   let restClockInterval = null;
   let weatherCache = null;
@@ -3575,8 +3616,13 @@
     saveReminders();
     renderSettingsReminders();
     renderRestReminders();
+    // Si ya está vencido, mostrar aviso enseguida (META despierta o en descanso)
+    if (item.at <= Date.now()) {
+      setTimeout(() => { try { checkRemindersDue(); } catch (e) {} }, 150);
+    }
     return item;
   }
+
 
   function deleteReminder(id) {
     reminders = reminders.filter(r => r.id !== id);
@@ -3590,6 +3636,8 @@
     const alert = document.getElementById('reminderAlert');
     if (!alert) return;
     alert.classList.remove('visible');
+    alert.style.display = '';
+    alert.style.zIndex = '';
     alert.dataset.remId = '';
     document.querySelectorAll('.reminder-alert-close, .reminder-alert-snooze').forEach(b => {
       b.style.outline = '';
@@ -3604,14 +3652,27 @@
     const time = document.getElementById('reminderAlertTime');
     const queueEl = document.getElementById('reminderAlertQueue');
     if (!alert || !rem) return;
-    // Persistencia: marcar aviso, NO marcar como leído
-    rem.lastNotifiedAt = Date.now();
-    rem.snoozeUntil = null;
-    saveReminders();
 
-    msg.textContent = rem.title;
+    // Asegurar que el nodo esté al final del body (encima de menú, ajustes, etc.)
+    try {
+      if (alert.parentElement !== document.body) {
+        document.body.appendChild(alert);
+      } else {
+        document.body.appendChild(alert); // reordenar al final
+      }
+    } catch (e) {}
+
+    rem.snoozeUntil = null;
+    // lastNotifiedAt solo tras pintar (abajo), para no “quemar” el aviso si falló la UI
+
+    if (msg) msg.textContent = rem.title;
     const d = new Date(rem.at);
-    time.textContent = d.toLocaleString('es-ES', { weekday: 'long', day: 'numeric', month: 'long', hour: '2-digit', minute: '2-digit' });
+    if (time) {
+      time.textContent = d.toLocaleString('es-ES', {
+        weekday: 'long', day: 'numeric', month: 'long',
+        hour: '2-digit', minute: '2-digit'
+      });
+    }
     alert.dataset.remId = rem.id;
     if (queueEl) {
       if (queueRemaining > 0) {
@@ -3622,9 +3683,32 @@
         queueEl.textContent = '';
       }
     }
+
+    // Forzar visibilidad (despierta o en descanso; PC y móvil)
     alert.classList.add('visible');
+    alert.style.display = 'flex';
+    alert.style.zIndex = '100000';
+    alert.setAttribute('aria-hidden', 'false');
+
+    rem.lastNotifiedAt = Date.now();
+    saveReminders();
+
+    // Cerrar ajustes si tapan la vista (z más bajo, pero por claridad)
+    try {
+      const sp = document.getElementById('settingsPanel');
+      if (sp && sp.classList.contains('visible')) sp.classList.remove('visible');
+    } catch (e) {}
+
     try { speak(`Recordatorio: ${rem.title}`); } catch (e) {}
+
+    // Reafirmar en el siguiente frame (algunos móviles no pintan el primer display)
+    requestAnimationFrame(() => {
+      if (!alert.classList.contains('visible')) return;
+      alert.style.display = 'flex';
+      alert.style.zIndex = '100000';
+    });
   }
+
 
   /** Confirmar lectura: solo así se archiva y no vuelve a salir */
   function acknowledgeReminderAlert() {
@@ -3712,9 +3796,16 @@
 
   function checkRemindersDue() {
     const alert = document.getElementById('reminderAlert');
-    if (alert && alert.classList.contains('visible')) return;
+    // Si el DOM dice visible pero no se está mostrando (display none), forzar reintento
+    if (alert && alert.classList.contains('visible')) {
+      const shown = window.getComputedStyle(alert).display !== 'none';
+      if (shown) return;
+      alert.classList.remove('visible');
+      alert.style.display = '';
+    }
     processReminderAlertQueue();
   }
+
 
 
   let reminderCapture = null;
@@ -5327,6 +5418,8 @@
   const airCtx = airCanvas ? airCanvas.getContext('2d') : null;
   const airHudStatus = document.getElementById('airHudStatus');
   const airCrosshair = document.getElementById('airCrosshair');
+  const airPointerOrb = document.getElementById('airPointerOrb');
+
 
 
   function airResizeCanvas() {
@@ -5545,16 +5638,29 @@
   }
 
   function airUpdateCrosshair(screenX, screenY, visible, charging) {
-    if (!airCrosshair) return;
-    if (!visible) {
-      airCrosshair.classList.remove('visible', 'ready');
-      return;
+    // Mira + orbe DOM (z-index máximo): se ven encima del modal de recordatorios
+    if (airCrosshair) {
+      if (!visible) {
+        airCrosshair.classList.remove('visible', 'ready');
+      } else {
+        airCrosshair.style.left = screenX + 'px';
+        airCrosshair.style.top = screenY + 'px';
+        airCrosshair.classList.add('visible');
+        airCrosshair.classList.toggle('ready', !!charging);
+      }
     }
-    airCrosshair.style.left = screenX + 'px';
-    airCrosshair.style.top = screenY + 'px';
-    airCrosshair.classList.add('visible');
-    airCrosshair.classList.toggle('ready', !!charging);
+    if (airPointerOrb) {
+      if (!visible) {
+        airPointerOrb.classList.remove('visible', 'charging');
+      } else {
+        airPointerOrb.style.left = screenX + 'px';
+        airPointerOrb.style.top = screenY + 'px';
+        airPointerOrb.classList.add('visible');
+        airPointerOrb.classList.toggle('charging', !!charging);
+      }
+    }
   }
+
 
   function airDrawHands(hands, handednessList, dwellProgress, hasLeft, hasRight) {
     if (!airCtx || !airCanvas) return;
@@ -5713,7 +5819,8 @@
       const el = document.elementFromPoint(screenX + dx, screenY + dy);
       if (!el) continue;
       if (el === document.body || el === document.documentElement) continue;
-      if (el.id === 'airCanvas' || el.id === 'airVideo' || el.id === 'airHudStatus' || el.id === 'airCrosshair') continue;
+      if (el.id === 'airCanvas' || el.id === 'airVideo' || el.id === 'airHudStatus' || el.id === 'airCrosshair' || el.id === 'airPointerOrb') continue;
+
       if (!found) found = el;
       const p = prefer(el);
       if (p) { preferred = p; break; }
@@ -6245,7 +6352,15 @@
     updateInfoPanel();
     renderSettingsReminders();
     renderRestPhrases();
-    setInterval(checkRemindersDue, 15000);
+    setInterval(checkRemindersDue, 4000);
+    document.addEventListener('visibilitychange', () => {
+      if (!document.hidden) {
+        setTimeout(() => { try { checkRemindersDue(); } catch (e) {} }, 300);
+      }
+    });
+    // Primera pasada al arrancar
+    setTimeout(() => { try { checkRemindersDue(); } catch (e) {} }, 1500);
+
     setTimeout(() => fetchWeather().catch(() => {}), 2000);
 
     bindActivityEvents();

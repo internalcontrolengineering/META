@@ -2149,7 +2149,7 @@
   }
   #airCrosshair svg { width: 100%; height: 100%; display: block; }
 
-  /* Orbe DOM sobre modal: solo punto, sin halo */
+  /* Orbe DOM sobre modal: punto + borde de halo */
   #airPointerOrb {
     position: fixed;
     width: 20px; height: 20px;
@@ -2158,18 +2158,19 @@
     pointer-events: none;
     z-index: 100011;
     opacity: 0;
-    transition: opacity 0.1s ease, background 0.12s ease;
+    transition: opacity 0.1s ease, background 0.12s ease, box-shadow 0.12s ease;
     background: rgba(212, 175, 55, 0.95);
-    border: none;
-    box-shadow: none;
+    border: 1.5px solid rgba(255, 230, 150, 0.85);
+    box-shadow: 0 0 10px 3px rgba(212, 175, 55, 0.45);
   }
   #airPointerOrb.visible { opacity: 1; }
   #airPointerOrb.charging {
     background: rgba(255, 50, 50, 0.95);
-    border: none;
-    box-shadow: none;
+    border-color: rgba(255, 120, 120, 0.9);
+    box-shadow: 0 0 10px 3px rgba(255, 80, 80, 0.5);
     animation: none;
   }
+
 
 
 </style>
@@ -3644,6 +3645,16 @@
     const queueEl = document.getElementById('reminderAlertQueue');
     if (!alert || !rem) return;
 
+    // Reset dwell AirTouch: el timer solo empieza al poner el puntero en un botón
+    try {
+      airDwellStart = 0;
+      airDwellProgress = 0;
+      airDwellFired = false;
+      airDwellFiredAt = 0;
+      airDwellOrigin = null;
+      airRemHoverAction = null;
+    } catch (e) {}
+
     // Asegurar que el nodo esté al final del body (encima de menú, ajustes, etc.)
     try {
       if (alert.parentElement !== document.body) {
@@ -3654,6 +3665,7 @@
     } catch (e) {}
 
     rem.snoozeUntil = null;
+
     // lastNotifiedAt solo tras pintar (abajo), para no “quemar” el aviso si falló la UI
 
     if (msg) msg.textContent = rem.title;
@@ -5574,33 +5586,58 @@
    * progress: 0..1 cuando charging
    */
   function airDrawIndexOrb(ctx, x, y, mode, progress) {
-    // Solo el punto: dorado o rojo. Sin halo, sin burbuja.
+    // Punto + borde de halo fino (dorado o rojo)
     const isCharge = mode === 'charging';
     const isAct = mode === 'activator';
     const radius = isAct ? 6 : 10;
+    const fill = isAct
+      ? 'rgba(212, 175, 55, 0.4)'
+      : (isCharge ? 'rgba(255, 50, 50, 0.95)' : 'rgba(212, 175, 55, 0.95)');
+    const halo = isCharge
+      ? 'rgba(255, 80, 80, 0.55)'
+      : 'rgba(212, 175, 55, 0.45)';
+    const ring = isCharge
+      ? 'rgba(255, 120, 120, 0.9)'
+      : 'rgba(255, 230, 150, 0.85)';
     ctx.save();
+
+    // Halo suave alrededor del punto
+    if (!isAct) {
+      const g = ctx.createRadialGradient(x, y, radius * 0.6, x, y, radius + 8);
+      g.addColorStop(0, halo);
+      g.addColorStop(1, 'rgba(0,0,0,0)');
+      ctx.fillStyle = g;
+      ctx.beginPath();
+      ctx.arc(x, y, radius + 8, 0, Math.PI * 2);
+      ctx.fill();
+    }
+
+    // Núcleo
     ctx.beginPath();
     ctx.arc(x, y, radius, 0, Math.PI * 2);
-    if (isAct) {
-      ctx.fillStyle = 'rgba(212, 175, 55, 0.4)';
-    } else if (isCharge) {
-      ctx.fillStyle = 'rgba(255, 50, 50, 0.95)';
-    } else {
-      ctx.fillStyle = 'rgba(212, 175, 55, 0.95)';
-    }
+    ctx.fillStyle = fill;
     ctx.fill();
-    // Progreso: arco fino pegado al punto (no halo)
+
+    // Borde de halo
+    ctx.strokeStyle = ring;
+    ctx.lineWidth = 1.5;
+    ctx.beginPath();
+    ctx.arc(x, y, radius + 1.5, 0, Math.PI * 2);
+    ctx.stroke();
+
+    // Progreso al cargar
     if (isCharge && progress > 0) {
       const p = Math.max(0, Math.min(1, progress));
       ctx.strokeStyle = 'rgba(255, 80, 80, 1)';
       ctx.lineWidth = 2;
       ctx.lineCap = 'round';
       ctx.beginPath();
-      ctx.arc(x, y, radius + 3, -Math.PI / 2, -Math.PI / 2 + p * Math.PI * 2);
+      ctx.arc(x, y, radius + 5, -Math.PI / 2, -Math.PI / 2 + p * Math.PI * 2);
       ctx.stroke();
     }
     ctx.restore();
   }
+
 
 
   function airUpdateCrosshair(screenX, screenY, visible, charging) {
@@ -6035,6 +6072,8 @@
   let airDwellFiredAt = 0;
   let airDwellOrigin = null;
   let airLastHandedness = [];
+  let airRemHoverAction = null; // botón de recordatorio bajo el puntero (reinicia el timer al entrar)
+
 
   function getAirDwellMs() {
     const mobile = typeof airIsMobileLike === 'function' && airIsMobileLike();
@@ -6143,13 +6182,15 @@
     // Resto: PC = 2 índices; móvil = 1 índice
     const canCharge = remOpen ? !!overRemBtn : (hasLeft || mobile);
     const configuredMs = getAirDwellMs();
-    const dwellMs = remOpen ? Math.max(Math.min(configuredMs, 2000), 400) : configuredMs;
+    // Mín. 1 s en recordatorio para ver el círculo llenarse (no cierre al instante)
+    const dwellMs = remOpen ? Math.max(configuredMs, 1000) : configuredMs;
 
     if (remOpen && !overRemBtn) {
       airDwellStart = 0;
       airDwellProgress = 0;
       airDwellFired = false;
       airDwellOrigin = null;
+      airRemHoverAction = null;
       airUpdateCrosshair(airIndexAnchor.x, airIndexAnchor.y, true, false);
       document.querySelectorAll('.reminder-alert-close, .reminder-alert-snooze').forEach(b => {
         b.style.outline = '';
@@ -6163,10 +6204,25 @@
       airDwellProgress = 0;
       airDwellFired = false;
       airDwellOrigin = null;
+      airRemHoverAction = null;
       airUpdateCrosshair(airIndexAnchor.x, airIndexAnchor.y, true, false);
       return { dwellProgress: 0, hasLeft, hasRight };
     }
 
+    // Al entrar en un botón de recordatorio: SIEMPRE reiniciar el timer (no heredar progreso)
+    if (remOpen && overRemBtn) {
+      const act = overRemBtn.action;
+      if (airRemHoverAction !== act) {
+        airRemHoverAction = act;
+        airDwellStart = now;
+        airDwellOrigin = { x: airIndexAnchor.x, y: airIndexAnchor.y };
+        airDwellProgress = 0;
+        airDwellFired = false;
+        airDwellFiredAt = 0;
+      }
+    } else {
+      airRemHoverAction = null;
+    }
 
     // Tras un clic: en móvil reinicio automático (menú → app)
     if (airDwellFired) {
@@ -6200,6 +6256,7 @@
         airDwellOrigin = { x: airIndexAnchor.x, y: airIndexAnchor.y };
       }
     }
+
 
 
     if (remOpen && overRemBtn && overRemBtn.el) {

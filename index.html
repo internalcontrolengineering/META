@@ -1322,7 +1322,8 @@
     display: none;
     position: fixed;
     inset: 0;
-    z-index: 500;
+    /* Por encima del canvas AirTouch para que el aviso siempre se vea */
+    z-index: 6000;
     background: rgba(0,0,0,0.65);
     backdrop-filter: blur(8px);
     align-items: center;
@@ -1331,6 +1332,7 @@
   .reminder-alert.visible {
     display: flex;
   }
+
   .reminder-alert-box {
     width: min(400px, 90vw);
     padding: 28px 24px;
@@ -2098,11 +2100,14 @@
     width: 1px; height: 1px; opacity: 0; pointer-events: none;
   }
   #airCanvas {
-    position: fixed; inset: 0; width: 100vw; height: 100vh;
-    /* Por encima del modal de recordatorios (z 500) para ver el orbe al apuntar */
+    position: fixed; left: 0; top: 0;
+    width: 100%; height: 100%;
+    /* Por encima del modal de recordatorios para ver el orbe al apuntar */
     z-index: 560; pointer-events: none;
     transform: scaleX(-1);
+    transform-origin: center center;
   }
+
   .air-hud-status {
     position: fixed; bottom: 62px; left: 50%;
     transform: translateX(-50%);
@@ -5292,9 +5297,23 @@
 
   function airResizeCanvas() {
     if (!airCanvas) return;
-    airCanvas.width = window.innerWidth;
-    airCanvas.height = window.innerHeight;
+    // visualViewport evita desfase de mira/orbe en móviles (barra de URL, zoom)
+    const vv = window.visualViewport;
+    const w = Math.max(1, Math.round(vv ? vv.width : window.innerWidth));
+    const h = Math.max(1, Math.round(vv ? vv.height : window.innerHeight));
+    if (airCanvas.width !== w) airCanvas.width = w;
+    if (airCanvas.height !== h) airCanvas.height = h;
   }
+
+  /** ¿Modo móvil / táctil? En estos dispositivos 1 índice basta para el dwell */
+  function airIsMobileLike() {
+    try {
+      return window.matchMedia('(max-width: 900px), (pointer: coarse)').matches;
+    } catch (e) {
+      return window.innerWidth <= 900;
+    }
+  }
+
 
   function airSetStatus(text, highlight) {
     if (!airHudStatus) return;
@@ -5320,10 +5339,12 @@
     if (toggle) toggle.checked = !!settings.HAND_GESTURE_ENABLED;
     if (!hint) return;
     if (settings.HAND_GESTURE_ENABLED && airRunning) {
-      hint.textContent = 'Activa. 1 índice = apuntar · 2 índices (izq. activa) = 3 s en el derecho → clic.';
-
+      hint.textContent = airIsMobileLike()
+        ? 'Móvil: 1 índice quieto ~2,5 s = clic. Puedes hacer varios clics seguidos (menú → app).'
+        : 'PC: 1 índice = apuntar · 2 índices (izq. activa) = 1,5 s en el derecho → clic.';
 
     } else if (settings.HAND_GESTURE_ENABLED) {
+
       hint.textContent = 'Cámara activada, iniciando o esperando permiso del navegador…';
     } else {
       hint.textContent = 'La cámara está desactivada. Actívala para usar gestos sin contacto.';
@@ -5524,9 +5545,39 @@
 
 
 
+  /**
+   * Canvas (buffer) → coordenadas de pantalla (clientX/Y).
+   * Tiene en cuenta getBoundingClientRect + scaleX(-1) del CSS
+   * para que la mira coincida con el orbe en PC y móvil.
+   */
   function airCanvasToScreen(cx, cy) {
-    return { x: airCanvas.width - cx, y: cy };
+    if (!airCanvas) return { x: cx, y: cy };
+    const rect = airCanvas.getBoundingClientRect();
+    const bw = airCanvas.width || 1;
+    const bh = airCanvas.height || 1;
+    const scaleX = rect.width / bw;
+    const scaleY = rect.height / bh;
+    // CSS transform scaleX(-1) refleja alrededor del centro del elemento
+    return {
+      x: rect.left + rect.width - cx * scaleX,
+      y: rect.top + cy * scaleY
+    };
   }
+
+  /** Pantalla → canvas (por si hace falta el inverso) */
+  function airScreenToCanvas(sx, sy) {
+    if (!airCanvas) return { x: sx, y: sy };
+    const rect = airCanvas.getBoundingClientRect();
+    const bw = airCanvas.width || 1;
+    const bh = airCanvas.height || 1;
+    const scaleX = rect.width / bw;
+    const scaleY = rect.height / bh;
+    return {
+      x: (rect.left + rect.width - sx) / scaleX,
+      y: (sy - rect.top) / scaleY
+    };
+  }
+
 
   function airFlashClick(sx, sy) {
 
@@ -5584,13 +5635,22 @@
     const prevHud = hud ? hud.style.pointerEvents : '';
     if (hud) hud.style.pointerEvents = 'none';
 
-    const offsets = [
+    const mobile = typeof airIsMobileLike === 'function' && airIsMobileLike();
+    const offsets = mobile ? [
+      [0, 0], [0, -16], [0, 16], [-16, 0], [16, 0],
+      [-14, -14], [14, -14], [-14, 14], [14, 14],
+      [0, -32], [0, 32], [-32, 0], [32, 0],
+      [-28, -28], [28, -28], [-28, 28], [28, 28],
+      [0, -48], [0, 48], [-48, 0], [48, 0],
+      [0, -64], [0, 64], [-64, 0], [64, 0]
+    ] : [
       [0, 0], [0, -12], [0, 12], [-12, 0], [12, 0],
       [-10, -10], [10, -10], [-10, 10], [10, 10],
       [0, -24], [0, 24], [-24, 0], [24, 0],
       [-20, -20], [20, -20], [-20, 20], [20, 20],
       [0, -36], [0, 36], [-36, 0], [36, 0]
     ];
+
     const prefer = (el) =>
       airClosest(el, '[data-air-action]') ||
       airClosest(el, '.reminder-alert-close') ||
@@ -5671,8 +5731,11 @@
 
   function airDispatchClick(screenX, screenY) {
     const now = performance.now();
-    if (now - airLastClickAt < 550) return;
+    // Cooldown más corto en móvil para menú → app seguidos
+    const minGap = (typeof airIsMobileLike === 'function' && airIsMobileLike()) ? 400 : 550;
+    if (now - airLastClickAt < minGap) return;
     airLastClickAt = now;
+
 
     registerActivity();
     airFlashClick(screenX, screenY);
@@ -5821,15 +5884,18 @@
    * - Solo se dibuja el índice (orbe).
    * - 1 mano: solo apunta (orbe dorado del tema).
    * - 2 manos: el índice IZQUIERDO activa el temporizador;
-   *   el índice DERECHO es el cursor; 3 s quieto → clic.
+   *   el índice DERECHO es el cursor; 1,5 s quieto → clic (PC).
    */
-  const AIR_DWELL_MS = 1500;
+  const AIR_DWELL_MS = 1500; // PC: 1,5 s para clic digital
+
   const AIR_DWELL_MOVE_MAX = 42; // px pantalla; si el derecho se mueve más, reinicia
   let airDwellStart = 0;
   let airDwellProgress = 0;
   let airDwellFired = false;
+  let airDwellFiredAt = 0; // para reiniciar clics seguidos en móvil
   let airDwellOrigin = null;
   let airLastHandedness = [];
+
 
 
   function airParseHandedness(results) {
@@ -5843,28 +5909,39 @@
 
   function airFindHandsBySide(hands, handednessList) {
     let right = null, left = null, rightIdx = -1, leftIdx = -1;
+    const usable = [];
     hands.forEach((hand, i) => {
-      const label = (handednessList[i] || '').toLowerCase();
-      if (label.includes('right') && hand[8]) { right = hand; rightIdx = i; }
-      else if (label.includes('left') && hand[8]) { left = hand; leftIdx = i; }
+      if (!hand || !hand[8]) return;
+      usable.push({ hand, i, label: (handednessList[i] || '').toLowerCase(), x: hand[8].x });
     });
-    // Fallback: si MediaPipe no etiqueta y hay 2 manos, la de mayor X en imagen
-    // (con espejo la derecha del usuario suele tener menor x en coords de cámara)
-    if (!right && !left && hands.length === 1 && hands[0][8]) {
-      right = hands[0]; rightIdx = 0;
-    } else if (hands.length >= 2 && (!right || !left)) {
-      let minX = 2, maxX = -1, iMin = 0, iMax = 0;
-      hands.forEach((h, i) => {
-        if (!h[8]) return;
-        if (h[8].x < minX) { minX = h[8].x; iMin = i; }
-        if (h[8].x > maxX) { maxX = h[8].x; iMax = i; }
-      });
-      // Imagen sin espejo: mano derecha del usuario suele estar a la izquierda de la imagen (menor x) en selfie
-      if (!right) { right = hands[iMin]; rightIdx = iMin; }
-      if (!left) { left = hands[iMax]; leftIdx = iMax; }
+    usable.forEach(({ hand, i, label }) => {
+      if (label.includes('right') && !right) { right = hand; rightIdx = i; }
+      else if (label.includes('left') && !left) { left = hand; leftIdx = i; }
+    });
+    // 1 mano: siempre es el puntero (derecho lógico)
+    if (usable.length === 1) {
+      right = usable[0].hand; rightIdx = usable[0].i;
+      left = null; leftIdx = -1;
+      return { right, left, rightIdx, leftIdx };
+    }
+    // 2+ manos sin etiquetas claras: por posición en imagen selfie
+    // (mano derecha del usuario → menor x en frame de cámara)
+    if (usable.length >= 2 && (!right || !left)) {
+      const sorted = usable.slice().sort((a, b) => a.x - b.x);
+      if (!right) { right = sorted[0].hand; rightIdx = sorted[0].i; }
+      if (!left) {
+        const other = sorted.find(s => s.i !== rightIdx) || sorted[sorted.length - 1];
+        left = other.hand; leftIdx = other.i;
+      }
+    }
+    // Si ambas etiquetas fallaron y solo asignamos right, y hay 2 manos: forzar left
+    if (right && !left && usable.length >= 2) {
+      const other = usable.find(u => u.i !== rightIdx);
+      if (other) { left = other.hand; leftIdx = other.i; }
     }
     return { right, left, rightIdx, leftIdx };
   }
+
 
   function airUpdateDwellClick(hands, handednessList) {
     if (!airCanvas) {
@@ -5878,6 +5955,9 @@
     const hasRight = !!right;
     const hasLeft = !!left;
     const now = performance.now();
+    const mobile = airIsMobileLike();
+    // En móvil la detección tiembla más: tolerancia de movimiento mayor
+    const moveMax = mobile ? 70 : AIR_DWELL_MOVE_MAX;
 
     if (!hasRight) {
       airDwellStart = 0;
@@ -5890,20 +5970,21 @@
 
     const ix = right[8].x * W, iy = right[8].y * H;
     const screen = airCanvasToScreen(ix, iy);
-    // Posición suave solo para dibujar / clic (no para medir movimiento)
+    // Suavizado más ligero en móvil (menos lag de la mira)
+    const smooth = mobile ? 0.55 : 0.35;
+    const follow = 1 - smooth;
     if (!airIndexAnchor) {
       airIndexAnchor = { x: screen.x, y: screen.y };
     } else {
-      airIndexAnchor.x = airIndexAnchor.x * 0.35 + screen.x * 0.65;
-      airIndexAnchor.y = airIndexAnchor.y * 0.35 + screen.y * 0.65;
+      airIndexAnchor.x = airIndexAnchor.x * smooth + screen.x * follow;
+      airIndexAnchor.y = airIndexAnchor.y * smooth + screen.y * follow;
     }
 
-    // Aviso de recordatorio abierto: 1 índice basta (no hace falta la mano izquierda)
     const remOpen = airIsReminderAlertOpen();
     const overRemBtn = remOpen ? airHitReminderButton(airIndexAnchor.x, airIndexAnchor.y) : null;
-    // Con modal abierto siempre se puede cargar si hay índice derecho
-    const canCharge = hasLeft || remOpen;
-    const dwellMs = remOpen ? 2000 : AIR_DWELL_MS; // 2 s en recordatorios (más ágil)
+    // PC: 2 índices (izq. activa). Móvil / recordatorio: 1 índice basta
+    const canCharge = hasLeft || remOpen || mobile;
+    const dwellMs = remOpen ? 2000 : (mobile ? 2500 : AIR_DWELL_MS);
 
     if (!canCharge) {
       airDwellStart = 0;
@@ -5914,19 +5995,27 @@
       return { dwellProgress: 0, hasLeft, hasRight };
     }
 
+    // Tras un clic: en móvil reinicio automático (clics seguidos menú → app)
     if (airDwellFired) {
-      if (hasLeft && !remOpen) {
+      if (mobile || remOpen) {
+        // Espera breve y permite otra carga sin quitar la mano
+        if (!airDwellFiredAt) airDwellFiredAt = now;
+        if (now - airDwellFiredAt < 900) {
+          airDwellProgress = 0;
+          airUpdateCrosshair(airIndexAnchor.x, airIndexAnchor.y, true, false);
+          return { dwellProgress: 0, hasLeft: canCharge, hasRight };
+        }
+        airDwellFired = false;
+        airDwellFiredAt = 0;
+      } else if (hasLeft) {
+        // PC: exigir quitar el índice izquierdo entre clics
         airDwellProgress = 0;
         airUpdateCrosshair(airIndexAnchor.x, airIndexAnchor.y, true, false);
         return { dwellProgress: 0, hasLeft, hasRight };
+      } else {
+        airDwellFired = false;
+        airDwellFiredAt = 0;
       }
-      // Tras un clic en recordatorio, exigir salir del botón o esperar un momento
-      if (remOpen && overRemBtn) {
-        airDwellProgress = 0;
-        airUpdateCrosshair(airIndexAnchor.x, airIndexAnchor.y, true, !!overRemBtn);
-        return { dwellProgress: 0, hasLeft: true, hasRight };
-      }
-      airDwellFired = false;
     }
 
     // Carga (anillo rojo)
@@ -5935,13 +6024,12 @@
       airDwellOrigin = { x: screen.x, y: screen.y };
     } else {
       const drift = Math.hypot(screen.x - airDwellOrigin.x, screen.y - airDwellOrigin.y);
-      if (drift > AIR_DWELL_MOVE_MAX) {
+      if (drift > moveMax) {
         airDwellStart = now;
         airDwellOrigin = { x: screen.x, y: screen.y };
       }
     }
 
-    // Feedback: si está sobre un botón, resaltarlo
     if (remOpen && overRemBtn && overRemBtn.el) {
       document.querySelectorAll('.reminder-alert-close, .reminder-alert-snooze').forEach(b => {
         b.style.outline = '';
@@ -5962,7 +6050,7 @@
 
     if (airDwellProgress >= 1) {
       airDwellFired = true;
-      // Forzar acción de recordatorio si el modal está abierto
+      airDwellFiredAt = now;
       if (remOpen) {
         const hit = overRemBtn || airHitReminderButton(airIndexAnchor.x, airIndexAnchor.y);
         if (hit && hit.action === 'reminder-ack') {
@@ -5973,7 +6061,8 @@
           airSetStatus('Pospuesto 10 min', false);
         } else {
           airSetStatus('Apunta a Confirmar o Posponer', false);
-          airDwellFired = false; // permitir reintentar
+          airDwellFired = false;
+          airDwellFiredAt = 0;
         }
         document.querySelectorAll('.reminder-alert-close, .reminder-alert-snooze').forEach(b => {
           b.style.outline = '';
@@ -5990,6 +6079,7 @@
 
     return { dwellProgress: airDwellProgress, hasLeft: canCharge, hasRight };
   }
+
 
 
 
@@ -6035,6 +6125,11 @@
 
 
   window.addEventListener('resize', () => { if (airRunning) airResizeCanvas(); });
+  if (window.visualViewport) {
+    window.visualViewport.addEventListener('resize', () => { if (airRunning) airResizeCanvas(); });
+    window.visualViewport.addEventListener('scroll', () => { if (airRunning) airResizeCanvas(); });
+  }
+
 
   document.getElementById('toggleHandGesture')?.addEventListener('change', (e) => {
     setHandGestureEnabled(e.target.checked);

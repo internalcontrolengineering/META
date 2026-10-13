@@ -5853,10 +5853,16 @@
 
   function airIsReminderAlertOpen() {
     const alert = document.getElementById('reminderAlert');
-    return !!(alert && alert.classList.contains('visible'));
+    if (!alert) return false;
+    if (alert.classList.contains('visible')) return true;
+    try {
+      return window.getComputedStyle(alert).display !== 'none';
+    } catch (e) {
+      return false;
+    }
   }
 
-  /** Hit-test recordatorio: rect ampliado + botón más cercano (tolerante cámara/móvil) */
+  /** Hit-test Confirmar / Posponer: rect ampliado + más cercano (PC y móvil) */
   function airHitReminderButton(screenX, screenY) {
     if (!airIsReminderAlertOpen()) return null;
     const ack = document.getElementById('reminderAlertClose');
@@ -5866,12 +5872,15 @@
     if (snooze) candidates.push({ el: snooze, action: 'reminder-snooze' });
     if (!candidates.length) return null;
 
-    const pad = 56;
+    const pad = 72;
+    const nearMax = 280;
     let bestInside = null, bestInsideDist = Infinity;
     let bestNear = null, bestNearDist = Infinity;
 
     for (const c of candidates) {
+      if (!c.el) continue;
       const r = c.el.getBoundingClientRect();
+      if (r.width < 2 || r.height < 2) continue;
       const cx = r.left + r.width / 2;
       const cy = r.top + r.height / 2;
       const dist = Math.hypot(screenX - cx, screenY - cy);
@@ -5888,9 +5897,19 @@
       }
     }
     if (bestInside) return bestInside;
-    if (bestNear && bestNearDist <= 140) return bestNear;
+    if (bestNear && bestNearDist <= nearMax) return bestNear;
+    // Si el puntero está sobre el cuadro del aviso, elegir el botón más cercano
+    const box = document.querySelector('.reminder-alert-box');
+    if (box && bestNear) {
+      const br = box.getBoundingClientRect();
+      const overBox =
+        screenX >= br.left - 24 && screenX <= br.right + 24 &&
+        screenY >= br.top - 24 && screenY <= br.bottom + 24;
+      if (overBox) return bestNear;
+    }
     return null;
   }
+
 
 
   function airDispatchClick(screenX, screenY) {
@@ -6134,8 +6153,9 @@
     const hasLeft = !!left;
     const now = performance.now();
     const mobile = airIsMobileLike();
-    // Móvil: más tolerancia al temblor de la cámara
-    const moveMax = mobile ? 130 : AIR_DWELL_MOVE_MAX;
+    // Móvil / modal recordatorio: más tolerancia al temblor
+    const moveMax = (mobile || airIsReminderAlertOpen()) ? 140 : AIR_DWELL_MOVE_MAX;
+
 
     if (!hasRight) {
       airDwellStart = 0;
@@ -6160,10 +6180,15 @@
 
     const remOpen = airIsReminderAlertOpen();
     const overRemBtn = remOpen ? airHitReminderButton(airIndexAnchor.x, airIndexAnchor.y) : null;
-    // PC: 2 índices. Móvil / recordatorio: 1 índice basta
+    // PC: 2 índices. Móvil / recordatorio abierto: 1 índice basta
     const canCharge = hasLeft || remOpen || mobile;
     const configuredMs = getAirDwellMs();
-    const dwellMs = remOpen ? Math.max(configuredMs, 500) : configuredMs;
+    // Recordatorio: un poco más ágil y tolerante al movimiento
+    const dwellMs = remOpen ? Math.max(Math.min(configuredMs, 2000), 400) : configuredMs;
+    if (remOpen && mobile) {
+      // ya incluido en moveMax alto; reforzar ancla estable
+    }
+
 
     if (!canCharge) {
       airDwellStart = 0;
@@ -6230,10 +6255,26 @@
       airDwellFired = true;
       airDwellFiredAt = now;
       if (remOpen) {
-        const hit = overRemBtn || airHitReminderButton(airIndexAnchor.x, airIndexAnchor.y);
+        let hit = overRemBtn || airHitReminderButton(airIndexAnchor.x, airIndexAnchor.y);
+        // Último recurso: el más cercano de los dos botones
+        if (!hit) {
+          const ack = document.getElementById('reminderAlertClose');
+          const sn = document.getElementById('reminderAlertSnooze');
+          let best = null, bd = Infinity;
+          [[ack, 'reminder-ack'], [sn, 'reminder-snooze']].forEach(([el, action]) => {
+            if (!el) return;
+            const r = el.getBoundingClientRect();
+            const d = Math.hypot(
+              airIndexAnchor.x - (r.left + r.width / 2),
+              airIndexAnchor.y - (r.top + r.height / 2)
+            );
+            if (d < bd) { bd = d; best = { el, action }; }
+          });
+          if (best && bd < 320) hit = best;
+        }
         if (hit && hit.action === 'reminder-ack') {
           acknowledgeReminderAlert();
-          airSetStatus('Recordatorio confirmado', false);
+          airSetStatus('Confirmado', false);
         } else if (hit && hit.action === 'reminder-snooze') {
           snoozeReminderAlert();
           airSetStatus('Pospuesto 10 min', false);
@@ -6254,6 +6295,7 @@
       airDwellProgress = 0;
       airDwellOrigin = null;
     }
+
 
     return { dwellProgress: airDwellProgress, hasLeft: canCharge, hasRight };
   }

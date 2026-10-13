@@ -5638,7 +5638,7 @@
   }
 
   function airUpdateCrosshair(screenX, screenY, visible, charging) {
-    // Mira + orbe DOM (z-index máximo): se ven encima del modal de recordatorios
+    // Mira alineada con el orbe del canvas (estilo original)
     if (airCrosshair) {
       if (!visible) {
         airCrosshair.classList.remove('visible', 'ready');
@@ -5649,8 +5649,10 @@
         airCrosshair.classList.toggle('ready', !!charging);
       }
     }
+    // Orbe DOM solo encima del modal de recordatorios (resto: orbe canvas)
     if (airPointerOrb) {
-      if (!visible) {
+      const needDom = visible && airIsReminderAlertOpen();
+      if (!needDom) {
         airPointerOrb.classList.remove('visible', 'charging');
       } else {
         airPointerOrb.style.left = screenX + 'px';
@@ -5662,10 +5664,12 @@
   }
 
 
+
   function airDrawHands(hands, handednessList, dwellProgress, hasLeft, hasRight) {
     if (!airCtx || !airCanvas) return;
     const W = airCanvas.width, H = airCanvas.height;
     airCtx.clearRect(0, 0, W, H);
+    const mobile = typeof airIsMobileLike === 'function' && airIsMobileLike();
     hands.forEach((hand, i) => {
       if (!hand[8]) return;
       const x = hand[8].x * W, y = hand[8].y * H;
@@ -5673,51 +5677,40 @@
       const isRight = label.includes('right');
       const isLeft = label.includes('left');
       // Solo índice (landmark 8)
-      if (isRight || (!isLeft && !hasRight && i === 0)) {
-        // Índice derecho (o único sin etiqueta) = apuntador / clic
-        const mode = (hasLeft && hasRight) ? 'charging' : 'pointer';
+      if (isRight || (!isLeft && !hasRight && i === 0) || (mobile && hasRight && !isLeft && hands.length === 1)) {
+        // Índice derecho (o único) = apuntador; charging si hay carga activa
+        const mode = (dwellProgress > 0.02 && (hasLeft || mobile)) ? 'charging' : 'pointer';
         airDrawIndexOrb(airCtx, x, y, mode, dwellProgress);
       } else if (isLeft) {
-        // Índice izquierdo solo como activador sutil
         airDrawIndexOrb(airCtx, x, y, 'activator', 0);
+      } else if (!isRight && !isLeft && hands.length >= 1 && i === 0) {
+        // Sin etiqueta: tratar como puntero
+        const mode = (dwellProgress > 0.02 && (hasLeft || mobile)) ? 'charging' : 'pointer';
+        airDrawIndexOrb(airCtx, x, y, mode, dwellProgress);
       }
     });
   }
 
 
 
+
   /**
-   * Canvas (buffer) → coordenadas de pantalla (clientX/Y).
-   * Tiene en cuenta getBoundingClientRect + scaleX(-1) del CSS
-   * para que la mira coincida con el orbe en PC y móvil.
+   * Canvas (buffer) → clientX/Y de pantalla.
+   * CSS tiene scaleX(-1): el punto dibujado en cx se ve espejado.
    */
   function airCanvasToScreen(cx, cy) {
     if (!airCanvas) return { x: cx, y: cy };
     const rect = airCanvas.getBoundingClientRect();
-    const bw = airCanvas.width || 1;
-    const bh = airCanvas.height || 1;
-    const scaleX = rect.width / bw;
-    const scaleY = rect.height / bh;
-    // CSS transform scaleX(-1) refleja alrededor del centro del elemento
+    const bw = Math.max(1, airCanvas.width);
+    const bh = Math.max(1, airCanvas.height);
+    const nx = 1 - (cx / bw);
+    const ny = cy / bh;
     return {
-      x: rect.left + rect.width - cx * scaleX,
-      y: rect.top + cy * scaleY
+      x: rect.left + nx * rect.width,
+      y: rect.top + ny * rect.height
     };
   }
 
-  /** Pantalla → canvas (por si hace falta el inverso) */
-  function airScreenToCanvas(sx, sy) {
-    if (!airCanvas) return { x: sx, y: sy };
-    const rect = airCanvas.getBoundingClientRect();
-    const bw = airCanvas.width || 1;
-    const bh = airCanvas.height || 1;
-    const scaleX = rect.width / bw;
-    const scaleY = rect.height / bh;
-    return {
-      x: (rect.left + rect.width - sx) / scaleX,
-      y: (sy - rect.top) / scaleY
-    };
-  }
 
 
   function airFlashClick(sx, sy) {
@@ -5768,22 +5761,60 @@
   }
 
 
+  /** Elemento interactivo más cercano (fiable en móvil cuando elementFromPoint falla) */
+  function airNearestInteractive(screenX, screenY, maxDist) {
+    const sel = [
+      '.ring-seg-group',
+      '[data-air-url]',
+      '.module-header',
+      '.module-app',
+      '.side-app-item',
+      '.orb-container',
+      '.hidden-app-card',
+      '.reminder-alert-close',
+      '.reminder-alert-snooze',
+      '[data-air-action]'
+    ].join(',');
+    let best = null;
+    let bestScore = maxDist;
+    document.querySelectorAll(sel).forEach((el) => {
+      const r = el.getBoundingClientRect();
+      if (r.width < 2 || r.height < 2) return;
+      // Ignorar menú anillo oculto
+      if (el.closest?.('.ring-menu') && !el.closest?.('.ring-menu.visible')) return;
+      const cx = r.left + r.width / 2;
+      const cy = r.top + r.height / 2;
+      const dist = Math.hypot(screenX - cx, screenY - cy);
+      const pad = 40;
+      const inside =
+        screenX >= r.left - pad && screenX <= r.right + pad &&
+        screenY >= r.top - pad && screenY <= r.bottom + pad;
+      const score = inside ? dist * 0.2 : dist;
+      if (score < bestScore) {
+        bestScore = score;
+        best = el;
+      }
+    });
+    return best;
+  }
+
   /** Busca elemento bajo el punto (radio amplio para anillo y apps) */
   function airElementAt(screenX, screenY) {
     if (airCanvas) airCanvas.style.pointerEvents = 'none';
     if (airCrosshair) airCrosshair.style.pointerEvents = 'none';
+    if (airPointerOrb) airPointerOrb.style.pointerEvents = 'none';
     const hud = document.getElementById('airHudStatus');
     const prevHud = hud ? hud.style.pointerEvents : '';
     if (hud) hud.style.pointerEvents = 'none';
 
     const mobile = typeof airIsMobileLike === 'function' && airIsMobileLike();
     const offsets = mobile ? [
-      [0, 0], [0, -16], [0, 16], [-16, 0], [16, 0],
-      [-14, -14], [14, -14], [-14, 14], [14, 14],
-      [0, -32], [0, 32], [-32, 0], [32, 0],
-      [-28, -28], [28, -28], [-28, 28], [28, 28],
-      [0, -48], [0, 48], [-48, 0], [48, 0],
-      [0, -64], [0, 64], [-64, 0], [64, 0]
+      [0, 0], [0, -18], [0, 18], [-18, 0], [18, 0],
+      [-16, -16], [16, -16], [-16, 16], [16, 16],
+      [0, -36], [0, 36], [-36, 0], [36, 0],
+      [-30, -30], [30, -30], [-30, 30], [30, 30],
+      [0, -54], [0, 54], [-54, 0], [54, 0],
+      [0, -72], [0, 72], [-72, 0], [72, 0]
     ] : [
       [0, 0], [0, -12], [0, 12], [-12, 0], [12, 0],
       [-10, -10], [10, -10], [-10, 10], [10, 10],
@@ -5812,7 +5843,6 @@
       airClosest(el, '.fullscreen-button') ||
       airClosest(el, '.hidden-app-card');
 
-
     let found = null;
     let preferred = null;
     for (const [dx, dy] of offsets) {
@@ -5826,8 +5856,12 @@
       if (p) { preferred = p; break; }
     }
     if (hud) hud.style.pointerEvents = prevHud;
-    return preferred || found;
+    if (preferred) return preferred;
+    // Fallback: más cercano por rectángulo (clave en móvil)
+    const near = airNearestInteractive(screenX, screenY, mobile ? 110 : 70);
+    return near || found;
   }
+
 
   function airIsReminderAlertOpen() {
     const alert = document.getElementById('reminderAlert');
@@ -6112,8 +6146,8 @@
     const hasLeft = !!left;
     const now = performance.now();
     const mobile = airIsMobileLike();
-    // En móvil la detección tiembla más: tolerancia de movimiento mayor
-    const moveMax = mobile ? 70 : AIR_DWELL_MOVE_MAX;
+    // Móvil: más tolerancia al temblor de la cámara
+    const moveMax = mobile ? 130 : AIR_DWELL_MOVE_MAX;
 
     if (!hasRight) {
       airDwellStart = 0;
@@ -6126,8 +6160,8 @@
 
     const ix = right[8].x * W, iy = right[8].y * H;
     const screen = airCanvasToScreen(ix, iy);
-    // Suavizado más ligero en móvil (menos lag de la mira)
-    const smooth = mobile ? 0.55 : 0.35;
+    // Móvil: seguir casi al punto real (menos lag); PC: más suave
+    const smooth = mobile ? 0.2 : 0.35;
     const follow = 1 - smooth;
     if (!airIndexAnchor) {
       airIndexAnchor = { x: screen.x, y: screen.y };
@@ -6138,12 +6172,10 @@
 
     const remOpen = airIsReminderAlertOpen();
     const overRemBtn = remOpen ? airHitReminderButton(airIndexAnchor.x, airIndexAnchor.y) : null;
-    // PC: 2 índices (izq. activa). Móvil / recordatorio: 1 índice basta
+    // PC: 2 índices. Móvil / recordatorio: 1 índice basta
     const canCharge = hasLeft || remOpen || mobile;
     const configuredMs = getAirDwellMs();
-    // Recordatorios: al menos el tiempo configurado (mín. práctico 0.5 s si el usuario puso muy bajo)
     const dwellMs = remOpen ? Math.max(configuredMs, 500) : configuredMs;
-
 
     if (!canCharge) {
       airDwellStart = 0;
@@ -6154,12 +6186,11 @@
       return { dwellProgress: 0, hasLeft, hasRight };
     }
 
-    // Tras un clic: en móvil reinicio automático (clics seguidos menú → app)
+    // Tras un clic: en móvil reinicio automático (menú → app)
     if (airDwellFired) {
       if (mobile || remOpen) {
-        // Espera breve y permite otra carga sin quitar la mano
         if (!airDwellFiredAt) airDwellFiredAt = now;
-        if (now - airDwellFiredAt < 900) {
+        if (now - airDwellFiredAt < 700) {
           airDwellProgress = 0;
           airUpdateCrosshair(airIndexAnchor.x, airIndexAnchor.y, true, false);
           return { dwellProgress: 0, hasLeft: canCharge, hasRight };
@@ -6167,7 +6198,6 @@
         airDwellFired = false;
         airDwellFiredAt = 0;
       } else if (hasLeft) {
-        // PC: exigir quitar el índice izquierdo entre clics
         airDwellProgress = 0;
         airUpdateCrosshair(airIndexAnchor.x, airIndexAnchor.y, true, false);
         return { dwellProgress: 0, hasLeft, hasRight };
@@ -6177,17 +6207,18 @@
       }
     }
 
-    // Carga (anillo rojo)
+    // Carga (anillo rojo): drift sobre el ancla suavizado
     if (!airDwellStart || !airDwellOrigin) {
       airDwellStart = now;
-      airDwellOrigin = { x: screen.x, y: screen.y };
+      airDwellOrigin = { x: airIndexAnchor.x, y: airIndexAnchor.y };
     } else {
-      const drift = Math.hypot(screen.x - airDwellOrigin.x, screen.y - airDwellOrigin.y);
+      const drift = Math.hypot(airIndexAnchor.x - airDwellOrigin.x, airIndexAnchor.y - airDwellOrigin.y);
       if (drift > moveMax) {
         airDwellStart = now;
-        airDwellOrigin = { x: screen.x, y: screen.y };
+        airDwellOrigin = { x: airIndexAnchor.x, y: airIndexAnchor.y };
       }
     }
+
 
     if (remOpen && overRemBtn && overRemBtn.el) {
       document.querySelectorAll('.reminder-alert-close, .reminder-alert-snooze').forEach(b => {

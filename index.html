@@ -2149,38 +2149,34 @@
   }
   #airCrosshair svg { width: 100%; height: 100%; display: block; }
 
-  /* Orbe DOM encima del modal de recordatorios (100000) */
+  /* Orbe DOM (solo sobre modal recordatorio): punto dorado limpio, sin burbuja */
   #airPointerOrb {
     position: fixed;
-    width: 34px; height: 34px;
-    margin-left: -17px; margin-top: -17px;
+    width: 22px; height: 22px;
+    margin-left: -11px; margin-top: -11px;
     border-radius: 50%;
     pointer-events: none;
     z-index: 100011;
-
     opacity: 0;
-    transition: opacity 0.12s ease, background 0.2s ease, box-shadow 0.2s ease;
-    background: radial-gradient(circle at 38% 32%,
-      rgba(255,255,255,0.9) 0%,
-      rgba(var(--orb-glow), 0.8) 32%,
-      rgba(var(--orb-glow), 0.35) 62%,
-      transparent 100%);
-    box-shadow: 0 0 14px rgba(var(--orb-glow), 0.75), 0 0 4px rgba(255,255,255,0.55);
+    transition: opacity 0.12s ease, background 0.15s ease;
+    background: radial-gradient(circle at 35% 30%,
+      rgba(255, 245, 200, 0.95) 0%,
+      rgba(212, 175, 55, 0.95) 45%,
+      rgba(212, 175, 55, 0.7) 100%);
+    border: 1.5px solid rgba(255, 230, 150, 0.9);
+    box-shadow: none;
   }
-  #airPointerOrb.visible { opacity: 0.95; }
+  #airPointerOrb.visible { opacity: 1; }
   #airPointerOrb.charging {
-    background: radial-gradient(circle at 38% 32%,
-      rgba(255,220,220,0.95) 0%,
-      rgba(255,70,90,0.85) 38%,
-      rgba(255,70,90,0.3) 68%,
-      transparent 100%);
-    box-shadow: 0 0 18px rgba(255,70,90,0.85), 0 0 6px rgba(255,255,255,0.4);
-    animation: airPointerPulse 0.75s ease-in-out infinite;
+    background: radial-gradient(circle at 35% 30%,
+      rgba(255, 230, 230, 0.95) 0%,
+      rgba(255, 55, 55, 0.95) 45%,
+      rgba(255, 55, 55, 0.75) 100%);
+    border-color: rgba(255, 120, 120, 0.95);
+    box-shadow: none;
+    animation: none;
   }
-  @keyframes airPointerPulse {
-    0%, 100% { transform: scale(1); }
-    50% { transform: scale(1.12); }
-  }
+
 </style>
 
 </head>
@@ -5583,73 +5579,64 @@
    * progress: 0..1 cuando charging
    */
   function airDrawIndexOrb(ctx, x, y, mode, progress) {
-    const theme = getComputedStyle(document.body).getPropertyValue('--orb-glow').trim() || '198, 168, 91';
-    const red = '255, 70, 70';
-    const color = mode === 'charging' ? red : theme;
-    const radius = mode === 'activator' ? 9 : 14;
-    const alphaCore = mode === 'activator' ? 0.18 : (mode === 'charging' ? 0.45 : 0.28);
+    // Dorado fijo del puntero (no cambia con el tema)
+    const gold = '212, 175, 55';
+    const red = '255, 55, 55';
+    const isCharge = mode === 'charging';
+    const isAct = mode === 'activator';
+    const color = isCharge ? red : gold;
+    const radius = isAct ? 7 : 11;
     ctx.save();
 
-    // Halo difuminado
-    const g = ctx.createRadialGradient(x, y, radius * 0.15, x, y, radius * 2.2);
-    g.addColorStop(0, `rgba(${color}, ${alphaCore + 0.12})`);
-    g.addColorStop(0.45, `rgba(${color}, ${alphaCore * 0.5})`);
-    g.addColorStop(1, `rgba(${color}, 0)`);
-    ctx.fillStyle = g;
-    ctx.beginPath();
-    ctx.arc(x, y, radius * 2.2, 0, Math.PI * 2);
-    ctx.fill();
-
-    // Núcleo semitransparente
-    const core = ctx.createRadialGradient(x - radius * 0.2, y - radius * 0.2, 1, x, y, radius);
-    core.addColorStop(0, `rgba(255,255,255,${mode === 'charging' ? 0.4 : 0.25})`);
-    core.addColorStop(0.5, `rgba(${color}, ${alphaCore})`);
-    core.addColorStop(1, `rgba(${color}, 0.06)`);
+    // Puntero limpio: solo núcleo (sin burbuja/halo grande)
+    const core = ctx.createRadialGradient(
+      x - radius * 0.25, y - radius * 0.25, 0.5,
+      x, y, radius
+    );
+    if (isAct) {
+      core.addColorStop(0, `rgba(${gold}, 0.35)`);
+      core.addColorStop(1, `rgba(${gold}, 0.05)`);
+    } else if (isCharge) {
+      core.addColorStop(0, 'rgba(255, 230, 230, 0.95)');
+      core.addColorStop(0.45, `rgba(${red}, 0.9)`);
+      core.addColorStop(1, `rgba(${red}, 0.55)`);
+    } else {
+      core.addColorStop(0, 'rgba(255, 245, 200, 0.95)');
+      core.addColorStop(0.4, `rgba(${gold}, 0.92)`);
+      core.addColorStop(1, `rgba(${gold}, 0.55)`);
+    }
     ctx.fillStyle = core;
     ctx.beginPath();
     ctx.arc(x, y, radius, 0, Math.PI * 2);
     ctx.fill();
 
-    // Anillo suave
-    ctx.strokeStyle = `rgba(${color}, ${mode === 'charging' ? 0.85 : 0.45})`;
-    ctx.lineWidth = mode === 'charging' ? 2 : 1.2;
+    // Borde fino del punto
+    ctx.strokeStyle = isCharge
+      ? 'rgba(255, 120, 120, 0.95)'
+      : 'rgba(255, 230, 150, 0.9)';
+    ctx.lineWidth = 1.5;
     ctx.beginPath();
-    ctx.arc(x, y, radius + 1, 0, Math.PI * 2);
+    ctx.arc(x, y, radius, 0, Math.PI * 2);
     ctx.stroke();
 
-    // Progreso de clic (anillo animado 0→360°)
-    if (mode === 'charging' && progress > 0) {
+    // Al cargar: anillo de progreso rojo (sin segunda burbuja)
+    if (isCharge && progress > 0) {
       const p = Math.max(0, Math.min(1, progress));
-      const pulse = 0.7 + 0.3 * Math.sin(airFingerprintPhase * 2.5);
-      ctx.strokeStyle = `rgba(255, 90, 90, ${0.55 + 0.35 * pulse})`;
-      ctx.lineWidth = 3.5;
+      ctx.strokeStyle = 'rgba(255, 80, 80, 0.95)';
+      ctx.lineWidth = 2.5;
       ctx.lineCap = 'round';
       ctx.beginPath();
-      ctx.arc(x, y, radius + 7, -Math.PI / 2, -Math.PI / 2 + p * Math.PI * 2);
-      ctx.stroke();
-      // segundo anillo exterior parpadeante
-      ctx.strokeStyle = `rgba(255, 120, 80, ${0.25 * pulse})`;
-      ctx.lineWidth = 6;
-      ctx.beginPath();
-      ctx.arc(x, y, radius + 11, -Math.PI / 2, -Math.PI / 2 + p * Math.PI * 2);
+      ctx.arc(x, y, radius + 5, -Math.PI / 2, -Math.PI / 2 + p * Math.PI * 2);
       ctx.stroke();
     }
     ctx.restore();
   }
 
   function airUpdateCrosshair(screenX, screenY, visible, charging) {
-    // Mira alineada con el orbe del canvas (estilo original)
+    // Sin cruz/burbuja SVG: solo el orbe del canvas (y DOM si hay recordatorio)
     if (airCrosshair) {
-      if (!visible) {
-        airCrosshair.classList.remove('visible', 'ready');
-      } else {
-        airCrosshair.style.left = screenX + 'px';
-        airCrosshair.style.top = screenY + 'px';
-        airCrosshair.classList.add('visible');
-        airCrosshair.classList.toggle('ready', !!charging);
-      }
+      airCrosshair.classList.remove('visible', 'ready');
     }
-    // Orbe DOM solo encima del modal de recordatorios (resto: orbe canvas)
     if (airPointerOrb) {
       const needDom = visible && airIsReminderAlertOpen();
       if (!needDom) {
@@ -5662,6 +5649,7 @@
       }
     }
   }
+
 
 
 

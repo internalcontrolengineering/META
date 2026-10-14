@@ -2149,56 +2149,38 @@
   }
   #airCrosshair svg { width: 100%; height: 100%; display: block; }
 
-  /* Orbe DOM sobre modal: punto + anillo de progreso (visible encima del recordatorio) */
+  /* Orbe DOM encima del modal de recordatorios (100000) */
   #airPointerOrb {
     position: fixed;
-    width: 20px; height: 20px;
-    margin-left: -10px; margin-top: -10px;
+    width: 34px; height: 34px;
+    margin-left: -17px; margin-top: -17px;
     border-radius: 50%;
     pointer-events: none;
     z-index: 100011;
+
     opacity: 0;
-    transition: opacity 0.1s ease, background 0.12s ease, box-shadow 0.12s ease;
-    background: rgba(212, 175, 55, 0.95);
-    border: 1.5px solid rgba(255, 230, 150, 0.85);
-    box-shadow: 0 0 10px 3px rgba(212, 175, 55, 0.45);
+    transition: opacity 0.12s ease, background 0.2s ease, box-shadow 0.2s ease;
+    background: radial-gradient(circle at 38% 32%,
+      rgba(255,255,255,0.9) 0%,
+      rgba(var(--orb-glow), 0.8) 32%,
+      rgba(var(--orb-glow), 0.35) 62%,
+      transparent 100%);
+    box-shadow: 0 0 14px rgba(var(--orb-glow), 0.75), 0 0 4px rgba(255,255,255,0.55);
   }
-  #airPointerOrb.visible { opacity: 1; }
+  #airPointerOrb.visible { opacity: 0.95; }
   #airPointerOrb.charging {
-    background: rgba(255, 50, 50, 0.95);
-    border-color: rgba(255, 120, 120, 0.9);
-    box-shadow: 0 0 10px 3px rgba(255, 80, 80, 0.5);
-    animation: none;
+    background: radial-gradient(circle at 38% 32%,
+      rgba(255,220,220,0.95) 0%,
+      rgba(255,70,90,0.85) 38%,
+      rgba(255,70,90,0.3) 68%,
+      transparent 100%);
+    box-shadow: 0 0 18px rgba(255,70,90,0.85), 0 0 6px rgba(255,255,255,0.4);
+    animation: airPointerPulse 0.75s ease-in-out infinite;
   }
-  #airPointerOrb .air-pointer-ring {
-    position: absolute;
-    left: 50%; top: 50%;
-    width: 40px; height: 40px;
-    margin-left: -20px; margin-top: -20px;
-    transform: rotate(-90deg);
-    overflow: visible;
+  @keyframes airPointerPulse {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.12); }
   }
-  #airPointerOrb .air-pointer-ring-bg {
-    fill: none;
-    stroke: rgba(255, 255, 255, 0.2);
-    stroke-width: 2.5;
-  }
-  #airPointerOrb .air-pointer-ring-fg {
-    fill: none;
-    stroke: rgba(255, 70, 70, 1);
-    stroke-width: 2.5;
-    stroke-linecap: round;
-    stroke-dasharray: 100.53;
-    stroke-dashoffset: 100.53;
-    transition: stroke-dashoffset 0.05s linear;
-  }
-  #airPointerOrb.charging .air-pointer-ring-fg {
-    stroke: rgba(255, 70, 70, 1);
-  }
-
-
-
-
 </style>
 
 </head>
@@ -2355,13 +2337,7 @@
       <line x1="18" y1="14" x2="26" y2="14" stroke="rgb(var(--orb-glow))" stroke-width="1.5" stroke-linecap="round"/>
     </svg>
   </div>
-  <div id="airPointerOrb" aria-hidden="true">
-    <svg class="air-pointer-ring" viewBox="0 0 40 40" aria-hidden="true">
-      <circle class="air-pointer-ring-bg" cx="20" cy="20" r="16"></circle>
-      <circle class="air-pointer-ring-fg" cx="20" cy="20" r="16"></circle>
-    </svg>
-  </div>
-
+  <div id="airPointerOrb" aria-hidden="true"></div>
   <div class="air-hud-status" id="airHudStatus" aria-live="polite"></div>
 
 
@@ -2881,6 +2857,7 @@
   };
 
   const APPS = {
+    fileHub: { id:'fileHub', label:'FileHub', section:'normatividad', icon:'fa-folder-open', url:"https://internalcontrolengineering.github.io/FileHub/" },
     matrizDocumental: { id:'matrizDocumental', label:'Matriz Documental', section:'normatividad', icon:'fa-table', url:"https://internalcontrolengineering.github.io/Matriz-Documental/" },
     normativa360:     { id:'normativa360', label:'Normativa 360', section:'normatividad', icon:'fa-file-signature', url:"https://internalcontrolengineering.github.io/CSWNormativa360/" },
     visum:            { id:'visum', label:'Visum', section:'normatividad', icon:'fa-ranking-star', url:"https://internalcontrolengineering.github.io/VisumCSW/" },
@@ -3677,16 +3654,6 @@
     const queueEl = document.getElementById('reminderAlertQueue');
     if (!alert || !rem) return;
 
-    // Reset dwell AirTouch: el timer solo empieza al poner el puntero en un botón
-    try {
-      airDwellStart = 0;
-      airDwellProgress = 0;
-      airDwellFired = false;
-      airDwellFiredAt = 0;
-      airDwellOrigin = null;
-      airRemHoverAction = null;
-    } catch (e) {}
-
     // Asegurar que el nodo esté al final del body (encima de menú, ajustes, etc.)
     try {
       if (alert.parentElement !== document.body) {
@@ -3697,7 +3664,6 @@
     } catch (e) {}
 
     rem.snoozeUntil = null;
-
     // lastNotifiedAt solo tras pintar (abajo), para no “quemar” el aviso si falló la UI
 
     if (msg) msg.textContent = rem.title;
@@ -5618,96 +5584,89 @@
    * progress: 0..1 cuando charging
    */
   function airDrawIndexOrb(ctx, x, y, mode, progress) {
-    // Punto + borde de halo fino (dorado o rojo)
-    const isCharge = mode === 'charging';
-    const isAct = mode === 'activator';
-    const radius = isAct ? 6 : 10;
-    const fill = isAct
-      ? 'rgba(212, 175, 55, 0.4)'
-      : (isCharge ? 'rgba(255, 50, 50, 0.95)' : 'rgba(212, 175, 55, 0.95)');
-    const halo = isCharge
-      ? 'rgba(255, 80, 80, 0.55)'
-      : 'rgba(212, 175, 55, 0.45)';
-    const ring = isCharge
-      ? 'rgba(255, 120, 120, 0.9)'
-      : 'rgba(255, 230, 150, 0.85)';
+    const theme = getComputedStyle(document.body).getPropertyValue('--orb-glow').trim() || '198, 168, 91';
+    const red = '255, 70, 70';
+    const color = mode === 'charging' ? red : theme;
+    const radius = mode === 'activator' ? 9 : 14;
+    const alphaCore = mode === 'activator' ? 0.18 : (mode === 'charging' ? 0.45 : 0.28);
     ctx.save();
 
-    // Halo suave alrededor del punto
-    if (!isAct) {
-      const g = ctx.createRadialGradient(x, y, radius * 0.6, x, y, radius + 8);
-      g.addColorStop(0, halo);
-      g.addColorStop(1, 'rgba(0,0,0,0)');
-      ctx.fillStyle = g;
-      ctx.beginPath();
-      ctx.arc(x, y, radius + 8, 0, Math.PI * 2);
-      ctx.fill();
-    }
-
-    // Núcleo
+    // Halo difuminado
+    const g = ctx.createRadialGradient(x, y, radius * 0.15, x, y, radius * 2.2);
+    g.addColorStop(0, `rgba(${color}, ${alphaCore + 0.12})`);
+    g.addColorStop(0.45, `rgba(${color}, ${alphaCore * 0.5})`);
+    g.addColorStop(1, `rgba(${color}, 0)`);
+    ctx.fillStyle = g;
     ctx.beginPath();
-    ctx.arc(x, y, radius, 0, Math.PI * 2);
-    ctx.fillStyle = fill;
+    ctx.arc(x, y, radius * 2.2, 0, Math.PI * 2);
     ctx.fill();
 
-    // Borde de halo
-    ctx.strokeStyle = ring;
-    ctx.lineWidth = 1.5;
+    // Núcleo semitransparente
+    const core = ctx.createRadialGradient(x - radius * 0.2, y - radius * 0.2, 1, x, y, radius);
+    core.addColorStop(0, `rgba(255,255,255,${mode === 'charging' ? 0.4 : 0.25})`);
+    core.addColorStop(0.5, `rgba(${color}, ${alphaCore})`);
+    core.addColorStop(1, `rgba(${color}, 0.06)`);
+    ctx.fillStyle = core;
     ctx.beginPath();
-    ctx.arc(x, y, radius + 1.5, 0, Math.PI * 2);
+    ctx.arc(x, y, radius, 0, Math.PI * 2);
+    ctx.fill();
+
+    // Anillo suave
+    ctx.strokeStyle = `rgba(${color}, ${mode === 'charging' ? 0.85 : 0.45})`;
+    ctx.lineWidth = mode === 'charging' ? 2 : 1.2;
+    ctx.beginPath();
+    ctx.arc(x, y, radius + 1, 0, Math.PI * 2);
     ctx.stroke();
 
-    // Progreso al cargar
-    if (isCharge && progress > 0) {
+    // Progreso de clic (anillo animado 0→360°)
+    if (mode === 'charging' && progress > 0) {
       const p = Math.max(0, Math.min(1, progress));
-      ctx.strokeStyle = 'rgba(255, 80, 80, 1)';
-      ctx.lineWidth = 2;
+      const pulse = 0.7 + 0.3 * Math.sin(airFingerprintPhase * 2.5);
+      ctx.strokeStyle = `rgba(255, 90, 90, ${0.55 + 0.35 * pulse})`;
+      ctx.lineWidth = 3.5;
       ctx.lineCap = 'round';
       ctx.beginPath();
-      ctx.arc(x, y, radius + 5, -Math.PI / 2, -Math.PI / 2 + p * Math.PI * 2);
+      ctx.arc(x, y, radius + 7, -Math.PI / 2, -Math.PI / 2 + p * Math.PI * 2);
+      ctx.stroke();
+      // segundo anillo exterior parpadeante
+      ctx.strokeStyle = `rgba(255, 120, 80, ${0.25 * pulse})`;
+      ctx.lineWidth = 6;
+      ctx.beginPath();
+      ctx.arc(x, y, radius + 11, -Math.PI / 2, -Math.PI / 2 + p * Math.PI * 2);
       ctx.stroke();
     }
     ctx.restore();
   }
 
-
-
-  function airUpdateCrosshair(screenX, screenY, visible, charging, progress) {
-    // Sin cruz SVG: orbe canvas; sobre recordatorio, orbe DOM + anillo de progreso
+  function airUpdateCrosshair(screenX, screenY, visible, charging) {
+    // Mira + orbe DOM (z-index máximo): se ven encima del modal de recordatorios
     if (airCrosshair) {
-      airCrosshair.classList.remove('visible', 'ready');
+      if (!visible) {
+        airCrosshair.classList.remove('visible', 'ready');
+      } else {
+        airCrosshair.style.left = screenX + 'px';
+        airCrosshair.style.top = screenY + 'px';
+        airCrosshair.classList.add('visible');
+        airCrosshair.classList.toggle('ready', !!charging);
+      }
     }
     if (airPointerOrb) {
-      const needDom = visible && airIsReminderAlertOpen();
-      if (!needDom) {
+      if (!visible) {
         airPointerOrb.classList.remove('visible', 'charging');
-        const fg0 = airPointerOrb.querySelector('.air-pointer-ring-fg');
-        if (fg0) fg0.style.strokeDashoffset = '100.53';
       } else {
         airPointerOrb.style.left = screenX + 'px';
         airPointerOrb.style.top = screenY + 'px';
         airPointerOrb.classList.add('visible');
         airPointerOrb.classList.toggle('charging', !!charging);
-        const fg = airPointerOrb.querySelector('.air-pointer-ring-fg');
-        if (fg) {
-          const c = 2 * Math.PI * 16; // ≈ 100.53
-          const p = Math.max(0, Math.min(1, Number(progress) || 0));
-          fg.style.strokeDasharray = String(c);
-          fg.style.strokeDashoffset = String(c * (1 - (charging ? p : 0)));
-        }
       }
     }
   }
-
-
-
 
 
   function airDrawHands(hands, handednessList, dwellProgress, hasLeft, hasRight) {
     if (!airCtx || !airCanvas) return;
     const W = airCanvas.width, H = airCanvas.height;
     airCtx.clearRect(0, 0, W, H);
-    const mobile = typeof airIsMobileLike === 'function' && airIsMobileLike();
     hands.forEach((hand, i) => {
       if (!hand[8]) return;
       const x = hand[8].x * W, y = hand[8].y * H;
@@ -5715,45 +5674,55 @@
       const isRight = label.includes('right');
       const isLeft = label.includes('left');
       // Solo índice (landmark 8)
-      if (isRight || (!isLeft && !hasRight && i === 0) || (mobile && hasRight && !isLeft && hands.length === 1)) {
-        // Índice derecho (o único) = apuntador; charging si hay carga activa
-        const mode = (dwellProgress > 0.02 && (hasLeft || mobile)) ? 'charging' : 'pointer';
+      if (isRight || (!isLeft && !hasRight && i === 0)) {
+        // Índice derecho (o único sin etiqueta) = apuntador / clic
+        const mode = (hasLeft && hasRight) ? 'charging' : 'pointer';
         airDrawIndexOrb(airCtx, x, y, mode, dwellProgress);
       } else if (isLeft) {
+        // Índice izquierdo solo como activador sutil
         airDrawIndexOrb(airCtx, x, y, 'activator', 0);
-      } else if (!isRight && !isLeft && hands.length >= 1 && i === 0) {
-        // Sin etiqueta: tratar como puntero
-        const mode = (dwellProgress > 0.02 && (hasLeft || mobile)) ? 'charging' : 'pointer';
-        airDrawIndexOrb(airCtx, x, y, mode, dwellProgress);
       }
     });
   }
 
 
 
-
   /**
-   * Canvas (buffer) → clientX/Y de pantalla.
-   * CSS tiene scaleX(-1): el punto dibujado en cx se ve espejado.
+   * Canvas (buffer) → coordenadas de pantalla (clientX/Y).
+   * Tiene en cuenta getBoundingClientRect + scaleX(-1) del CSS
+   * para que la mira coincida con el orbe en PC y móvil.
    */
   function airCanvasToScreen(cx, cy) {
     if (!airCanvas) return { x: cx, y: cy };
     const rect = airCanvas.getBoundingClientRect();
-    const bw = Math.max(1, airCanvas.width);
-    const bh = Math.max(1, airCanvas.height);
-    const nx = 1 - (cx / bw);
-    const ny = cy / bh;
+    const bw = airCanvas.width || 1;
+    const bh = airCanvas.height || 1;
+    const scaleX = rect.width / bw;
+    const scaleY = rect.height / bh;
+    // CSS transform scaleX(-1) refleja alrededor del centro del elemento
     return {
-      x: rect.left + nx * rect.width,
-      y: rect.top + ny * rect.height
+      x: rect.left + rect.width - cx * scaleX,
+      y: rect.top + cy * scaleY
+    };
+  }
+
+  /** Pantalla → canvas (por si hace falta el inverso) */
+  function airScreenToCanvas(sx, sy) {
+    if (!airCanvas) return { x: sx, y: sy };
+    const rect = airCanvas.getBoundingClientRect();
+    const bw = airCanvas.width || 1;
+    const bh = airCanvas.height || 1;
+    const scaleX = rect.width / bw;
+    const scaleY = rect.height / bh;
+    return {
+      x: (rect.left + rect.width - sx) / scaleX,
+      y: (sy - rect.top) / scaleY
     };
   }
 
 
-
   function airFlashClick(sx, sy) {
-    // Sin anillos de halo: el clic se confirma por estado HUD
-    return;
+
     if (!airCtx || !airCanvas) return;
     const cx = airCanvas.width - sx, cy = sy;
     const glow = getComputedStyle(document.body).getPropertyValue('--orb-glow').trim() || '198, 168, 91';
@@ -5769,7 +5738,6 @@
       airCtx.restore();
       frame++;
       if (frame < maxF) requestAnimationFrame(draw);
-
     };
     requestAnimationFrame(draw);
   }
@@ -5801,60 +5769,22 @@
   }
 
 
-  /** Elemento interactivo más cercano (fiable en móvil cuando elementFromPoint falla) */
-  function airNearestInteractive(screenX, screenY, maxDist) {
-    const sel = [
-      '.ring-seg-group',
-      '[data-air-url]',
-      '.module-header',
-      '.module-app',
-      '.side-app-item',
-      '.orb-container',
-      '.hidden-app-card',
-      '.reminder-alert-close',
-      '.reminder-alert-snooze',
-      '[data-air-action]'
-    ].join(',');
-    let best = null;
-    let bestScore = maxDist;
-    document.querySelectorAll(sel).forEach((el) => {
-      const r = el.getBoundingClientRect();
-      if (r.width < 2 || r.height < 2) return;
-      // Ignorar menú anillo oculto
-      if (el.closest?.('.ring-menu') && !el.closest?.('.ring-menu.visible')) return;
-      const cx = r.left + r.width / 2;
-      const cy = r.top + r.height / 2;
-      const dist = Math.hypot(screenX - cx, screenY - cy);
-      const pad = 40;
-      const inside =
-        screenX >= r.left - pad && screenX <= r.right + pad &&
-        screenY >= r.top - pad && screenY <= r.bottom + pad;
-      const score = inside ? dist * 0.2 : dist;
-      if (score < bestScore) {
-        bestScore = score;
-        best = el;
-      }
-    });
-    return best;
-  }
-
   /** Busca elemento bajo el punto (radio amplio para anillo y apps) */
   function airElementAt(screenX, screenY) {
     if (airCanvas) airCanvas.style.pointerEvents = 'none';
     if (airCrosshair) airCrosshair.style.pointerEvents = 'none';
-    if (airPointerOrb) airPointerOrb.style.pointerEvents = 'none';
     const hud = document.getElementById('airHudStatus');
     const prevHud = hud ? hud.style.pointerEvents : '';
     if (hud) hud.style.pointerEvents = 'none';
 
     const mobile = typeof airIsMobileLike === 'function' && airIsMobileLike();
     const offsets = mobile ? [
-      [0, 0], [0, -18], [0, 18], [-18, 0], [18, 0],
-      [-16, -16], [16, -16], [-16, 16], [16, 16],
-      [0, -36], [0, 36], [-36, 0], [36, 0],
-      [-30, -30], [30, -30], [-30, 30], [30, 30],
-      [0, -54], [0, 54], [-54, 0], [54, 0],
-      [0, -72], [0, 72], [-72, 0], [72, 0]
+      [0, 0], [0, -16], [0, 16], [-16, 0], [16, 0],
+      [-14, -14], [14, -14], [-14, 14], [14, 14],
+      [0, -32], [0, 32], [-32, 0], [32, 0],
+      [-28, -28], [28, -28], [-28, 28], [28, 28],
+      [0, -48], [0, 48], [-48, 0], [48, 0],
+      [0, -64], [0, 64], [-64, 0], [64, 0]
     ] : [
       [0, 0], [0, -12], [0, 12], [-12, 0], [12, 0],
       [-10, -10], [10, -10], [-10, 10], [10, 10],
@@ -5883,6 +5813,7 @@
       airClosest(el, '.fullscreen-button') ||
       airClosest(el, '.hidden-app-card');
 
+
     let found = null;
     let preferred = null;
     for (const [dx, dy] of offsets) {
@@ -5896,25 +5827,15 @@
       if (p) { preferred = p; break; }
     }
     if (hud) hud.style.pointerEvents = prevHud;
-    if (preferred) return preferred;
-    // Fallback: más cercano por rectángulo (clave en móvil)
-    const near = airNearestInteractive(screenX, screenY, mobile ? 110 : 70);
-    return near || found;
+    return preferred || found;
   }
-
 
   function airIsReminderAlertOpen() {
     const alert = document.getElementById('reminderAlert');
-    if (!alert) return false;
-    if (alert.classList.contains('visible')) return true;
-    try {
-      return window.getComputedStyle(alert).display !== 'none';
-    } catch (e) {
-      return false;
-    }
+    return !!(alert && alert.classList.contains('visible'));
   }
 
-  /** Hit-test Confirmar / Posponer: solo sobre los botones (no cierra el modal al azar) */
+  /** Hit-test recordatorio: rect ampliado + botón más cercano (tolerante cámara/móvil) */
   function airHitReminderButton(screenX, screenY) {
     if (!airIsReminderAlertOpen()) return null;
     const ack = document.getElementById('reminderAlertClose');
@@ -5924,30 +5845,31 @@
     if (snooze) candidates.push({ el: snooze, action: 'reminder-snooze' });
     if (!candidates.length) return null;
 
-    // Móvil: margen estrecho (debe estar sobre el botón). PC: un poco más amplio.
-    const mobile = typeof airIsMobileLike === 'function' && airIsMobileLike();
-    const pad = mobile ? 18 : 36;
-    let best = null, bestDist = Infinity;
+    const pad = 56;
+    let bestInside = null, bestInsideDist = Infinity;
+    let bestNear = null, bestNearDist = Infinity;
 
     for (const c of candidates) {
-      if (!c.el) continue;
       const r = c.el.getBoundingClientRect();
-      if (r.width < 2 || r.height < 2) continue;
       const cx = r.left + r.width / 2;
       const cy = r.top + r.height / 2;
       const dist = Math.hypot(screenX - cx, screenY - cy);
       const inside =
         screenX >= r.left - pad && screenX <= r.right + pad &&
         screenY >= r.top - pad && screenY <= r.bottom + pad;
-      if (inside && dist < bestDist) {
-        bestDist = dist;
-        best = c;
+      if (inside && dist < bestInsideDist) {
+        bestInsideDist = dist;
+        bestInside = c;
+      }
+      if (dist < bestNearDist) {
+        bestNearDist = dist;
+        bestNear = c;
       }
     }
-    return best;
+    if (bestInside) return bestInside;
+    if (bestNear && bestNearDist <= 140) return bestNear;
+    return null;
   }
-
-
 
 
   function airDispatchClick(screenX, screenY) {
@@ -6114,8 +6036,6 @@
   let airDwellFiredAt = 0;
   let airDwellOrigin = null;
   let airLastHandedness = [];
-  let airRemHoverAction = null; // botón de recordatorio bajo el puntero (reinicia el timer al entrar)
-
 
   function getAirDwellMs() {
     const mobile = typeof airIsMobileLike === 'function' && airIsMobileLike();
@@ -6193,9 +6113,8 @@
     const hasLeft = !!left;
     const now = performance.now();
     const mobile = airIsMobileLike();
-    // Móvil / modal recordatorio: más tolerancia al temblor
-    const moveMax = (mobile || airIsReminderAlertOpen()) ? 140 : AIR_DWELL_MOVE_MAX;
-
+    // En móvil la detección tiembla más: tolerancia de movimiento mayor
+    const moveMax = mobile ? 70 : AIR_DWELL_MOVE_MAX;
 
     if (!hasRight) {
       airDwellStart = 0;
@@ -6208,8 +6127,8 @@
 
     const ix = right[8].x * W, iy = right[8].y * H;
     const screen = airCanvasToScreen(ix, iy);
-    // Móvil: seguir casi al punto real (menos lag); PC: más suave
-    const smooth = mobile ? 0.2 : 0.35;
+    // Suavizado más ligero en móvil (menos lag de la mira)
+    const smooth = mobile ? 0.55 : 0.35;
     const follow = 1 - smooth;
     if (!airIndexAnchor) {
       airIndexAnchor = { x: screen.x, y: screen.y };
@@ -6220,57 +6139,28 @@
 
     const remOpen = airIsReminderAlertOpen();
     const overRemBtn = remOpen ? airHitReminderButton(airIndexAnchor.x, airIndexAnchor.y) : null;
-    // Recordatorio: cargar SOLO si el puntero está sobre Confirmar o Posponer
-    // Resto: PC = 2 índices; móvil = 1 índice
-    const canCharge = remOpen ? !!overRemBtn : (hasLeft || mobile);
+    // PC: 2 índices (izq. activa). Móvil / recordatorio: 1 índice basta
+    const canCharge = hasLeft || remOpen || mobile;
     const configuredMs = getAirDwellMs();
-    // Mín. 1 s en recordatorio para ver el círculo llenarse (no cierre al instante)
-    const dwellMs = remOpen ? Math.max(configuredMs, 1000) : configuredMs;
+    // Recordatorios: al menos el tiempo configurado (mín. práctico 0.5 s si el usuario puso muy bajo)
+    const dwellMs = remOpen ? Math.max(configuredMs, 500) : configuredMs;
 
-    if (remOpen && !overRemBtn) {
-      airDwellStart = 0;
-      airDwellProgress = 0;
-      airDwellFired = false;
-      airDwellOrigin = null;
-      airRemHoverAction = null;
-      airUpdateCrosshair(airIndexAnchor.x, airIndexAnchor.y, true, false);
-      document.querySelectorAll('.reminder-alert-close, .reminder-alert-snooze').forEach(b => {
-        b.style.outline = '';
-        b.style.outlineOffset = '';
-      });
-      return { dwellProgress: 0, hasLeft: true, hasRight };
-    }
 
     if (!canCharge) {
       airDwellStart = 0;
       airDwellProgress = 0;
       airDwellFired = false;
       airDwellOrigin = null;
-      airRemHoverAction = null;
       airUpdateCrosshair(airIndexAnchor.x, airIndexAnchor.y, true, false);
       return { dwellProgress: 0, hasLeft, hasRight };
     }
 
-    // Al entrar en un botón de recordatorio: SIEMPRE reiniciar el timer (no heredar progreso)
-    if (remOpen && overRemBtn) {
-      const act = overRemBtn.action;
-      if (airRemHoverAction !== act) {
-        airRemHoverAction = act;
-        airDwellStart = now;
-        airDwellOrigin = { x: airIndexAnchor.x, y: airIndexAnchor.y };
-        airDwellProgress = 0;
-        airDwellFired = false;
-        airDwellFiredAt = 0;
-      }
-    } else {
-      airRemHoverAction = null;
-    }
-
-    // Tras un clic: en móvil reinicio automático (menú → app)
+    // Tras un clic: en móvil reinicio automático (clics seguidos menú → app)
     if (airDwellFired) {
       if (mobile || remOpen) {
+        // Espera breve y permite otra carga sin quitar la mano
         if (!airDwellFiredAt) airDwellFiredAt = now;
-        if (now - airDwellFiredAt < 700) {
+        if (now - airDwellFiredAt < 900) {
           airDwellProgress = 0;
           airUpdateCrosshair(airIndexAnchor.x, airIndexAnchor.y, true, false);
           return { dwellProgress: 0, hasLeft: canCharge, hasRight };
@@ -6278,6 +6168,7 @@
         airDwellFired = false;
         airDwellFiredAt = 0;
       } else if (hasLeft) {
+        // PC: exigir quitar el índice izquierdo entre clics
         airDwellProgress = 0;
         airUpdateCrosshair(airIndexAnchor.x, airIndexAnchor.y, true, false);
         return { dwellProgress: 0, hasLeft, hasRight };
@@ -6287,19 +6178,17 @@
       }
     }
 
-    // Carga (anillo rojo): drift sobre el ancla suavizado
+    // Carga (anillo rojo)
     if (!airDwellStart || !airDwellOrigin) {
       airDwellStart = now;
-      airDwellOrigin = { x: airIndexAnchor.x, y: airIndexAnchor.y };
+      airDwellOrigin = { x: screen.x, y: screen.y };
     } else {
-      const drift = Math.hypot(airIndexAnchor.x - airDwellOrigin.x, airIndexAnchor.y - airDwellOrigin.y);
+      const drift = Math.hypot(screen.x - airDwellOrigin.x, screen.y - airDwellOrigin.y);
       if (drift > moveMax) {
         airDwellStart = now;
-        airDwellOrigin = { x: airIndexAnchor.x, y: airIndexAnchor.y };
+        airDwellOrigin = { x: screen.x, y: screen.y };
       }
     }
-
-
 
     if (remOpen && overRemBtn && overRemBtn.el) {
       document.querySelectorAll('.reminder-alert-close, .reminder-alert-snooze').forEach(b => {
@@ -6317,19 +6206,16 @@
 
     const elapsed = now - airDwellStart;
     airDwellProgress = Math.min(1, elapsed / dwellMs);
-    // progress para el anillo DOM sobre el modal de recordatorio
-    airUpdateCrosshair(airIndexAnchor.x, airIndexAnchor.y, true, true, airDwellProgress);
-
+    airUpdateCrosshair(airIndexAnchor.x, airIndexAnchor.y, true, true);
 
     if (airDwellProgress >= 1) {
       airDwellFired = true;
       airDwellFiredAt = now;
       if (remOpen) {
-        // Solo actúa si el puntero sigue sobre Confirmar o Posponer
         const hit = overRemBtn || airHitReminderButton(airIndexAnchor.x, airIndexAnchor.y);
         if (hit && hit.action === 'reminder-ack') {
           acknowledgeReminderAlert();
-          airSetStatus('Confirmado', false);
+          airSetStatus('Recordatorio confirmado', false);
         } else if (hit && hit.action === 'reminder-snooze') {
           snoozeReminderAlert();
           airSetStatus('Pospuesto 10 min', false);
@@ -6350,8 +6236,6 @@
       airDwellProgress = 0;
       airDwellOrigin = null;
     }
-
-
 
     return { dwellProgress: airDwellProgress, hasLeft: canCharge, hasRight };
   }
